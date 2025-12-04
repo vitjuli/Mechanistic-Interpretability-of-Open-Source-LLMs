@@ -76,6 +76,22 @@ class InterventionValidator:
         self.config = config or Config()
         self.hooks: list = []
 
+    def _get_model_layers(self):
+        """Get the transformer layers from the model.
+
+        Returns:
+            The model's transformer layers.
+
+        Raises:
+            ValueError: If the model architecture is not recognized.
+        """
+        if hasattr(self.model, "model"):
+            return self.model.model.layers
+        elif hasattr(self.model, "transformer"):
+            return self.model.transformer.h
+        else:
+            raise ValueError("Unknown model architecture")
+
     def _get_inhibition_hook(
         self,
         layer: int,
@@ -188,13 +204,7 @@ class InterventionValidator:
         Returns:
             Handle for the registered hook.
         """
-        if hasattr(self.model, "model"):
-            layers = self.model.model.layers
-        elif hasattr(self.model, "transformer"):
-            layers = self.model.transformer.h
-        else:
-            raise ValueError("Unknown model architecture")
-
+        layers = self._get_model_layers()
         handle = layers[layer].register_forward_hook(hook)
         self.hooks.append(handle)
         return handle
@@ -302,11 +312,7 @@ class InterventionValidator:
             hidden = output[0] if isinstance(output, tuple) else output
             source_activations.append(hidden.detach())
 
-        if hasattr(self.model, "model"):
-            layers = self.model.model.layers
-        else:
-            layers = self.model.transformer.h
-
+        layers = self._get_model_layers()
         handle = layers[layer].register_forward_hook(capture_hook)
 
         try:

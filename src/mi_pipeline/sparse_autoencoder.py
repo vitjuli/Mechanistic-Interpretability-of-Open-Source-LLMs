@@ -286,19 +286,24 @@ class SAETrainer:
         cls,
         path: str,
         config: Optional[Config] = None,
-        device: str = "cuda",
+        device: Optional[str] = None,
     ) -> "SAETrainer":
         """Load an SAE model from disk.
 
         Args:
             path: Path to the saved model.
             config: Configuration object.
-            device: Device to load the model to.
+            device: Device to load the model to. If None, uses CUDA if available.
 
         Returns:
             SAETrainer instance with loaded model.
         """
-        checkpoint = torch.load(path, map_location=device, weights_only=False)
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Load checkpoint with weights_only=True for security
+        # We need to load the metadata separately from state_dict
+        checkpoint = torch.load(path, map_location=device, weights_only=True)
         sae = SparseAutoencoder(
             input_dim=checkpoint["input_dim"],
             hidden_dim=checkpoint["hidden_dim"],
