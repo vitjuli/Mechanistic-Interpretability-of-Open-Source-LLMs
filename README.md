@@ -1,6 +1,4 @@
 # Mechanistic Interpretability of an Open-Source LLM (Qwen3-4B-Instruct)
-Small-scale reproduction of *On the Biology of a Large Language Model* (Transformer Circuits, 2025)
-
 Authour: Iuliia Vitiugova
 DAMTP, University of Cambridge 
 
