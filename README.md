@@ -1,10 +1,10 @@
-# Mechanistic-Interpretability-of-Open-Source-LLMs
-Mechanistic Interpretability of Open Source LLMs: reproduction of On the Biology of a Large Language Model Investigation of mechanisms can be found in an open model, Qwen3-4B-Instruct. DAMPT, University of Cambridge.
-
 # Mechanistic Interpretability of an Open-Source LLM (Qwen3-4B-Instruct)  
 ## Transformer Forward Pass → Activations → Sparse Autoencoders (SAEs) → Replacement Model → Attribution Graphs → Interventions
 
-This repository reproduces (at small scale) key steps from *On the Biology of a Large Language Model* using an open model (**Qwen3-4B-Instruct**).  
+Author: Iuliia Vitiugova
+DAMPT, University of Cambridge
+
+This repository reproduces key steps from *On the Biology of a Large Language Model* using an open model (**Qwen3-4B-Instruct**).  
 The goal is to identify **interpretable internal features** and **causal circuits** for selected behaviours, using **Sparse Autoencoders (SAEs)** trained on **MLP activations**, then validated via **feature-level interventions** (ablation / swap-in).
 
 ---
