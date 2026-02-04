@@ -1,0 +1,38 @@
+{
+  "behaviour": "grammar_agreement",
+  "split": "train",
+  "n_prompts": 80,
+  "n_samples": 80,
+  "token_selection": "last",
+  "layer_range": [
+    15,
+    20
+  ],
+  "shapes": {
+    "layer_15": [
+      80,
+      2560
+    ],
+    "layer_16": [
+      80,
+      2560
+    ],
+    "layer_17": [
+      80,
+      2560
+    ],
+    "layer_18": [
+      80,
+      2560
+    ],
+    "layer_19": [
+      80,
+      2560
+    ]
+  },
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "dtype": "float32",
+  "device": "cpu",
+  "torch_version": "2.5.1+cu121",
+  "deterministic": true
+}
