@@ -296,13 +296,17 @@ def save_features(
         layer_dir.mkdir(exist_ok=True)
 
         # Save top-k features (most commonly needed)
+        # Convert to float32 if bfloat16 (numpy doesn't support bfloat16)
         np.save(
             layer_dir / f"{behaviour}_{split}_top_k_indices.npy",
             layer_data["top_k_indices"].numpy()
         )
+        top_k_values = layer_data["top_k_values"]
+        if top_k_values.dtype == torch.bfloat16:
+            top_k_values = top_k_values.float()
         np.save(
             layer_dir / f"{behaviour}_{split}_top_k_values.npy",
-            layer_data["top_k_values"].numpy()
+            top_k_values.numpy()
         )
 
         # Save feature frequencies
@@ -315,7 +319,10 @@ def save_features(
         # NOTE: feature_activations removed from extract_features by default to save memory
         # Only present if --save_full_acts flag used (future feature)
         if "feature_activations" in layer_data:
-            full_acts = layer_data["feature_activations"].numpy()
+            full_acts_tensor = layer_data["feature_activations"]
+            if full_acts_tensor.dtype == torch.bfloat16:
+                full_acts_tensor = full_acts_tensor.float()
+            full_acts = full_acts_tensor.numpy()
             if full_acts.nbytes < 1e9:  # < 1GB
                 np.save(
                     layer_dir / f"{behaviour}_{split}_full_activations.npy",
