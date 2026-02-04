@@ -27,7 +27,7 @@ behaviours:
 
 # Activation capture
 activations:
-  layer_range: [15, 20]   # Reduced range for CPU testing (5 layers instead of 15)
+  layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)
   token_positions: "last"
   batch_size: 2           # Smaller batch for CPU memory
 

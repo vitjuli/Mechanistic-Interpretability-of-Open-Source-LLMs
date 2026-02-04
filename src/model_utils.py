@@ -76,9 +76,9 @@ class ModelWrapper:
 
         if device == "auto":
             load_kwargs["device_map"] = "auto"
-            load_kwargs["torch_dtype"] = self.dtype
+            load_kwargs["dtype"] = self.dtype
         else:
-            load_kwargs["torch_dtype"] = self.dtype
+            load_kwargs["dtype"] = self.dtype
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
