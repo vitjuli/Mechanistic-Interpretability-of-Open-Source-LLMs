@@ -1,0 +1,20 @@
+{
+  "behaviour": "grammar_agreement",
+  "experiment_type": "patching",
+  "n_experiments": 60,
+  "mean_effect_size": 0.026517093926668168,
+  "std_effect_size": 1.5220162693663253,
+  "mean_relative_effect": 0.006119791707667211,
+  "mean_baseline_logit_diff": -0.006085205078125,
+  "timestamp": "2026-02-04T21:25:45.254623",
+  "model_size": "4b",
+  "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
+  "layers": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    20
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "input"
+    },
+    {
+      "id": "output_correct",
+      "type": "output"
+    },
+    {
+      "id": "output_incorrect",
+      "type": "output"
+    }
+  ],
+  "edges": [],
+  "metadata": {
+    "behaviour": "grammar_agreement",
+    "split": "train",
+    "model_size": "4b",
+    "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
+    "layers": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "n_prompts": 20,
+    "timestamp": "2026-02-04T21:03:53.944794"
+  }
+}
