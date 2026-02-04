@@ -231,7 +231,7 @@ def extract_features(
         logger.info(f"Processing layer {layer_idx} ({activations.shape[0]} samples)")
 
         # Get transcoder for this layer
-        transcoder = transcoder_set.get_transcoder(layer_idx)
+        transcoder = transcoder_set[layer_idx]
 
         # Move activations to device and convert dtype in single step (optimization)
         activations = activations.to(device=device, dtype=transcoder.dtype, non_blocking=True)
