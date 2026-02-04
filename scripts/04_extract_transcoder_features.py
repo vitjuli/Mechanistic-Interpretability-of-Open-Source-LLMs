@@ -31,12 +31,12 @@ import argparse
 import sys
 from tqdm import tqdm
 import logging
+from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.model_utils import ModelWrapper
-from src.transcoder.transcoder_loader import TranscoderSet
-from src.configs import load_config, load_transcoder_config
+from src.transcoder import TranscoderSet, load_transcoder_set
 
 
 logger = logging.getLogger(__name__)
