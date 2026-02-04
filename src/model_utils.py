@@ -123,6 +123,35 @@ class ModelWrapper:
             return {k: v.to(input_device) for k, v in inputs.items()}
         return {k: v.to(self.device) for k, v in inputs.items()}
 
+    def _add_special_tokens(self, token_ids: List[int]) -> List[int]:
+        """
+        Add special tokens (BOS) to a list of token IDs.
+
+        Handles tokenizers that lack build_inputs_with_special_tokens method
+        (e.g., Qwen2Tokenizer).
+
+        Args:
+            token_ids: List of token IDs without special tokens
+
+        Returns:
+            List of token IDs with BOS prepended if applicable
+        """
+        # Try the standard method first
+        if hasattr(self.tokenizer, 'build_inputs_with_special_tokens'):
+            try:
+                return self.tokenizer.build_inputs_with_special_tokens(token_ids)
+            except (AttributeError, TypeError):
+                pass
+
+        # Fallback: manually prepend BOS token if it exists
+        result = list(token_ids)
+        if self.tokenizer.bos_token_id is not None:
+            # Only prepend if not already there
+            if len(result) == 0 or result[0] != self.tokenizer.bos_token_id:
+                result = [self.tokenizer.bos_token_id] + result
+
+        return result
+
     def tokenize(
         self,
         texts: List[str],
@@ -310,30 +339,26 @@ class ModelWrapper:
         prompt_lengths = []  # Track where targets start
         
         for prompt_ids in prompt_token_ids_list:
-            # Compute prompt_with_special ONCE per prompt (not per target!)
-            prompt_with_special = self.tokenizer.build_inputs_with_special_tokens(prompt_ids)
+            # Add special tokens (BOS) if tokenizer has them
+            # Use helper to handle tokenizers that lack build_inputs_with_special_tokens
+            prompt_with_special = self._add_special_tokens(prompt_ids)
             prompt_len = len(prompt_with_special)
-            
+
             for target_data in target_token_data:
                 target_ids = target_data['ids']
-                
+
                 # Concatenate token IDs manually
                 combined_ids = prompt_ids + target_ids
-                
-                # Now add special tokens to the COMBINED sequence
-                # This ensures consistent tokenization with no boundary issues
-                final_ids = self.tokenizer.build_inputs_with_special_tokens(combined_ids)
-                
-                # CRITICAL VALIDATION: Verify prompt_with_special is a prefix of final_ids
-                # This assumption is required for correct prompt_len
-                # If this fails, tokenizer adds special tokens in unexpected places
+
+                # Add special tokens to the COMBINED sequence
+                final_ids = self._add_special_tokens(combined_ids)
+
+                # Validate prompt_with_special is a prefix of final_ids
                 if final_ids[:prompt_len] != prompt_with_special:
                     raise ValueError(
-                        f"Tokenizer behavior violated assumption: prompt_with_special is not a prefix of final_ids. "
-                        f"This means build_inputs_with_special_tokens() adds tokens differently for "
-                        f"prompt alone vs prompt+target. Cannot reliably determine target start position."
+                        f"Tokenizer behavior violated assumption: prompt_with_special is not a prefix of final_ids."
                     )
-                
+
                 all_input_ids.append(final_ids)
                 prompt_lengths.append(prompt_len)
         
