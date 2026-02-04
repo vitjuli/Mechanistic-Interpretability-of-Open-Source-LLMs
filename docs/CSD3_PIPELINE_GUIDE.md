@@ -2,6 +2,8 @@
 
 Complete step-by-step instructions for running the mechanistic interpretability pipeline on CSD3.
 
+**Current Mode: CPU-only** (for initial pipeline testing)
+
 ## Table of Contents
 1. [Initial Setup](#1-initial-setup)
 2. [Environment Configuration](#2-environment-configuration)
@@ -60,11 +62,10 @@ ls -la
 ### 2.1 Load Required Modules
 
 ```bash
-# Load Python and CUDA modules
+# Load Python module (CPU-only, no CUDA needed)
 module purge
 module load rhel8/default-amp
 module load python/3.11.0-icl
-module load cuda/12.1
 
 # Verify
 python --version  # Should be 3.11.x
@@ -87,8 +88,8 @@ pip install --upgrade pip
 ### 2.3 Install Dependencies
 
 ```bash
-# Install PyTorch with CUDA support
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch (CPU version for initial testing)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Install project dependencies
 pip install -r requirements.txt
@@ -125,17 +126,19 @@ mkdir -p logs
 
 ## 3. Pipeline Steps
 
-### Overview
+### Overview (CPU-only mode)
 
-| Step | Script | GPU Required | Approx. Time | Output |
-|------|--------|--------------|--------------|--------|
-| 1 | 01_generate_prompts.py | No | <1 min | data/prompts/*.jsonl |
-| 2 | 02_run_baseline.py | Yes | 5-10 min | data/results/baseline_* |
-| 3 | 03_capture_activations.py | Yes | 10-20 min | data/activations/*.npy |
-| 4 | 04_extract_transcoder_features.py | Yes | 15-30 min | data/results/transcoder_features/ |
-| 5 | 06_build_attribution_graph.py | Yes | 20-40 min | data/results/attribution_graphs/ |
-| 6 | 07_run_interventions.py | Yes | 30-60 min | data/results/interventions/ |
-| 7 | 08_generate_figures.py | No | <5 min | figures/*.png |
+| Step | Script | Partition | Time (CPU) | Memory | Output |
+|------|--------|-----------|------------|--------|--------|
+| 1 | 01_generate_prompts.py | cclake | ~10 min | 4G | data/prompts/*.jsonl |
+| 2 | 02_run_baseline.py | cclake | ~4 hrs | 64G | data/results/baseline_* |
+| 3 | 03_capture_activations.py | cclake | ~6 hrs | 128G | data/activations/*.npy |
+| 4 | 04_extract_transcoder_features.py | cclake | ~6 hrs | 128G | data/results/transcoder_features/ |
+| 5 | 06_build_attribution_graph.py | cclake | ~8 hrs | 128G | data/results/attribution_graphs/ |
+| 6 | 07_run_interventions.py | cclake | ~8 hrs | 128G | data/results/interventions/ |
+| 7 | 08_generate_figures.py | cclake | ~30 min | 8G | figures/*.png |
+
+**Note:** All jobs run on CPU (cclake partition). Total estimated time: 24-36 hours.
 
 ---
 
@@ -540,11 +543,11 @@ scancel <JOB_ID>
 scancel -u $USER
 ```
 
-### 5.4 Check GPU Availability
+### 5.4 Check CPU Partition Status
 
 ```bash
-# Check ampere partition status
-sinfo -p ampere
+# Check cclake partition status
+sinfo -p cclake
 
 # Check your allocation usage
 mybalance
@@ -553,13 +556,16 @@ mybalance
 ### 5.5 Interactive Session (for debugging)
 
 ```bash
-# Request interactive GPU session
-sintr -A <YOUR_ACCOUNT> -p ampere --gres=gpu:1 --time=01:00:00 --mem=32G
+# Request interactive CPU session
+sintr -A <YOUR_ACCOUNT> -p cclake --time=02:00:00 --mem=64G --cpus-per-task=4
 
 # Once allocated, load modules and test
-module load python/3.11.0-icl cuda/12.1
+module load python/3.11.0-icl
 source ~/rds/hpc-work/thesis/project/venv/bin/activate
 cd ~/rds/hpc-work/thesis/project
+
+# Force CPU
+export CUDA_VISIBLE_DEVICES=""
 
 # Test a script interactively
 python scripts/01_generate_prompts.py
@@ -570,10 +576,11 @@ python scripts/01_generate_prompts.py
 | Issue | Solution |
 |-------|----------|
 | `ModuleNotFoundError` | Check venv is activated, reinstall package |
-| `CUDA out of memory` | Reduce batch_size in config, request more GPU memory |
+| `Out of memory` | Reduce batch_size in config (currently 2), request more memory |
 | `FileNotFoundError` | Check paths, ensure previous step completed |
 | `Permission denied` | Check file permissions with `ls -la` |
 | Job pending long time | Check allocation balance with `mybalance` |
+| Very slow inference | Normal for CPU - 4B model is slow on CPU |
 
 ### 5.7 Check Results
 
@@ -595,14 +602,17 @@ cat data/results/baseline_metrics_train.json
 
 ## Quick Reference
 
-### Account Setup
-Replace `<YOUR_ACCOUNT>` in all job scripts with your actual SLURM account:
-- CPU jobs: Usually ends with `-CPU` (e.g., `COMPUTERLAB-SL2-CPU`)
-- GPU jobs: Usually ends with `-GPU` (e.g., `COMPUTERLAB-SL2-GPU`)
+### Account Setup (CPU-only mode)
+Replace `CHANGEME-SL2-CPU` in all job scripts with your actual SLURM CPU account.
 
 Check your accounts:
 ```bash
 sacctmgr show assoc user=$USER format=account%30
+```
+
+Quick setup (run from project directory on CSD3):
+```bash
+./jobs/setup_account.sh YOUR-CPU-ACCOUNT
 ```
 
 ### Complete Workflow

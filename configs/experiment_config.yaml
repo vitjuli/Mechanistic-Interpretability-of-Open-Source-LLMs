@@ -11,8 +11,8 @@ seeds:
 model:
   name: "Qwen/Qwen3-4B-Instruct-2507"
   revision: "main"
-  dtype: "bfloat16"
-  device: "auto"
+  dtype: "float32"      # Use float32 for CPU (bfloat16 is GPU-optimized)
+  device: "cpu"         # Force CPU for initial testing
   max_length: 512
   trust_remote_code: true
 
@@ -27,9 +27,9 @@ behaviours:
 
 # Activation capture
 activations:
-  layer_range: [10, 25]
+  layer_range: [15, 20]   # Reduced range for CPU testing (5 layers instead of 15)
   token_positions: "last"
-  batch_size: 8
+  batch_size: 2           # Smaller batch for CPU memory
 
 # Transcoder settings
 transcoder:
