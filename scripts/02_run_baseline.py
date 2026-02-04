@@ -7,11 +7,8 @@ clarity (log-probability differences) to proceed with circuit analysis.
 Generates visualizations and saves comprehensive results for reproducibility.
 
 Usage:
-    python scripts/02_run_baseline.py --behaviour grammar_agreement
-    python scripts/02_run_baseline.py --behaviour factual_recall
-    python scripts/02_run_baseline.py --behaviour sentiment_continuation
-    python scripts/02_run_baseline.py --behaviour arithmetic
-    python scripts/02_run_baseline.py --all
+    python scripts/02_run_baseline.py
+    python scripts/02_run_baseline.py --split test
 """
 
 import json
@@ -558,13 +555,9 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "factual_recall", "sentiment_continuation", "arithmetic"],
-        help="Which behaviour to evaluate",
-    )
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Evaluate all behaviours",
+        choices=["grammar_agreement"],
+        default="grammar_agreement",
+        help="Which behaviour to evaluate (currently only grammar_agreement)",
     )
     parser.add_argument(
         "--split",
@@ -584,14 +577,8 @@ def main():
     config = load_config(args.config)
     torch.manual_seed(config["seeds"]["torch_seed"])
 
-    # Determine behaviours to evaluate
-    if args.all:
-        behaviours = ["grammar_agreement", "factual_recall", "sentiment_continuation", "arithmetic"]
-    elif args.behaviour:
-        behaviours = [args.behaviour]
-    else:
-        print("Error: Must specify --behaviour or --all")
-        return
+    # Behaviours (single behaviour for pipeline testing)
+    behaviours = [args.behaviour]
 
     print("=" * 70)
     print("BASELINE PERFORMANCE MEASUREMENT")
@@ -726,7 +713,7 @@ def main():
         print("All behaviours PASSED. Ready for circuit analysis.")
         print("\nNext steps:")
         print("  1. Review visualizations in data/results/figures/")
-        print("  2. Proceed to: python scripts/03_capture_activations.py --all")
+        print("  2. Proceed to: python scripts/03_capture_activations.py")
     else:
         print("Some behaviours FAILED threshold.")
         print("\nRecommendations:")
