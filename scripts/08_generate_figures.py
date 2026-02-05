@@ -387,35 +387,36 @@ def visualize_patching_results(
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Feature similarity distribution
+    # Effect size distribution
     ax1 = axes[0]
-    ax1.hist(df["feature_cosine_similarity"], bins=20, color=CAMBRIDGE_BLUE,
+    ax1.hist(df["effect_size"], bins=20, color=CAMBRIDGE_BLUE,
              edgecolor='black', alpha=0.7)
-    ax1.axvline(x=df["feature_cosine_similarity"].mean(), color=CAMBRIDGE_RED,
+    ax1.axvline(x=df["effect_size"].mean(), color=CAMBRIDGE_RED,
                 linestyle='--', linewidth=2,
-                label=f'Mean: {df["feature_cosine_similarity"].mean():.3f}')
-    ax1.set_xlabel("Feature Cosine Similarity")
+                label=f'Mean: {df["effect_size"].mean():.3f}')
+    ax1.set_xlabel("Effect Size")
     ax1.set_ylabel("Count")
-    ax1.set_title(f"Feature Similarity Between Prompt Pairs\n({behaviour})")
+    ax1.set_title(f"Patching Effect Size Distribution\n({behaviour})")
     ax1.legend()
 
-    # Baseline logit diff comparison
+    # Baseline vs intervened logit diff
     ax2 = axes[1]
-    ax2.scatter(df["baseline_diff_a"], df["baseline_diff_b"],
-                c=df["feature_cosine_similarity"], cmap="viridis",
+    ax2.scatter(df["baseline_logit_diff"], df["intervened_logit_diff"],
+                c=df["effect_size"], cmap="viridis",
                 s=50, alpha=0.7, edgecolor='black')
 
-    # Add diagonal
-    min_val = min(df["baseline_diff_a"].min(), df["baseline_diff_b"].min())
-    max_val = max(df["baseline_diff_a"].max(), df["baseline_diff_b"].max())
-    ax2.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.5)
+    # Add diagonal (no effect line)
+    min_val = min(df["baseline_logit_diff"].min(), df["intervened_logit_diff"].min())
+    max_val = max(df["baseline_logit_diff"].max(), df["intervened_logit_diff"].max())
+    ax2.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.5, label='No effect')
 
-    ax2.set_xlabel("Baseline Logit Diff (Prompt A)")
-    ax2.set_ylabel("Baseline Logit Diff (Prompt B)")
-    ax2.set_title("Logit Difference Comparison")
+    ax2.set_xlabel("Baseline Logit Diff")
+    ax2.set_ylabel("Intervened Logit Diff")
+    ax2.set_title("Patching Effect on Logit Difference")
+    ax2.legend()
 
     cbar = plt.colorbar(ax2.collections[0], ax=ax2)
-    cbar.set_label("Feature Similarity")
+    cbar.set_label("Effect Size")
 
     plt.tight_layout()
 
