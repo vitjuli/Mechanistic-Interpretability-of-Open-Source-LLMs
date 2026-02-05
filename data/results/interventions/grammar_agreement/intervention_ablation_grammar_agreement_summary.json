@@ -6,7 +6,7 @@
   "std_effect_size": 58.89268070187305,
   "mean_relative_effect": 3.6277637557949647,
   "mean_baseline_logit_diff": 0.7494964599609375,
-  "timestamp": "2026-02-04T21:19:11.607867",
+  "timestamp": "2026-02-05T11:41:34.283512",
   "model_size": "4b",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
   "layers": [
