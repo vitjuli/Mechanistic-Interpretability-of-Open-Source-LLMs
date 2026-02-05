@@ -6,7 +6,7 @@
   "token_selection": "last",
   "layer_range": [
     15,
-    20
+    21
   ],
   "shapes": {
     "layer_15": [
@@ -26,6 +26,10 @@
       2560
     ],
     "layer_19": [
+      80,
+      2560
+    ],
+    "layer_20": [
       80,
       2560
     ]
