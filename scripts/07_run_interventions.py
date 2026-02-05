@@ -586,11 +586,12 @@ def main():
     # Load language model
     print(f"\nLoading language model...")
     model_name = tc_config["transcoders"][model_size]["model_name"]
-    if "4b" in model_size.lower():
-        model_name = "Qwen/Qwen3-4B-Instruct-2507"
+    
+    # CRITICAL: Use BASE model to match transcoders and features
+    # Same reasoning as in script 06 - consistency is key!
 
     model = ModelWrapper(
-        model_name=model_name,
+        model_name=model_name,  # Use base model from transcoder config
         dtype="bfloat16",
         device="auto",
         trust_remote_code=True,
