@@ -38,6 +38,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+def to_numpy(x: torch.Tensor) -> np.ndarray:
+    """
+    Safely convert torch tensor to numpy array.
+    
+    Handles bfloat16 dtype which NumPy doesn't support by converting to float32.
+    
+    Args:
+        x: PyTorch tensor
+        
+    Returns:
+        NumPy array
+    """
+    if x.dtype == torch.bfloat16:
+        x = x.float()  # Convert bfloat16 → float32
+    return x.cpu().numpy()
+
+
 @dataclass
 class InterventionResult:
     """Result of a single intervention experiment."""
@@ -380,8 +397,8 @@ class TranscoderInterventionExperiment:
                 layer_act = outputs.hidden_states[layer][:, -1, :]
                 features = transcoder.encode(layer_act.to(transcoder.dtype))
 
-                # Convert to float32 before numpy (NumPy doesn't support bfloat16)
-                feature_activations.append(features.float().cpu().numpy())
+                # Use helper to safely convert to numpy (handles bfloat16)
+                feature_activations.append(to_numpy(features))
 
             # Get logit diff
             logit_diff = self.compute_logit_diff(prompt, correct, incorrect)
