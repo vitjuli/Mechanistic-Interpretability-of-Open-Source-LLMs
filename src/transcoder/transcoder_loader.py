@@ -105,7 +105,12 @@ class TranscoderSet:
         self._transcoders: Dict[int, SingleLayerTranscoder] = {}
         self._layer_paths: Dict[int, Path] = {}
 
-        # Ensure cache directory exists
+        # Set up cache directory for transcoder weights
+        # FIXED: Handle case where cache_dir exists as a file (not directory)
+        if self.cache_dir.exists() and not self.cache_dir.is_dir():
+            logger.warning(f"Cache path {self.cache_dir} exists as file, not directory. Removing...")
+            self.cache_dir.unlink()  # Remove the file
+        
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(
