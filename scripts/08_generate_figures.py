@@ -281,14 +281,14 @@ def visualize_baseline_comparison(
 
     # Logit difference comparison
     ax2 = axes[1]
-    mean_diffs = [behaviours_data[b]["mean_logit_diff"] for b in behaviours]
+    mean_diffs = [behaviours_data[b]["mean_logprob_diff_normalized"] for b in behaviours]
 
     bars = ax2.bar(range(len(behaviours)), mean_diffs, color=CAMBRIDGE_BLUE, edgecolor='black')
     ax2.axhline(y=2.0, color='gray', linestyle='--', linewidth=2, label='Min Threshold')
     ax2.set_xticks(range(len(behaviours)))
     ax2.set_xticklabels([b.replace("_", "\n") for b in behaviours], fontsize=9)
-    ax2.set_ylabel("Mean Logit Difference")
-    ax2.set_title("Mean Logit Difference by Behaviour")
+    ax2.set_ylabel("Mean Normalized Logprob Diff")
+    ax2.set_title("Mean Normalized Logprob Difference by Behaviour")
     ax2.legend()
 
     for bar, diff in zip(bars, mean_diffs):
@@ -473,7 +473,7 @@ def create_summary_figure(
     # Panel 2: Logit differences
     ax2 = fig.add_subplot(gs[0, 1])
     if "behaviours" in metrics:
-        mean_diffs = [metrics["behaviours"][b]["mean_logit_diff"] for b in behaviours]
+        mean_diffs = [metrics["behaviours"][b]["mean_logprob_diff_normalized"] for b in behaviours]
         ax2.bar(range(len(behaviours)), mean_diffs, color=CAMBRIDGE_BLUE, edgecolor='black')
         ax2.set_xticks(range(len(behaviours)))
         ax2.set_xticklabels([b.replace("_", "\n")[:15] for b in behaviours], fontsize=8)
@@ -491,7 +491,7 @@ def create_summary_figure(
             status = "PASS" if m["passed"] else "FAIL"
             summary_text += f"{b}:\n"
             summary_text += f"  Acc: {m['accuracy']:.1%} [{status}]\n"
-            summary_text += f"  Diff: {m['mean_logit_diff']:.2f}\n\n"
+            summary_text += f"  Diff: {m['mean_logprob_diff_normalized']:.2f}\n\n"
 
     ax3.text(0.1, 0.9, summary_text, transform=ax3.transAxes,
              fontsize=9, verticalalignment='top', fontfamily='monospace',
