@@ -380,7 +380,8 @@ class TranscoderInterventionExperiment:
                 layer_act = outputs.hidden_states[layer][:, -1, :]
                 features = transcoder.encode(layer_act.to(transcoder.dtype))
 
-                feature_activations.append(features.cpu().numpy())
+                # Convert to float32 before numpy (NumPy doesn't support bfloat16)
+                feature_activations.append(features.float().cpu().numpy())
 
             # Get logit diff
             logit_diff = self.compute_logit_diff(prompt, correct, incorrect)
