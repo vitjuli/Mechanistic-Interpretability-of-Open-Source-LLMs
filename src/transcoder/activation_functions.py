@@ -29,7 +29,7 @@ def rectangle(x: torch.Tensor) -> torch.Tensor:
     """
     return ((x > -0.5) & (x < 0.5)).to(x.dtype)
 
-
+# ENCODER
 class _JumpReLUFunction(torch.autograd.Function):
     """
     Custom autograd function for JumpReLU with learnable threshold.
