@@ -472,7 +472,12 @@ class ModelWrapper:
         Args:
             prompts: List of prompt strings
             layer_range: (start_layer, end_layer) to capture
-            token_positions: Token selection strategy ("all", "last", "last_N")
+            token_positions: Token selection strategy
+                - "all": All non-padding tokens
+                - "last": Last non-padding token
+                - "last_N": Last N non-padding tokens  
+                - "decision" or "next_token": Position where model predicts next token
+                  (last non-padding token - use this for causal LM analysis)
         
         Returns:
             Dictionary with keys:
@@ -558,8 +563,15 @@ class ModelWrapper:
         # Parse token_positions
         last_pos = None
         last_n = None
+        decision_mode = False
         
         if token_positions == "last":
+            last_pos = attention_mask.sum(dim=1) - 1
+        elif token_positions in ["decision", "next_token"]:
+            # DECISION MODE: Capture position used for next token prediction
+            # This is the last non-padding token of the prompt
+            # Model uses hidden state at this position to predict next token
+            decision_mode = True
             last_pos = attention_mask.sum(dim=1) - 1
         elif token_positions.startswith("last_"):
             try:
@@ -594,8 +606,10 @@ class ModelWrapper:
                                 "token_id": input_ids[i, j].item(),
                             })
             
-            elif token_positions == "last":
-                # Last token only
+            elif token_positions == "last" or decision_mode:
+                # Last token only (or decision position for next token prediction)
+                # For decision mode: this is the position where model computes
+                # logits for the NEXT token (the answer in grammar_agreement)
                 idx = torch.arange(batch_size, device=layer_acts.device)
                 last_pos_device = last_pos.to(layer_acts.device)
                 selected_acts = layer_acts[idx, last_pos_device, :]
@@ -606,6 +620,7 @@ class ModelWrapper:
                             "prompt_idx": i,
                             "token_pos": last_pos[i].item(),
                             "token_id": input_ids[i, last_pos[i]].item(),
+                            "is_decision_position": decision_mode,
                         })
             
             elif token_positions.startswith("last_"):
