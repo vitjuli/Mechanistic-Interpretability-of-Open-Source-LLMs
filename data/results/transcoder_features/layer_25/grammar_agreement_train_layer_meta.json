@@ -490,5 +490,9 @@
     163020,
     163354,
     163723
-  ]
+  ],
+  "token_positions": "decision",
+  "context_tokens": 1,
+  "activation_threshold": 0.0,
+  "saved_full_activations": false
 }
