@@ -19,7 +19,7 @@
     24,
     25
   ],
-  "timestamp": "2026-02-08T21:28:03.687849",
+  "timestamp": "2026-02-08T22:08:49.707366",
   "model_size": "4b",
   "model_name": "Qwen/Qwen3-4B",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
@@ -42,8 +42,8 @@
     25
   ],
   "n_prompts": 80,
-  "context_tokens": 1,
-  "token_positions": "decision",
+  "context_tokens": 2,
+  "token_positions": "last_2",
   "activation_threshold": 0.0,
   "top_k": 50,
   "frequencies_over": "all_features",
