@@ -76,9 +76,9 @@ class ModelWrapper:
 
         if device == "auto":
             load_kwargs["device_map"] = "auto"
-            load_kwargs["dtype"] = self.dtype
+            load_kwargs["torch_dtype"] = self.dtype
         else:
-            load_kwargs["dtype"] = self.dtype
+            load_kwargs["torch_dtype"] = self.dtype
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
@@ -119,8 +119,9 @@ class ModelWrapper:
     def _move_inputs(self, inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Move inputs to appropriate device, handling device_map='auto' safely."""
         if self.use_device_map:
-            input_device = next(self.model.parameters()).device
-            return {k: v.to(input_device) for k, v in inputs.items()}
+            # CRITICAL: Leave inputs on CPU when using device_map
+            # HuggingFace Accelerate handles device placement for sharded models
+            return inputs
         return {k: v.to(self.device) for k, v in inputs.items()}
 
     def _add_special_tokens(self, token_ids: List[int]) -> List[int]:
@@ -206,15 +207,22 @@ class ModelWrapper:
         inputs = self.tokenize(prompts)
         inputs = self._move_inputs(inputs)
 
-        outputs = self.model.generate(
+
+        gen_kwargs = {
             **inputs,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature if temperature > 0 else 1.0,
-            do_sample=temperature > 0,
-            return_dict_in_generate=return_dict_in_generate,
-            output_scores=output_scores,
-            pad_token_id=self.tokenizer.pad_token_id,
-        )
+            "max_new_tokens": max_new_tokens,
+            "return_dict_in_generate": return_dict_in_generate,
+            "output_scores": output_scores,
+            "pad_token_id": self.tokenizer.pad_token_id,
+        }
+        
+        if temperature > 0:
+            gen_kwargs["do_sample"] = True
+            gen_kwargs["temperature"] = temperature
+        else:
+            gen_kwargs["do_sample"] = False
+        
+        outputs = self.model.generate(**gen_kwargs)
 
         return outputs
 
@@ -261,7 +269,15 @@ class ModelWrapper:
                 add_special_tokens=False,
             )["input_ids"]
             # Handle multi-token targets (take first token)
-            target_ids = [ids[0] if isinstance(ids, list) else ids for ids in target_ids]
+            # Safety: handle empty tokenization and None unk_token_id
+            fallback_id = self.tokenizer.unk_token_id
+            if fallback_id is None:
+                fallback_id = self.tokenizer.eos_token_id
+            
+            target_ids = [
+                ids[0] if (isinstance(ids, list) and len(ids) > 0) else fallback_id
+                for ids in target_ids
+            ]
             target_logits = logits[:, target_ids]  # (batch, num_targets)
             return logits, target_logits
 
@@ -354,9 +370,22 @@ class ModelWrapper:
                 final_ids = self._add_special_tokens(combined_ids)
 
                 # Validate prompt_with_special is a prefix of final_ids
+                # CRITICAL: This assumes tokenizer only adds BOS (not EOS) to prefix
+                # If tokenizer adds EOS, this check will fail
                 if final_ids[:prompt_len] != prompt_with_special:
+                    # Check if this is due to EOS being added
+                    # For debugging: log the actual sequences
+                    logger.error(
+                        f"Tokenizer behavior violated assumption: "
+                        f"prompt_with_special is not a prefix of final_ids. "
+                        f"This usually means tokenizer adds EOS token to prompts. "
+                        f"prompt_with_special={prompt_with_special[:10]}..., "
+                        f"final_ids[:prompt_len]={final_ids[:prompt_len]}"
+                    )
                     raise ValueError(
-                        f"Tokenizer behavior violated assumption: prompt_with_special is not a prefix of final_ids."
+                        f"Tokenizer behavior violated assumption: "
+                        f"prompt_with_special is not a prefix of final_ids. "
+                        f"Check if tokenizer adds EOS token."
                     )
 
                 all_input_ids.append(final_ids)
@@ -366,8 +395,9 @@ class ModelWrapper:
         # Use pad_token_id (normalized in __init__)
         max_len = max(len(ids) for ids in all_input_ids)
         
-        # CRITICAL: Use correct device (handles device_map='auto')
-        device = next(self.model.parameters()).device if self.use_device_map else self.device
+        # CRITICAL: Use CPU for tensor creation when using device_map
+        # Accelerate handles device placement for sharded models
+        device = torch.device("cpu") if self.use_device_map else self.device
         
         n = batch_size * num_sequences
         input_ids_tensor = torch.full(
@@ -593,7 +623,8 @@ class ModelWrapper:
             if token_positions == "all":
                 # Keep all VALID tokens
                 acts_flat = layer_acts.reshape(-1, layer_acts.shape[-1])
-                mask = attention_mask.bool().view(-1)
+                # CRITICAL: Move mask to layer device for indexing (device_map compatibility)
+                mask = attention_mask.to(layer_acts.device).bool().view(-1)
                 selected_acts = acts_flat[mask]
                 
                 if li == start:
@@ -715,16 +746,9 @@ class ModelWrapper:
         # NOTE: Using truncation=True for activation capture to avoid OOM on long sequences
         inputs = self.tokenize(prompts, truncation=True)
         
-        # CRITICAL: Safe device placement for device_map="auto"
-        # When using device_map, model may be sharded across devices,
-        # so we place inputs on the device of the first parameter
-        if self.use_device_map:
-            # Get device from first model parameter (works with device_map)
-            input_device = next(self.model.parameters()).device
-            inputs = {k: v.to(input_device) for k, v in inputs.items()}
-        else:
-            # Standard single-device placement
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        # CRITICAL: Use _move_inputs for safe device placement
+        # When using device_map, this keeps inputs on CPU for Accelerate to handle
+        inputs = self._move_inputs(inputs)
         
         input_ids = inputs["input_ids"]
         attention_mask = inputs["attention_mask"]
@@ -827,7 +851,8 @@ class ModelWrapper:
             if token_positions == "all":
                 # Keep all VALID tokens (exclude padding)
                 acts_flat = layer_acts.reshape(-1, layer_acts.shape[-1])
-                mask = attention_mask.bool().view(-1)
+                # CRITICAL: Move mask to layer device for indexing (device_map compatibility)
+                mask = attention_mask.to(layer_acts.device).bool().view(-1)
                 selected_acts = acts_flat[mask]
                 
                 # Build metadata only for first layer

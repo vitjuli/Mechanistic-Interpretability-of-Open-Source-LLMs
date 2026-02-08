@@ -103,7 +103,7 @@ def capture_mlp_inputs(
     prompts: List[Dict],
     layer_indices: List[int],
     batch_size: int = 8,
-    token_positions: str = "last_5",
+    token_positions: str = "decision",
 ) -> Tuple[Dict[int, torch.Tensor], List[Dict]]:
     """
     Capture MLP input activations (pre-MLP residual stream) for transcoder analysis.
@@ -116,7 +116,7 @@ def capture_mlp_inputs(
         prompts: List of prompt dictionaries
         layer_indices: Which layers to capture
         batch_size: Prompts per batch
-        token_positions: Which tokens to capture ("last", "last_5", "all")
+        token_positions: Which tokens to capture ("all", "last", "last_N", "decision")
 
     Returns:
         Tuple of:
@@ -144,18 +144,27 @@ def capture_mlp_inputs(
         end_idx = min(start_idx + batch_size, len(prompts))
         batch_texts = prompt_texts[start_idx:end_idx]
 
+        # Track first batch_result for position_map (same across all groups)
+        batch_result_for_posmap = None
+
         # Process each contiguous group separately
         for group in layer_groups:
             group_start = group[0]
             group_end = group[-1] + 1
             
-            # Use the NEW capture_mlp_inputs method from ModelWrapper
-            # This correctly hooks post_attention_layernorm to get MLP inputs
+            # Capture MLP inputs for this batch
+            # For grammar_agreement with token_positions="decision":
+            # Captures activations at last token of prompt (e.g., " dogs")
+            # which are used to compute logits for next token (" sleep" vs " sleeps")
             batch_result = model.capture_mlp_inputs(
                 batch_texts,
                 layer_range=(group_start, group_end),
-                token_positions=token_positions,
+                token_positions=token_positions,  # Pass through argument
             )
+            
+            # Save first result for position_map extraction
+            if batch_result_for_posmap is None:
+                batch_result_for_posmap = batch_result
 
             # Extract per-layer activations with CORRECT key
             for layer_idx in group:
@@ -172,9 +181,9 @@ def capture_mlp_inputs(
         
         # Accumulate position_map (adjust prompt_idx for batch offset)
         # Only need to do this once per batch (same for all groups)
-        if layer_groups:  # If we have any groups
-            # Use result from last group (position_map is same for all)
-            batch_position_map = batch_result["metadata"]["position_map"]
+        if layer_groups and batch_result_for_posmap is not None:
+            # Use result from FIRST group (position_map is same for all)
+            batch_position_map = batch_result_for_posmap["metadata"]["position_map"]
             for entry in batch_position_map:
                 entry_adjusted = entry.copy()
                 entry_adjusted["prompt_idx"] += start_idx  # Offset by batch start
@@ -189,6 +198,7 @@ def capture_mlp_inputs(
             logger.error(f"No activations captured for layer {layer_idx}!")
             layer_activations[layer_idx] = None
 
+    logger.info(f"Captured {len(position_map_all)} samples with token_positions='{token_positions}'")
     return layer_activations, position_map_all
 
 
@@ -503,7 +513,7 @@ def main():
             prompts,
             layer_indices,
             batch_size=args.batch_size,
-            token_positions="last_5",
+            token_positions="decision",  # Next-token prediction position
         )
         
         # Save position_map (CRITICAL for attribution analysis)
