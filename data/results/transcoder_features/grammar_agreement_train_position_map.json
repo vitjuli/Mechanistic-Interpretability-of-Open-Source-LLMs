@@ -1,802 +1,482 @@
 [
   {
     "prompt_idx": 0,
-    "token_pos": 0,
-    "token_id": 785
-  },
-  {
-    "prompt_idx": 0,
     "token_pos": 1,
-    "token_id": 12590
-  },
-  {
-    "prompt_idx": 1,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 12590,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 1,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 2,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 2,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 3,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 3,
     "token_pos": 1,
-    "token_id": 24198
-  },
-  {
-    "prompt_idx": 4,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 24198,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 4,
     "token_pos": 1,
-    "token_id": 12632
-  },
-  {
-    "prompt_idx": 5,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 12632,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 5,
     "token_pos": 1,
-    "token_id": 22351
-  },
-  {
-    "prompt_idx": 6,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 22351,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 6,
     "token_pos": 1,
-    "token_id": 27468
-  },
-  {
-    "prompt_idx": 7,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 27468,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 7,
     "token_pos": 1,
-    "token_id": 23576
-  },
-  {
-    "prompt_idx": 8,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 23576,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 8,
     "token_pos": 1,
-    "token_id": 24198
-  },
-  {
-    "prompt_idx": 9,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 24198,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 9,
     "token_pos": 1,
-    "token_id": 24198
-  },
-  {
-    "prompt_idx": 10,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 24198,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 10,
     "token_pos": 1,
-    "token_id": 17619
-  },
-  {
-    "prompt_idx": 11,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 17619,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 11,
     "token_pos": 1,
-    "token_id": 6467
-  },
-  {
-    "prompt_idx": 12,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 6467,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 12,
     "token_pos": 1,
-    "token_id": 13336
-  },
-  {
-    "prompt_idx": 13,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13336,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 13,
     "token_pos": 1,
-    "token_id": 9331
-  },
-  {
-    "prompt_idx": 14,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 9331,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 14,
     "token_pos": 1,
-    "token_id": 8251
-  },
-  {
-    "prompt_idx": 15,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 8251,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 15,
     "token_pos": 1,
-    "token_id": 16093
-  },
-  {
-    "prompt_idx": 16,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 16093,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 16,
     "token_pos": 1,
-    "token_id": 18495
-  },
-  {
-    "prompt_idx": 17,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 18495,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 17,
     "token_pos": 1,
-    "token_id": 8251
-  },
-  {
-    "prompt_idx": 18,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 8251,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 18,
     "token_pos": 1,
-    "token_id": 4916
-  },
-  {
-    "prompt_idx": 19,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4916,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 19,
     "token_pos": 1,
-    "token_id": 4540
-  },
-  {
-    "prompt_idx": 20,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4540,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 20,
     "token_pos": 1,
-    "token_id": 6916
-  },
-  {
-    "prompt_idx": 21,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 6916,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 21,
     "token_pos": 1,
-    "token_id": 49452
-  },
-  {
-    "prompt_idx": 22,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 49452,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 22,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 23,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 23,
     "token_pos": 1,
-    "token_id": 4143
-  },
-  {
-    "prompt_idx": 24,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4143,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 24,
     "token_pos": 1,
-    "token_id": 6366
-  },
-  {
-    "prompt_idx": 25,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 6366,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 25,
     "token_pos": 1,
-    "token_id": 10496
-  },
-  {
-    "prompt_idx": 26,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10496,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 26,
     "token_pos": 1,
-    "token_id": 5562
-  },
-  {
-    "prompt_idx": 27,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 5562,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 27,
     "token_pos": 1,
-    "token_id": 8251
-  },
-  {
-    "prompt_idx": 28,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 8251,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 28,
     "token_pos": 1,
-    "token_id": 22351
-  },
-  {
-    "prompt_idx": 29,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 22351,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 29,
     "token_pos": 1,
-    "token_id": 10496
-  },
-  {
-    "prompt_idx": 30,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10496,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 30,
     "token_pos": 1,
-    "token_id": 1803
-  },
-  {
-    "prompt_idx": 31,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 1803,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 31,
     "token_pos": 1,
-    "token_id": 10049
-  },
-  {
-    "prompt_idx": 32,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10049,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 32,
     "token_pos": 1,
-    "token_id": 4916
-  },
-  {
-    "prompt_idx": 33,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4916,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 33,
     "token_pos": 1,
-    "token_id": 13336
-  },
-  {
-    "prompt_idx": 34,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13336,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 34,
     "token_pos": 1,
-    "token_id": 12632
-  },
-  {
-    "prompt_idx": 35,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 12632,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 35,
     "token_pos": 1,
-    "token_id": 11079
-  },
-  {
-    "prompt_idx": 36,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 11079,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 36,
     "token_pos": 1,
-    "token_id": 25904
-  },
-  {
-    "prompt_idx": 37,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 25904,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 37,
     "token_pos": 1,
-    "token_id": 10668
-  },
-  {
-    "prompt_idx": 38,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10668,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 38,
     "token_pos": 1,
-    "token_id": 4916
-  },
-  {
-    "prompt_idx": 39,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4916,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 39,
     "token_pos": 1,
-    "token_id": 31529
-  },
-  {
-    "prompt_idx": 40,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 31529,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 40,
     "token_pos": 1,
-    "token_id": 13511
-  },
-  {
-    "prompt_idx": 41,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13511,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 41,
     "token_pos": 1,
-    "token_id": 13923
-  },
-  {
-    "prompt_idx": 42,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13923,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 42,
     "token_pos": 1,
-    "token_id": 17619
-  },
-  {
-    "prompt_idx": 43,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 17619,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 43,
     "token_pos": 1,
-    "token_id": 27468
-  },
-  {
-    "prompt_idx": 44,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 27468,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 44,
     "token_pos": 1,
-    "token_id": 13702
-  },
-  {
-    "prompt_idx": 45,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13702,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 45,
     "token_pos": 1,
-    "token_id": 16026
-  },
-  {
-    "prompt_idx": 46,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 16026,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 46,
     "token_pos": 1,
-    "token_id": 16026
-  },
-  {
-    "prompt_idx": 47,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 16026,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 47,
     "token_pos": 1,
-    "token_id": 10668
-  },
-  {
-    "prompt_idx": 48,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10668,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 48,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 49,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 49,
     "token_pos": 1,
-    "token_id": 4143
-  },
-  {
-    "prompt_idx": 50,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4143,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 50,
     "token_pos": 1,
-    "token_id": 13336
-  },
-  {
-    "prompt_idx": 51,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13336,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 51,
     "token_pos": 1,
-    "token_id": 9331
-  },
-  {
-    "prompt_idx": 52,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 9331,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 52,
     "token_pos": 1,
-    "token_id": 12632
-  },
-  {
-    "prompt_idx": 53,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 12632,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 53,
     "token_pos": 1,
-    "token_id": 10049
-  },
-  {
-    "prompt_idx": 54,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10049,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 54,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 55,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 55,
     "token_pos": 1,
-    "token_id": 23576
-  },
-  {
-    "prompt_idx": 56,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 23576,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 56,
     "token_pos": 1,
-    "token_id": 13511
-  },
-  {
-    "prompt_idx": 57,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13511,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 57,
     "token_pos": 1,
-    "token_id": 13702
-  },
-  {
-    "prompt_idx": 58,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13702,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 58,
     "token_pos": 1,
-    "token_id": 4540
-  },
-  {
-    "prompt_idx": 59,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4540,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 59,
     "token_pos": 1,
-    "token_id": 31529
-  },
-  {
-    "prompt_idx": 60,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 31529,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 60,
     "token_pos": 1,
-    "token_id": 13702
-  },
-  {
-    "prompt_idx": 61,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 13702,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 61,
     "token_pos": 1,
-    "token_id": 6467
-  },
-  {
-    "prompt_idx": 62,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 6467,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 62,
     "token_pos": 1,
-    "token_id": 9331
-  },
-  {
-    "prompt_idx": 63,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 9331,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 63,
     "token_pos": 1,
-    "token_id": 49452
-  },
-  {
-    "prompt_idx": 64,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 49452,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 64,
     "token_pos": 1,
-    "token_id": 19281
-  },
-  {
-    "prompt_idx": 65,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 19281,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 65,
     "token_pos": 1,
-    "token_id": 4143
-  },
-  {
-    "prompt_idx": 66,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4143,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 66,
     "token_pos": 1,
-    "token_id": 10496
-  },
-  {
-    "prompt_idx": 67,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 10496,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 67,
     "token_pos": 1,
-    "token_id": 22351
-  },
-  {
-    "prompt_idx": 68,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 22351,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 68,
     "token_pos": 1,
-    "token_id": 27962
-  },
-  {
-    "prompt_idx": 69,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 27962,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 69,
     "token_pos": 1,
-    "token_id": 5562
-  },
-  {
-    "prompt_idx": 70,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 5562,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 70,
     "token_pos": 1,
-    "token_id": 17619
-  },
-  {
-    "prompt_idx": 71,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 17619,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 71,
     "token_pos": 1,
-    "token_id": 2311
-  },
-  {
-    "prompt_idx": 72,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 2311,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 72,
     "token_pos": 1,
-    "token_id": 11079
-  },
-  {
-    "prompt_idx": 73,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 11079,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 73,
     "token_pos": 1,
-    "token_id": 4540
-  },
-  {
-    "prompt_idx": 74,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4540,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 74,
     "token_pos": 1,
-    "token_id": 12590
-  },
-  {
-    "prompt_idx": 75,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 12590,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 75,
     "token_pos": 1,
-    "token_id": 6366
-  },
-  {
-    "prompt_idx": 76,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 6366,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 76,
     "token_pos": 1,
-    "token_id": 24198
-  },
-  {
-    "prompt_idx": 77,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 24198,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 77,
     "token_pos": 1,
-    "token_id": 22351
-  },
-  {
-    "prompt_idx": 78,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 22351,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 78,
     "token_pos": 1,
-    "token_id": 4143
-  },
-  {
-    "prompt_idx": 79,
-    "token_pos": 0,
-    "token_id": 785
+    "token_id": 4143,
+    "is_decision_position": true
   },
   {
     "prompt_idx": 79,
     "token_pos": 1,
-    "token_id": 31529
+    "token_id": 31529,
+    "is_decision_position": true
   }
 ]
