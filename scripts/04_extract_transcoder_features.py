@@ -174,8 +174,9 @@ def capture_mlp_inputs(
                 layer_key = f"layer_{layer_idx}_mlp_input"  # Correct key for MLP inputs
                 if layer_key in batch_result["activations"]:
                     acts = batch_result["activations"][layer_key]
-                    # acts is already flattened numpy array from capture_mlp_inputs
-                    layer_activations[layer_idx].append(torch.from_numpy(acts))
+                    acts_t = torch.from_numpy(acts)
+                    assert acts_t.ndim == 2, f"{layer_key}: expected 2D (n_samples, d_model), got {acts_t.shape}"
+                    layer_activations[layer_idx].append(acts_t)
                 else:
                     logger.warning(f"Layer {layer_idx} not found in batch result. Available keys: {list(batch_result['activations'].keys())}")
         
@@ -184,6 +185,19 @@ def capture_mlp_inputs(
         if layer_groups and batch_result_for_posmap is not None:
             # Use result from FIRST group (position_map is same for all)
             batch_position_map = batch_result_for_posmap["metadata"]["position_map"]
+            
+            # Batch-level sanity check: ensure activations rows match position_map entries
+            # This catches any synchronization issues early
+            ref_layer = layer_groups[0][0]
+            ref_key = f"layer_{ref_layer}_mlp_input"
+            if ref_key in batch_result_for_posmap["activations"]:
+                n_act = batch_result_for_posmap["activations"][ref_key].shape[0]
+                n_pos = len(batch_position_map)
+                assert n_act == n_pos, (
+                    f"Batch {batch_idx} mismatch: activations rows={n_act} but position_map entries={n_pos} "
+                    f"(token_positions={token_positions})"
+                )
+            
             for entry in batch_position_map:
                 entry_adjusted = entry.copy()
                 entry_adjusted["prompt_idx"] += start_idx  # Offset by batch start
@@ -198,7 +212,112 @@ def capture_mlp_inputs(
             logger.error(f"No activations captured for layer {layer_idx}!")
             layer_activations[layer_idx] = None
 
-    logger.info(f"Captured {len(position_map_all)} samples with token_positions='{token_positions}'")
+    # Add prompt hashes (AFTER batch assembly, using global indices)
+    import hashlib
+    prompt_hashes = {
+        i: hashlib.sha256(prompt_texts[i].encode()).hexdigest()[:16]
+        for i in range(len(prompt_texts))
+    }
+    for e in position_map_all:
+        # e["prompt_idx"] is now global index
+        e["prompt_hash"] = prompt_hashes[e["prompt_idx"]]
+
+    # Post-process: set is_decision_position flag correctly
+    # Decision token = token with max token_pos within each prompt
+    from collections import defaultdict
+    by_prompt = defaultdict(list)
+    for i, e in enumerate(position_map_all):
+        by_prompt[e["prompt_idx"]].append((i, e["token_pos"]))
+    
+    for prompt_idx, items in by_prompt.items():
+        max_pos = max(tp for _, tp in items)
+        for i, tp in items:
+            position_map_all[i]["is_decision_position"] = (tp == max_pos)
+    
+    # Add within-window ordering metadata (useful for analysis)
+    # This tracks: position within the K-token window, and total window size
+    for prompt_idx, items in by_prompt.items():
+        # Sort by token_pos to get within-window ordering
+        items_sorted = sorted(items, key=lambda x: x[1])
+        window_len = len(items_sorted)
+        for j, (global_i, _) in enumerate(items_sorted):
+            position_map_all[global_i]["within_window_index"] = j
+            position_map_all[global_i]["prompt_window_len"] = window_len
+    
+    # Robust sanity checks: verify sample structure aligns with token_positions mode
+    n_samples = len(position_map_all)
+    
+    # Per-prompt statistics
+    cnt = defaultdict(int)
+    dec_cnt = defaultdict(int)
+    max_pos_seen = defaultdict(lambda: -10**9)
+    
+    for e in position_map_all:
+        p = e["prompt_idx"]
+        cnt[p] += 1
+        dec_cnt[p] += int(bool(e.get("is_decision_position", False)))
+        max_pos_seen[p] = max(max_pos_seen[p], e["token_pos"])
+    
+    # Verify decision token corresponds to max token_pos in each prompt
+    for idx, e in enumerate(position_map_all):
+        p = e["prompt_idx"]
+        if e.get("is_decision_position", False):
+            assert e["token_pos"] == max_pos_seen[p], (
+                f"Decision token_pos mismatch for prompt {p}: "
+                f"decision token_pos={e['token_pos']} but max token_pos={max_pos_seen[p]}"
+            )
+    
+    # Ensure every prompt appears (for decision/last modes)
+    if token_positions != "all":
+        assert len(cnt) == len(prompts), (
+            f"Position map covers {len(cnt)} prompts, but prompts list has {len(prompts)}."
+        )
+    
+    # Check sample counts per prompt (robust to variable-length prompts)
+    if token_positions.startswith("last_"):
+        K = int(token_positions.split("_")[1])
+        # Each prompt should have between 1 and K samples (depends on prompt length)
+        bad = [p for p, c in cnt.items() if not (1 <= c <= K)]
+        assert not bad, (
+            f"Some prompts have sample counts outside [1, {K}]: {bad[:10]} "
+            f"(this indicates a bug in capture_mlp_inputs)"
+        )
+        logger.info(f"Sample count range per prompt: [{min(cnt.values())}, {max(cnt.values())}] (expected: [1, {K}])")
+    
+    elif token_positions in ("decision", "last"):
+        # Each prompt should have exactly 1 sample
+        bad = [p for p, c in cnt.items() if c != 1]
+        assert not bad, (
+            f"Some prompts do not have exactly 1 sample: {bad[:10]}"
+        )
+    
+    # Decision flag: exactly one decision token per prompt (for non-all modes)
+    if token_positions != "all":
+        bad = [p for p, c in dec_cnt.items() if c != 1]
+        assert not bad, (
+            f"Some prompts do not have exactly one decision token: {bad[:10]}"
+        )
+    
+    # Verify activations match position_map
+    for layer_idx in layer_indices:
+        acts = layer_activations[layer_idx]
+        if acts is None:
+            continue
+        assert acts.shape[0] == n_samples, (
+            f"Layer {layer_idx}: activations N={acts.shape[0]} != position_map N={n_samples}"
+        )
+    
+    # Log window length statistics (useful for multi-token analysis)
+    prompt_window_lens = {p: len(items) for p, items in by_prompt.items()}
+    logger.info(f"Captured {n_samples} samples with token_positions='{token_positions}'")
+    logger.info(f"Sanity checks passed: {len(cnt)} prompts, {n_samples} total samples")
+    if len(prompt_window_lens) > 0:
+        logger.info(
+            f"Window lengths: min={min(prompt_window_lens.values())}, "
+            f"max={max(prompt_window_lens.values())}, "
+            f"mean={np.mean(list(prompt_window_lens.values())):.2f}"
+        )
+    
     return layer_activations, position_map_all
 
 
@@ -207,6 +326,8 @@ def extract_features(
     transcoder_set: TranscoderSet,
     mlp_inputs: Dict[int, torch.Tensor],
     top_k: int = 50,
+    activation_threshold: float = 0.0,
+    save_full_acts: bool = False,
     device: torch.device = None,
 ) -> Dict[int, Dict]:
     """
@@ -216,11 +337,13 @@ def extract_features(
         transcoder_set: Loaded TranscoderSet
         mlp_inputs: Dict mapping layer_idx -> activation tensor
         top_k: Number of top features to track per sample
+        activation_threshold: Minimum activation value to consider feature "active"
+        save_full_acts: Whether to save full feature activations (large files)
         device: Device for computation
 
     Returns:
         Dict mapping layer_idx -> {
-            "feature_activations": sparse tensor of all activations,
+            "feature_activations": (optional) full tensor of all activations,
             "top_k_indices": top-k feature indices per sample,
             "top_k_values": top-k activation values per sample,
             "active_features": set of all features active in this layer,
@@ -254,9 +377,12 @@ def extract_features(
         top_k_values, top_k_indices = torch.topk(features, k=min(top_k, features.shape[1]), dim=1)
 
         # Compute active features (store as numpy array for efficiency)
-        active_mask = (features > 0).cpu()  # [N, d_transcoder]
-        active_feature_indices = torch.where(active_mask.any(dim=0))[0].cpu().numpy().astype(np.int32)
-        feature_frequencies = active_mask.float().mean(dim=0).cpu().numpy()
+        # Cast threshold to features dtype to avoid BF16 comparison issues
+        thr = torch.as_tensor(activation_threshold, device=features.device, dtype=features.dtype)
+        active_mask = (features > thr)  # [N, d_transcoder] bool on GPU
+        active_feature_indices = torch.where(active_mask.any(dim=0))[0].detach().cpu().numpy().astype(np.int32)
+        feature_frequencies = active_mask.float().mean(dim=0).detach().cpu().numpy()
+        mean_active_per_sample = active_mask.sum(dim=1).float().mean().item()
 
         # Store results
         # NOTE: Don't save full feature_activations by default - too large!
@@ -268,9 +394,19 @@ def extract_features(
             "active_feature_indices": active_feature_indices,  # numpy int32 array (more efficient than set)
             "feature_frequencies": feature_frequencies,
             "n_active_features": len(active_feature_indices),
-            "mean_active_per_sample": active_mask.sum(dim=1).float().mean().item(),
+            "mean_active_per_sample": mean_active_per_sample,  # Reuse computed value
             "d_transcoder": transcoder.d_transcoder,
         }
+        
+        # Free GPU memory early (active_mask no longer needed)
+        del active_mask
+
+        # Optionally store full activations (float16 on CPU) for downstream analysis
+        if save_full_acts:
+            feats_cpu = features.detach().to("cpu")
+            if feats_cpu.dtype == torch.bfloat16:
+                feats_cpu = feats_cpu.float()
+            results[layer_idx]["feature_activations"] = feats_cpu.half()
 
         logger.info(f"  Layer {layer_idx}: {len(active_feature_indices)} active features, "
                    f"{results[layer_idx]['mean_active_per_sample']:.1f} mean active per sample")
@@ -326,21 +462,22 @@ def save_features(
         )
 
         # Save full activations (OPTIONAL - only if present and not too large)
-        # NOTE: feature_activations removed from extract_features by default to save memory
-        # Only present if --save_full_acts flag used (future feature)
+        # NOTE: feature_activations already saved as float16 in extract_features
         if "feature_activations" in layer_data:
             full_acts_tensor = layer_data["feature_activations"]
-            if full_acts_tensor.dtype == torch.bfloat16:
-                full_acts_tensor = full_acts_tensor.float()
-            full_acts = full_acts_tensor.numpy()
-            if full_acts.nbytes < 1e9:  # < 1GB
+            
+            # Early check: verify size before conversion
+            nbytes = full_acts_tensor.numel() * 2  # float16 = 2 bytes
+            if nbytes < 1e9:  # < 1GB
+                # Already float16 from extract_features - no need to cast
+                full_acts = full_acts_tensor.numpy()
                 np.save(
                     layer_dir / f"{behaviour}_{split}_full_activations.npy",
-                    full_acts.astype(np.float16)  # Compress to float16
+                    full_acts
                 )
-                logger.info(f"Saved full activations for layer {layer_idx} ({full_acts.nbytes / 1e6:.1f} MB)")
+                logger.info(f"Saved full activations for layer {layer_idx} ({nbytes / 1e6:.1f} MB)")
             else:
-                logger.warning(f"Skipping full activations for layer {layer_idx} (too large: {full_acts.nbytes / 1e9:.2f} GB)")
+                logger.warning(f"Skipping full activations for layer {layer_idx} (too large: {nbytes / 1e9:.2f} GB)")
         else:
             # This is the default now - feature_activations not saved
             logger.debug(f"Full activations not requested for layer {layer_idx}")
@@ -354,6 +491,10 @@ def save_features(
             "mean_active_per_sample": layer_data["mean_active_per_sample"],
             "d_transcoder": layer_data["d_transcoder"],
             "active_features": layer_data["active_feature_indices"].tolist(),  # Convert numpy to list for JSON
+            "token_positions": metadata.get("token_positions"),
+            "context_tokens": metadata.get("context_tokens"),
+            "activation_threshold": metadata.get("activation_threshold", 0.0),
+            "saved_full_activations": bool("feature_activations" in layer_data),
         }
         with open(layer_dir / f"{behaviour}_{split}_layer_meta.json", "w") as f:
             json.dump(layer_meta, f, indent=2)
@@ -425,15 +566,39 @@ def main():
         default=50,
         help="Number of top features to track per sample",
     )
+    parser.add_argument(
+        "--context_tokens",
+        type=int,
+        default=1,
+        help="How many final prompt tokens to capture (1 = decision token only, 2+ = multi-token window)",
+    )
+    parser.add_argument(
+        "--activation_threshold",
+        type=float,
+        default=0.0,
+        help="Minimum activation value to consider feature 'active' (default: 0.0)",
+    )
+    parser.add_argument(
+        "--save_full_acts",
+        action="store_true",
+        help="Save full feature activations (large files, for PCA/distribution analysis)",
+    )
     args = parser.parse_args()
 
     # Load configs
     config = load_config(args.config)
     tc_config = load_transcoder_config(args.transcoder_config)
+    
+    # Research hygiene: compute config hashes for reproducibility
+    import hashlib
+    import json as _json
+    cfg_hash = hashlib.sha256(_json.dumps(config, sort_keys=True).encode()).hexdigest()
+    tc_hash = hashlib.sha256(_json.dumps(tc_config, sort_keys=True).encode()).hexdigest()
 
     # Determinism
     torch.manual_seed(config["seeds"]["torch_seed"])
     torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False  # Ensures full reproducibility
 
     # Model size
     model_size = args.model_size or tc_config.get("model_size", "4b")
@@ -494,6 +659,10 @@ def main():
         device="auto",
         trust_remote_code=True,
     )
+    
+    # Ensure model is in eval mode for consistent activations across layer groups
+    # Critical: same batch must give identical position_map when captured multiple times
+    model.model.eval()
 
     # Process each behaviour
     for behaviour in behaviours:
@@ -508,12 +677,21 @@ def main():
 
         # Capture MLP inputs
         print(f"\nCapturing MLP inputs for layers {layer_indices}...")
+        
+        # Determine token_positions mode based on context_tokens
+        if args.context_tokens <= 1:
+            token_positions = "decision"  # Single decision token
+        else:
+            token_positions = f"last_{args.context_tokens}"  # Multi-token window
+        
+        print(f"Token positions mode: {token_positions} (capturing {args.context_tokens} token(s) per prompt)")
+        
         mlp_inputs, position_map = capture_mlp_inputs(
             model,
             prompts,
             layer_indices,
             batch_size=args.batch_size,
-            token_positions="decision",  # Next-token prediction position
+            token_positions=token_positions,
         )
         
         # Save position_map (CRITICAL for attribution analysis)
@@ -531,6 +709,8 @@ def main():
             transcoder_set,
             mlp_inputs,
             top_k=args.top_k,
+            activation_threshold=args.activation_threshold,
+            save_full_acts=args.save_full_acts,
             device=device,
         )
 
@@ -542,7 +722,20 @@ def main():
             "transcoder_repo": tc_config["transcoders"][model_size]["repo_id"],
             "layers": layer_indices,
             "n_prompts": len(prompts),
+            "context_tokens": args.context_tokens,
+            "token_positions": token_positions,
+            "activation_threshold": args.activation_threshold,
             "top_k": args.top_k,
+            # Feature computation metadata
+            "frequencies_over": "all_features",
+            "saved_activations": "top_k_only" if not args.save_full_acts else "full_float16",
+            # Semantics note (honest, no assumptions)
+            "token_pos_semantics": "token_pos as returned by ModelWrapper.capture_mlp_inputs metadata.position_map",
+            # Config versioning for reproducibility
+            "config_path": args.config,
+            "transcoder_config_path": args.transcoder_config,
+            "experiment_config_sha256": cfg_hash,
+            "transcoder_config_sha256": tc_hash,
         }
 
         print(f"\nSaving features to {output_path}...")
