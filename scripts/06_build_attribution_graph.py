@@ -817,6 +817,11 @@ def main():
         # Save graph
         output_path = output_base / behaviour
         
+        # STABILITY FIX: Add _nN suffix to differentiate runs with different sample sizes
+        # This allows us to compare stability across train_n20, train_n80, test_n20
+        n_used = min(args.n_prompts, len(prompts)) if args.n_prompts else len(prompts)
+        name = f"attribution_graph_{args.split}_n{n_used}"
+        
         # Get topk size from extracted_features for metadata
         first_layer = list(extracted_features.keys())[0]
         topk_size = extracted_features[first_layer]["top_k_indices"].shape[1]
@@ -838,7 +843,7 @@ def main():
             "activation_observation": "topk_truncated",
             "topk_per_token": int(topk_size),
         }
-        save_graph(G, output_path, f"attribution_graph_{args.split}", metadata)
+        save_graph(G, output_path, name, metadata)  # Use variable name with _nN suffix
 
         # Print summary
         n_features = sum(1 for _, d in G.nodes(data=True) if d.get("type") == "feature")
@@ -861,7 +866,7 @@ def main():
             print(f"  {feat_id}: corr={r:+.4f}, |corr|={abs_r:.4f}, freq={freq:.1%}")
 
         # Patch C: Only print what we actually save
-        print(f"\nSaved graph to {output_path / f'attribution_graph_{args.split}.graphml'}")
+        print(f"\nSaved graph to {output_path / f'{name}.graphml'}")
     print("\n" + "=" * 70)
     print("ATTRIBUTION GRAPH CONSTRUCTION COMPLETE")
     print("=" * 70)
