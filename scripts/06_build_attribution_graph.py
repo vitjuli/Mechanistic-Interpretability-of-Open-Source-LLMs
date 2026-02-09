@@ -231,9 +231,15 @@ def compute_margin_batch(
     for prompt_data in tqdm(prompts, desc="Computing margins"):
         prompt_text = prompt_data["prompt"]
 
-        # Use the SAME keys everywhere (choose one schema and stick to it)
-        correct_tok = prompt_data["answer_matching"]
-        incorrect_tok = prompt_data["answer_not_matching"]
+        # Dataset uses correct_answer/incorrect_answer fields
+        correct_tok = prompt_data.get("correct_answer") or prompt_data.get("answer_matching")
+        incorrect_tok = prompt_data.get("incorrect_answer") or prompt_data.get("answer_not_matching")
+        
+        if not correct_tok or not incorrect_tok:
+            raise ValueError(
+                f"Prompt missing answer fields. Found keys: {list(prompt_data.keys())}\n"
+                f"Expected: 'correct_answer'/'incorrect_answer' OR 'answer_matching'/'answer_not_matching'"
+            )
 
         inputs = model.tokenizer(prompt_text, return_tensors="pt").to(model_device)
 
