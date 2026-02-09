@@ -577,6 +577,14 @@ def save_graph(G: nx.DiGraph, output_path: Path, name: str, metadata: Dict = Non
         json.dump(graph_data, f, indent=2)
 
     logger.info(f"Saved graph: {graphml_path.name}, {json_path.name}")
+    
+    # Save metadata separately for easier access
+    if metadata is not None:
+        meta_path = output_path / f"{name}_metadata.json"
+        with open(meta_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+        logger.info(f"Saved metadata: {meta_path.name}")
+    
     return graphml_path, json_path
 
 
