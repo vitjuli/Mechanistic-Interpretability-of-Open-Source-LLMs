@@ -128,13 +128,38 @@ def load_transcoder_config(config_path: str = "configs/transcoder_config.yaml") 
         return yaml.safe_load(f)
 
 
-def load_prompts(prompt_path: Path, behaviour: str, split: str = "train") -> List[Dict]:
-    """Load prompts from JSONL file."""
-    file_path = prompt_path / f"{behaviour}_{split}.jsonl"
+def load_prompts(
+    prompt_path: Path, 
+    behaviour: str, 
+    split: str = "train",
+    prompts_file: Optional[str] = None
+) -> List[Dict]:
+    """
+    Load prompts from JSONL file.
+    
+    Args:
+        prompt_path: Base prompts directory
+        behaviour: Behaviour name  
+        split: Data split
+        prompts_file: Optional custom JSONL path (overrides default)
+    """
+    # Use custom file if provided
+    if prompts_file:
+        file_path = Path(prompts_file)
+        logger.info(f"Loading prompts from custom file: {file_path}")
+    else:
+        file_path = prompt_path / f"{behaviour}_{split}.jsonl"
+    
+    if not file_path.exists():
+        raise FileNotFoundError(f"Prompts file not found: {file_path}")
+    
     prompts = []
     with open(file_path, "r") as f:
         for line in f:
-            prompts.append(json.loads(line))
+            line = line.strip()
+            if line:
+                prompts.append(json.loads(line))
+    
     return prompts
 
 
@@ -978,7 +1003,7 @@ def main():
         # Load prompts
         prompt_path = Path(config["paths"]["prompts"])
         try:
-            prompts = load_prompts(prompt_path, behaviour, args.split)
+            prompts = load_prompts(prompt_path, behaviour, args.split, prompts_file=args.prompts_file)
         except FileNotFoundError:
             print(f"Prompt file not found. Skipping {behaviour}.")
             continue
