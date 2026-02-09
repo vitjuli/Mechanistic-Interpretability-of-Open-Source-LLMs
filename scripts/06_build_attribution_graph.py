@@ -18,10 +18,9 @@ Usage:
 import json
 import yaml
 import torch
-import torch.nn.functional as F
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 import argparse
 import sys
 from tqdm import tqdm
@@ -30,10 +29,10 @@ import networkx as nx
 from datetime import datetime
 import logging
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
 from src.model_utils import ModelWrapper
-from src.transcoder import load_transcoder_set, TranscoderSet, SingleLayerTranscoder
+from src.transcoder import load_transcoder_set, TranscoderSet
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -131,7 +130,9 @@ def load_extracted_features(
         logger.info(
             f"  Layer {layer_idx}: {top_k_indices.shape[0]} samples, "
             f"top-{top_k_indices.shape[1]} features, "
-            f"{metadata['n_active_features']} active features"
+            f"{metadata['n_active_features']} active features, "
+            f"token_positions={metadata.get('token_positions')}, "
+            f"context_tokens={metadata.get('context_tokens')}"
         )
     
     return extracted_features
@@ -215,6 +216,62 @@ def build_prompt_to_samples_map(position_map: List[Dict]) -> Dict[int, List[int]
     return prompt_to_samples
 
 
+def compute_margin_batch(
+    model: ModelWrapper,
+    prompts: List[Dict],
+) -> np.ndarray:
+    """
+    Δ_p = log p(y⁺|c) - log p(y⁻|c) for each prompt (single-token answers only).
+    """
+    margins = []
+
+    model_device = next(model.model.parameters()).device
+    logger.info(f"Computing margins for {len(prompts)} prompts on device={model_device}...")
+
+    for prompt_data in tqdm(prompts, desc="Computing margins"):
+        prompt_text = prompt_data["prompt"]
+
+        # Use the SAME keys everywhere (choose one schema and stick to it)
+        correct_tok = prompt_data["answer_matching"]
+        incorrect_tok = prompt_data["answer_not_matching"]
+
+        inputs = model.tokenizer(prompt_text, return_tensors="pt").to(model_device)
+
+        with torch.no_grad():
+            outputs = model.model(**inputs, use_cache=False)
+            logits = outputs.logits[0, -1, :]  # next-token logits at final position
+            log_probs = torch.log_softmax(logits, dim=0)
+
+        # Enforce single-token answers (critical for correctness)
+        ids_pos = model.tokenizer.encode(correct_tok, add_special_tokens=False)
+        ids_neg = model.tokenizer.encode(incorrect_tok, add_special_tokens=False)
+        
+        # CRITICAL: Use raise instead of assert (assert can be disabled with -O flag)
+        if len(ids_pos) != 1 or len(ids_neg) != 1:
+            raise ValueError(
+                f"Answers must be single token.\n"
+                f"correct_tok={correct_tok!r} -> ids={ids_pos}\n"
+                f"incorrect_tok={incorrect_tok!r} -> ids={ids_neg}\n"
+                f"Fix dataset/tokenization or implement multi-token continuation scoring."
+            )
+
+        correct_id = ids_pos[0]
+        incorrect_id = ids_neg[0]
+
+        margin = (log_probs[correct_id] - log_probs[incorrect_id]).item()
+        margins.append(margin)
+
+    margins = np.array(margins, dtype=np.float64)
+
+    logger.info(
+        f"Margins: mean={margins.mean():.4f}, std={margins.std():.4f}, "
+        f"min={margins.min():.4f}, max={margins.max():.4f}"
+    )
+    return margins
+
+
+
+
 class TranscoderAttributionBuilder:
     """
     Builds attribution graphs using pre-trained transcoders.
@@ -229,277 +286,236 @@ class TranscoderAttributionBuilder:
         self,
         model: ModelWrapper,
         transcoder_set: TranscoderSet,
-        extracted_features: Dict[int, Dict],  # NEW: Pre-extracted features from script 04
-        position_map: List[Dict],  # NEW: Maps sample_idx -> (prompt_idx, token_pos, token_id)
-        device: torch.device,
+        extracted_features: Dict[int, Dict],
+        position_map: List[Dict],
+        prompts: List[Dict],              # required for margins
         top_k_edges: int = 10,
         attribution_threshold: float = 0.01,
         layers: Optional[List[int]] = None,
     ):
         """
-        Initialize attribution graph builder with pre-extracted transcoder features.
-
-        CRITICAL CHANGE: Now accepts pre-extracted features from script 04 instead
-        of recomputing them. This ensures we use features from MLP inputs (correct
-        distribution for transcoders) not residual stream (wrong distribution).
-
-        Args:
-            model: Wrapped language model
-            transcoder_set: Pre-trained TranscoderSet
-            extracted_features: Pre-computed features from script 04
-            position_map: Sample-to-prompt mapping from script 04
-            device: Computation device
-            top_k_edges: Number of top edges to keep per node
-            attribution_threshold: Minimum attribution magnitude to include edge
-            layers: Specific layers to analyze (None = all in transcoder_set)
+        Initialize correlation-based attribution builder.
+        
+        Device is auto-detected from model parameters (no need to specify).
         """
         self.model = model
         self.transcoder_set = transcoder_set
-        self.extracted_features = extracted_features  # NEW
-        self.position_map = position_map  # NEW
-        self.device = device
+        self.position_map = position_map
+        self.extracted_features = extracted_features
+        self.prompts = prompts
         self.top_k_edges = top_k_edges
         self.attribution_threshold = attribution_threshold
 
-        # Determine layers to use
+        # Use only layers that exist in extracted_features
         if layers is None:
-            self.layers = list(range(transcoder_set.config.num_layers))
+            self.layers = sorted(list(extracted_features.keys()))
         else:
-            self.layers = [l for l in layers if l in transcoder_set]
+            self.layers = [l for l in layers if l in extracted_features]
 
-        # Build reverse map: prompt_idx -> [sample_indices]
-        # CRITICAL for attribution: we need to know which samples belong to each prompt
-        self.prompt_to_samples = build_prompt_to_samples_map(position_map)  # NEW
+        # Reverse map prompt_idx -> sample_indices
+        self.prompt_to_samples = build_prompt_to_samples_map(position_map)
 
-        logger.info(f"Attribution builder initialized for layers: {self.layers}")
-        logger.info(
-            f"Loaded {len(position_map)} samples across {len(self.prompt_to_samples)} prompts"
-        )
+        # Compute margins for ALL prompts (robust indexing by prompt_idx)
+        logger.info("Computing margins for correlation attribution (all prompts)...")
+        self.margins = compute_margin_batch(model, prompts)
 
-    def compute_prompt_attribution(
-        self,
-        prompt_idx: int,
-        correct_token: str,
-        incorrect_token: str,
-    ) -> Dict[int, torch.Tensor]:
+        # quick sanity: position_map prompt_idx must be valid
+        max_prompt = max(e["prompt_idx"] for e in position_map) if len(position_map) else -1
+        if max_prompt >= len(prompts):
+            raise ValueError(
+                f"position_map refers to prompt_idx={max_prompt}, but prompts has len={len(prompts)}."
+            )
+
+        logger.info(f"Builder initialized. layers={self.layers}")
+        logger.info(f"position_map samples={len(position_map)}, prompts_in_map={len(self.prompt_to_samples)}")
+
+
+    def collect_feature_activations(self, prompt_idx: int) -> Dict[int, Dict[int, float]]:
         """
-        Compute differential attribution for a prompt using pre-extracted features.
-        
-        SIMPLIFIED APPROACH: Uses activation-based attribution instead of gradients.
-        Attribution = avg_feature_activation × correlation_with_correct
-        
-        This is simpler than gradient-based attribution and avoids complex backprop
-        through the model with injected activations.
-        
-        Args:
-            prompt_idx: Index of the prompt in the prompts list
-            correct_token: Correct answer token
-            incorrect_token: Incorrect answer token
-        
-        Returns:
-            Dict mapping layer -> attribution scores per feature (sparse tensor)
+        Returns sparse activations for the DECISION token of this prompt:
+          {layer: {feature_idx: activation}}
         """
         if prompt_idx not in self.prompt_to_samples:
-            logger.warning(f"Prompt {prompt_idx} not in position map")
             return {}
-        
-        # Get sample indices for this prompt
-        sample_indices = self.prompt_to_samples[prompt_idx]
-        
-        # Get logits for correct/incorrect tokens to determine "success"
-        # (Use model forward pass to see which token is predicted)
-        # For now, use simpler heuristic: features that activate ARE important
-        # (This is the activation-based attribution approach)
-        
-        attributions = {}
-        
+
+        sample_indices_all = self.prompt_to_samples[prompt_idx]
+        decision_samples = [
+            s for s in sample_indices_all
+            if self.position_map[s].get("is_decision_position", False)
+        ]
+        sample_indices = decision_samples if decision_samples else sample_indices_all
+
+        # CRITICAL: For correlation attribution, we need exactly 1 decision sample per prompt
+        # Otherwise averaging semantics become ambiguous (average over samples vs over top-k appearances)
+        if len(sample_indices) != 1:
+            raise ValueError(
+                f"Expected exactly 1 decision sample for prompt {prompt_idx}, got {len(sample_indices)}. "
+                f"decision_samples={len(decision_samples)}, all_samples={len(sample_indices_all)}. "
+                f"Check position_map is_decision_position / token_positions."
+            )
+
+        activations = {}
+
         for layer in self.layers:
             layer_data = self.extracted_features[layer]
-            
-            # Get top-k features for this prompt's samples
-            sample_top_k_indices = layer_data['top_k_indices'][sample_indices]  # (n_samples, top_k)
-            sample_top_k_values = layer_data['top_k_values'][sample_indices]  # (n_samples, top_k)
-            
-           # Compute sparse attribution tensor
-            d_transcoder = layer_data['metadata']['d_transcoder']
-            attribution_sparse = torch.zeros(d_transcoder, dtype=torch.float32)
-            feature_count = torch.zeros(d_transcoder, dtype=torch.float32)
-            
-            # Aggregate activations across all samples for this prompt
-            for i in range(len(sample_indices)):
-                feat_indices = sample_top_k_indices[i]  # (top_k,)
-                feat_values = sample_top_k_values[i]  # (top_k,)
-                
-                for feat_idx, feat_val in zip(feat_indices, feat_values):
-                    feat_idx = feat_idx.item()
-                    feat_val = feat_val.item()
-                    
-                    # Attribution = feature activation (simple!)
-                    # More sophisticated: multiply by gradient or use correlation
-                    # For now: use raw activation as proxy for importance
-                    attribution_sparse[feat_idx] += feat_val
-                    feature_count[feat_idx] += 1
-            
-            # Average over samples
-            mask = feature_count > 0
-            attribution_sparse[mask] /= feature_count[mask]
-            
-            attributions[layer] = attribution_sparse
-        
-        return attributions
+            topk_idx = layer_data["top_k_indices"][sample_indices]   # (1, K)
+            topk_val = layer_data["top_k_values"][sample_indices]    # (1, K)
 
+            layer_act = {}
+            # Since we have exactly 1 sample, no averaging needed
+            for feat_idx, feat_val in zip(topk_idx[0].tolist(), topk_val[0].tolist()):
+                layer_act[int(feat_idx)] = float(feat_val)
 
-    def build_graph_for_prompt(
-        self,
-        prompt_idx: int,  # NEW: pass index instead of text
-        prompt_data: Dict,  # NEW: pass full prompt dict
-    ) -> nx.DiGraph:
-        """
-        Build attribution graph for a single prompt using pre-extracted features.
-        
-        CHANGED: Now uses prompt_idx to look up pre-extracted features instead
-        of recomputing them via forward pass.
-        
-        Args:
-prompt_idx: Index in prompts list
-            prompt_data: Prompt dictionary with 'prompt', 'correct_answer', 'incorrect_answer'
-        
-        Returns:
-            NetworkX directed graph
-        """
-        G = nx.DiGraph()
-        G.add_node("input", type="input")
-        
-        correct_token = prompt_data["correct_answer"].strip()
-        incorrect_token = prompt_data["incorrect_answer"].strip()
-        
-        G.add_node("output_correct", type="output", token=correct_token)
-        G.add_node("output_incorrect", type="output", token=incorrect_token)
-        
-        # Compute attribution using pre-extracted features
-        attributions = self.compute_prompt_attribution(
-            prompt_idx,
-            correct_token,
-            incorrect_token,
-        )
-        
-        # Add feature nodes and edges
-        for layer, attr_tensor in attributions.items():
-            # Get top-k most attributed features
-            top_values, top_indices = torch.topk(
-                attr_tensor,
-                k=min(self.top_k_edges, (attr_tensor > 0).sum().item()),
-            )
-            
-            for feat_idx, attr_val in zip(top_indices, top_values):
-                feat_idx = feat_idx.item()
-                attr_val = attr_val.item()
-                
-                if attr_val < self.attribution_threshold:
-                    continue
-                
-                feat_id = f"L{layer}_F{feat_idx}"
-                
-                # Add feature node
-                G.add_node(
-                    feat_id,
-                    type="feature",
-                    layer=layer,
-                    feature_idx=feat_idx,
-                    attribution=attr_val,
-                )
-                
-                # Add edges
-                G.add_edge("input", feat_id, weight=attr_val)
-                G.add_edge(feat_id, "output_correct", weight=attr_val)
-                # Note: For simplicity, we don't differentiate correct/incorrect attribution
-                # In future: use logits to compute differential attribution
-        
-        return G
+            activations[layer] = layer_act
+
+        return activations
 
     def aggregate_graphs(
         self,
         prompts: List[Dict],
         n_prompts: int = 20,
         min_frequency: float = 0.2,
+        use_abs_corr: bool = True,
     ) -> nx.DiGraph:
         """
-        Aggregate attribution graphs across multiple prompts using pre-extracted features.
+        Correlation-based attribution.
 
-        CHANGED: Now uses prompt indices to look up pre-extracted features.
-        Removed silent error handling - errors now propagate for debugging.
+        For each feature f=(layer, idx), define x_p as activation on prompt p (0 if absent).
+        Compute Pearson r(x, margin) over the selected prompts.
 
-        Args:
-            prompts: List of prompt dictionaries
-            n_prompts: Number of prompts to aggregate
-            min_frequency: Minimum fraction of prompts a feature must appear in
-
-        Returns:
-            Aggregated attribution graph
+        Efficient sparse Pearson:
+          sum_x, sum_x2, sum_xy computed only over nonzeros (zeros contribute nothing),
+          sum_y, sum_y2 computed once globally.
+          
+        IMPORTANT: Features not in top-k for a prompt are treated as activation=0.
+        This is correct since transcoders produce sparse activations.
+        
+        We treat features absent from top-k as zero; this approximates sparse 
+        transcoder activations under top-k truncation.
         """
-        sample_prompts = prompts[:n_prompts]
-
-        # Track feature statistics
-        feature_stats = defaultdict(lambda: {
-            "count": 0,
-            "total_attribution": 0.0,
-        })
-
-        logger.info(f"Building attribution graphs for {len(sample_prompts)} prompts...")
-
-        for prompt_idx, prompt_data in enumerate(tqdm(sample_prompts, desc="Building graphs")):
-            # Build graph for this prompt
-            # NOTE: No try/except - let errors propagate so we can debug!
-            G = self.build_graph_for_prompt(
-                prompt_idx,  # Use index to lookup features
-                prompt_data,
+        N = min(n_prompts, len(prompts))
+        
+        # CRITICAL: Need at least 2 samples to compute correlation
+        if N < 2:
+            raise ValueError(
+                f"Need at least 2 prompts to compute correlation (got N={N}). "
+                f"Set --n_prompts >= 2."
             )
+        
+        prompt_indices = list(range(N))
 
-            # Accumulate feature statistics
-            for node, data in G.nodes(data=True):
-                if data.get("type") == "feature":
-                    feat_key = (data["layer"], data["feature_idx"])
-                    feature_stats[feat_key]["count"] += 1
-                    feature_stats[feat_key]["total_attribution"] += data["attribution"]
+        y = np.array([self.margins[p] for p in prompt_indices], dtype=np.float64)
+        
+        # CRITICAL: Log margins subset to debug var_y issues
+        logger.info(
+            f"Margins subset (N={N}): mean={y.mean():.4f}, std={y.std():.4f}, "
+            f"min={y.min():.4f}, max={y.max():.4f}"
+        )
+        
+        sum_y = float(y.sum())
+        sum_y2 = float((y * y).sum())
 
-        logger.info(f"Collected statistics for {len(feature_stats)} unique features")
+        # stats[(layer, feat)] = {sum_x, sum_x2, sum_xy, count_nonzero}
+        stats = defaultdict(lambda: {"sum_x": 0.0, "sum_x2": 0.0, "sum_xy": 0.0, "count": 0})
+
+        logger.info(f"Correlation aggregation over N={N} prompts. min_frequency={min_frequency:.2f}")
+
+        for p in tqdm(prompt_indices, desc="Collecting activations"):
+            acts_by_layer = self.collect_feature_activations(p)
+            yp = float(self.margins[p])
+
+            for layer, layer_acts in acts_by_layer.items():
+                for feat_idx, x in layer_acts.items():
+                    key = (layer, int(feat_idx))
+                    st = stats[key]
+                    st["sum_x"] += x
+                    st["sum_x2"] += x * x
+                    st["sum_xy"] += x * yp
+                    st["count"] += 1
 
         # Build aggregated graph
-        G_agg = nx.DiGraph()
-        G_agg.add_node("input", type="input")
-        G_agg.add_node("output_correct", type="output")
-        G_agg.add_node("output_incorrect", type="output")
+        G = nx.DiGraph()
+        G.add_node("input", type="input")
+        G.add_node("output_correct", type="output")
+        G.add_node("output_incorrect", type="output")
 
-        # Add features meeting frequency threshold
-        min_count = max(1, int(n_prompts * min_frequency))
-        logger.info(f"Filtering features with min_count >= {min_count}")
+        min_count = max(1, int(np.ceil(min_frequency * N)))
+        logger.info(f"Feature filter: min_count_nonzero >= {min_count} (of N={N})")
 
-        features_added = 0
-        for (layer, feat_idx), stats in feature_stats.items():
-            if stats["count"] >= min_count:
+        added = 0
+
+        # Optional: keep per-layer top_k_edges only (more readable graphs)
+        per_layer_candidates = defaultdict(list)
+
+        for (layer, feat_idx), st in stats.items():
+            c = st["count"]
+            if c < min_count:
+                continue
+
+            sum_x = st["sum_x"]
+            sum_x2 = st["sum_x2"]
+            sum_xy = st["sum_xy"]
+
+            # Pearson components (population-style; scaling cancels in r)
+            var_x = sum_x2 - (sum_x * sum_x) / N
+            var_y = sum_y2 - (sum_y * sum_y) / N
+            if var_x <= 1e-12 or var_y <= 1e-12:
+                continue
+
+            cov_xy = sum_xy - (sum_x * sum_y) / N
+            r = cov_xy / np.sqrt(var_x * var_y)
+
+            score = abs(r) if use_abs_corr else r
+            
+            # CRITICAL: Distinguish two different means for semantic clarity
+            # mean_given_present: average activation when feature is in top-k (c samples)
+            # mean_all: average over all N prompts (missing = 0), consistent with correlation
+            mean_act_given_present = sum_x / c
+            mean_act_all = sum_x / N
+
+            per_layer_candidates[layer].append(
+                (score, r, feat_idx, c, mean_act_given_present, mean_act_all)
+            )
+
+        # Add top features per layer
+        for layer, items in per_layer_candidates.items():
+            items.sort(key=lambda t: t[0], reverse=True)
+            items = items[: self.top_k_edges]
+
+            for score, r, feat_idx, c, mean_act_present, mean_act_all in items:
+                if abs(r) < self.attribution_threshold:
+                    continue
+
                 feat_id = f"L{layer}_F{feat_idx}"
-                count = stats["count"]
-                avg_attribution = stats["total_attribution"] / count
+                freq = c / N
 
-                G_agg.add_node(
+                G.add_node(
                     feat_id,
                     type="feature",
-                    layer=layer,
-                    feature_idx=feat_idx,
-                    count=count,
-                    frequency=count / len(sample_prompts),
-                    avg_attribution=avg_attribution,
+                    layer=int(layer),
+                    feature_idx=int(feat_idx),
+                    count=int(c),
+                    frequency=float(freq),
+                    corr=float(r),
+                    abs_corr=float(abs(r)),
+                    mean_activation_given_present=float(mean_act_present),
+                    mean_activation_all=float(mean_act_all),
                 )
 
-                G_agg.add_edge("input", feat_id, weight=avg_attribution)
-                G_agg.add_edge(feat_id, "output_correct", weight=avg_attribution)
-                
-                features_added += 1
+                # Edge weights: use corr (signed)
+                # Positive r -> pushes toward output_correct, away from output_incorrect
+                # Negative r -> pushes toward output_incorrect, away from output_correct
+                w = float(r)
+                G.add_edge("input", feat_id, weight=w)
+                G.add_edge(feat_id, "output_correct", weight=w)
+                G.add_edge(feat_id, "output_incorrect", weight=-w)  # Symmetric margin interpretation
 
-        logger.info(f"Aggregated graph: {G_agg.number_of_nodes()} nodes, {G_agg.number_of_edges()} edges")
-        logger.info(f"Added {features_added} features meeting threshold")
+                added += 1
 
-        return G_agg
+        logger.info(f"Aggregated correlation graph: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}, features_added={added}")
+        if added == 0:
+            logger.warning("No features survived thresholds. Consider lowering min_frequency or attribution_threshold.")
+        return G
 
     def compute_virtual_weights(
         self,
@@ -674,25 +690,92 @@ def main():
     extracted_features = load_extracted_features(
         features_path,
         behaviour=behaviour,
-        split="train",  # Use train split for building graph
+        split=args.split,  # Use specified split (train/test)
         layers=layers,
     )
     
     position_map = load_position_map(
         features_path,
         behaviour=behaviour,
-        split="train",
+        split=args.split,  # Use specified split (train/test)
     )
     
     print(f"Loaded {len(position_map)} samples from {len(extracted_features)} layers")
+    
+    # CRITICAL SANITY CHECKS: Ensure data consistency
+    n_pos = len(position_map)
+    logger.info(f"Position map has {n_pos} samples")
+    
+    # Check each layer has same number of samples as position_map
+    for layer_idx, layer_data in extracted_features.items():
+        n_layer = layer_data["top_k_indices"].shape[0]
+        if n_layer != n_pos:
+            raise ValueError(
+                f"Mismatch: position_map has {n_pos} samples, "
+                f"but layer {layer_idx} has {n_layer} samples in top_k_indices. "
+                f"This indicates mixed files from different runs."
+            )
+    
+    # Check token_positions is consistent across layers
+    tokpos = None
+    for layer_idx, layer_data in extracted_features.items():
+        meta = layer_data["metadata"]
+        layer_tokpos = meta.get("token_positions", None)
+        if tokpos is None:
+            tokpos = layer_tokpos
+        elif layer_tokpos != tokpos:
+            raise ValueError(
+                f"token_positions differs across layers: "
+                f"expected {tokpos}, but layer {layer_idx} has {layer_tokpos}"
+            )
+    logger.info(f"✓ All layers use token_positions={tokpos}")
+    
+    # PATCH 4: Validate decision mode consistency
+    if tokpos in ("decision", "last"):
+        # CRITICAL: For correlation attribution, validate is_decision_position exists
+        dec_samples = [i for i, e in enumerate(position_map) if e.get("is_decision_position", False)]
+        n_prompts_in_map = len(set(e["prompt_idx"] for e in position_map))
+        
+        # Must have decision positions marked
+        if len(dec_samples) == 0:
+            raise ValueError(
+                f"token_positions={tokpos!r} but no entries have is_decision_position=True. "
+                f"This means position_map is inconsistent with extraction mode. "
+                f"Regenerate features with script 04 or check extraction metadata."
+            )
+        
+        dec_prompts = len(set(position_map[i]["prompt_idx"] for i in dec_samples))
+        logger.info(f"Decision positions: {len(dec_samples)} samples covering {dec_prompts} prompts")
+        
+        # Must have exactly 1 decision sample per prompt (strict for correlation)
+        if dec_prompts != n_prompts_in_map:
+            raise ValueError(
+                f"Decision samples cover {dec_prompts} prompts but position_map has {n_prompts_in_map} prompts. "
+                f"Each prompt must have exactly 1 decision sample for correlation attribution. "
+                f"Check script 04 extraction logic for token_positions='{tokpos}'."
+            )
+    
+    # PATCH 6: Load prompts BEFORE builder (required for margins)
+    prompt_path = Path(config["paths"]["prompts"])
+    prompts = load_prompts(prompt_path, behaviour, args.split)
+    
+    # PATCH 5: Validate prompt indices
+    max_prompt_in_map = max(entry["prompt_idx"] for entry in position_map)
+    if max_prompt_in_map >= len(prompts):
+        raise ValueError(
+            f"position_map references prompt_idx {max_prompt_in_map}, "
+            f"but only {len(prompts)} prompts loaded. "
+            f"Mismatch between position_map and prompts file."
+        )
 
     # Build attribution builder with pre-extracted features
+    # Device is auto-detected from model (no need to pass it)
     builder = TranscoderAttributionBuilder(
         model=model,
         transcoder_set=transcoder_set,
-        extracted_features=extracted_features,  # NEW
-        position_map=position_map,  # NEW
-        device=device,
+        extracted_features=extracted_features,
+        position_map=position_map,
+        prompts=prompts,  # <-- ADDED for margins
         top_k_edges=config["attribution"]["top_k_edges"],
         attribution_threshold=config["attribution"]["attribution_threshold"],
         layers=layers,
@@ -701,20 +784,13 @@ def main():
     # Process behaviours
     output_base = Path(config["paths"]["results"]) / "attribution_graphs"
 
+    # PATCH 6: Prompts already loaded before builder, remove from loop
     for behaviour in behaviours:
         print("\n" + "=" * 70)
         print(f"BEHAVIOUR: {behaviour}")
         print("=" * 70)
-
-        # Load prompts
-        prompt_path = Path(config["paths"]["prompts"])
-        try:
-            prompts = load_prompts(prompt_path, behaviour, args.split)
-        except FileNotFoundError:
-            print(f"Prompt file not found. Skipping {behaviour}.")
-            continue
-
-        print(f"Loaded {len(prompts)} prompts")
+        
+        print(f"Using {len(prompts)} prompts (already loaded)")
 
         # Build aggregated graph
         print(f"\nBuilding aggregated attribution graph...")
@@ -726,6 +802,11 @@ def main():
 
         # Save graph
         output_path = output_base / behaviour
+        
+        # Get topk size from extracted_features for metadata
+        first_layer = list(extracted_features.keys())[0]
+        topk_size = extracted_features[first_layer]["top_k_indices"].shape[1]
+        
         metadata = {
             "behaviour": behaviour,
             "split": args.split,
@@ -734,6 +815,14 @@ def main():
             "layers": layers,
             "n_prompts": args.n_prompts,
             "timestamp": datetime.now().isoformat(),
+            # Patch E: Attribution method metadata
+            "attribution_method": "correlation",
+            "feature_score": "abs_corr",
+            "edge_weight": "corr",
+            "missing_feature_activation": 0.0,
+            # Patch 5: Top-k truncation metadata
+            "activation_observation": "topk_truncated",
+            "topk_per_token": int(topk_size),
         }
         save_graph(G, output_path, f"attribution_graph_{args.split}", metadata)
 
@@ -743,20 +832,22 @@ def main():
 
         print(f"\nGraph summary:")
         print(f"  Feature nodes: {n_features}")
-        print(f"  Edges: {n_edges}")
+        print(f" Edges: {n_edges}")
 
-        # Show top features
-        feature_attrs = [
-            (n, d["avg_attribution"], d["frequency"])
+        # PATCH 7: Print top features by correlation (not avg_attribution)
+        feature_rows = [
+            (n, d.get("abs_corr", 0.0), d.get("corr", 0.0), d.get("frequency", 0.0))
             for n, d in G.nodes(data=True)
             if d.get("type") == "feature"
         ]
-        feature_attrs.sort(key=lambda x: x[1], reverse=True)
+        feature_rows.sort(key=lambda x: x[1], reverse=True)
 
-        print(f"\nTop 10 attributed features:")
-        for feat_id, attr, freq in feature_attrs[:10]:
-            print(f"  {feat_id}: avg_attr={attr:.4f}, frequency={freq:.1%}")
+        print("\nTop 10 features by |corr|:")
+        for feat_id, abs_r, r, freq in feature_rows[:10]:
+            print(f"  {feat_id}: corr={r:+.4f}, |corr|={abs_r:.4f}, freq={freq:.1%}")
 
+        # Patch C: Only print what we actually save
+        print(f"\nSaved graph to {output_path / f'attribution_graph_{args.split}.graphml'}")
     print("\n" + "=" * 70)
     print("ATTRIBUTION GRAPH CONSTRUCTION COMPLETE")
     print("=" * 70)
