@@ -86,8 +86,7 @@ def ensure_single_token(model: ModelWrapper, tok: str) -> int:
 def to_numpy(x: torch.Tensor) -> np.ndarray:
     """
     Safely convert torch tensor to numpy array.
-    
-    Handles bfloat16 dtype which NumPy doesn't support by converting to float32.
+    Detaches from autograd graph and handles bfloat16.
     
     Args:
         x: PyTorch tensor
@@ -95,6 +94,7 @@ def to_numpy(x: torch.Tensor) -> np.ndarray:
     Returns:
         NumPy array
     """
+    x = x.detach()  # CRITICAL: Detach from computation graph!
     if x.dtype == torch.bfloat16:
         x = x.float()  # Convert bfloat16 → float32
     return x.cpu().numpy()
@@ -692,7 +692,10 @@ class TranscoderInterventionExperiment:
             mlp_input = get_mlp_input_activation(
                 self.model, inputs, layer_idx=layer, token_pos=-1
             )
-            features = transcoder.encode(mlp_input.to(transcoder.dtype))
+            
+            # Encode features (with no_grad for safety and speed)
+            with torch.no_grad():
+                features = transcoder.encode(mlp_input.to(transcoder.dtype))
 
             # Get logit diff FIRST (may raise ValueError for multi-token)
             try:
