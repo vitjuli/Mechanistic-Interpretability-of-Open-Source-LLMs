@@ -1,20 +1,24 @@
 {
   "behaviour": "grammar_agreement",
   "experiment_type": "patching",
-  "n_experiments": 60,
-  "mean_effect_size": -0.022891108194986978,
-  "std_effect_size": 1.3349459517043019,
-  "mean_relative_effect": 0.010156250091660218,
-  "mean_baseline_logit_diff": -0.11015625,
-  "timestamp": "2026-02-05T17:06:11.428930",
+  "n_experiments": 2,
+  "mean_effect_size": 0.03125,
+  "median_effect_size": 0.03125,
+  "std_effect_size": 0.2651650429449553,
+  "mean_abs_effect_size": 0.1875,
+  "median_abs_effect_size": 0.1875,
+  "std_abs_effect_size": 0.04419417382415922,
+  "mean_relative_effect": 0.06631578923875583,
+  "mean_baseline_logit_diff": 2.8515625,
+  "median_baseline_logit_diff": 2.8515625,
+  "mean_intervened_logit_diff": 2.8828125,
+  "median_intervened_logit_diff": 2.8828125,
+  "sign_flip_rate": 0.0,
+  "n_sign_flips": 0,
+  "timestamp": "2026-02-09T21:08:52.890240",
   "model_size": "4b",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
   "layers": [
-    15,
-    16,
-    17,
-    18,
-    19,
-    20
+    15
   ]
 }
