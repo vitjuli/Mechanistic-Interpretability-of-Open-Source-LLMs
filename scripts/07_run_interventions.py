@@ -795,27 +795,27 @@ def save_results(
         "n_experiments": len(results),
         
         # Effect size metrics (SIGNED - directional bias)
-        "mean_effect_size": df["effect_size"].mean(),  # Can be ~0 if +/- cancel!
-        "median_effect_size": df["effect_size"].median(),
-        "std_effect_size": df["effect_size"].std(),
+        "mean_effect_size": float(df["effect_size"].mean()),  # Can be ~0 if +/- cancel!
+        "median_effect_size": float(df["effect_size"].median()),
+        "std_effect_size": float(df["effect_size"].std()),
         
         # Absolute effect size (MAGNITUDE - doesn't cancel out)
-        "mean_abs_effect_size": df["abs_effect_size"].mean(),
-        "median_abs_effect_size": df["abs_effect_size"].median(),
-        "std_abs_effect_size": df["abs_effect_size"].std(),
+        "mean_abs_effect_size": float(df["abs_effect_size"].mean()),
+        "median_abs_effect_size": float(df["abs_effect_size"].median()),
+        "std_abs_effect_size": float(df["abs_effect_size"].std()),
         
         # Relative effect (MAGNITUDE-ONLY: abs / baseline)
-        "mean_relative_effect": df["relative_effect"].mean(),
+        "mean_relative_effect": float(df["relative_effect"].mean()),
         
         # Margin metrics
-        "mean_baseline_logit_diff": df["baseline_logit_diff"].mean(),
-        "median_baseline_logit_diff": df["baseline_logit_diff"].median(),
-        "mean_intervened_logit_diff": df["intervened_logit_diff"].mean(),
-        "median_intervened_logit_diff": df["intervened_logit_diff"].median(),
+        "mean_baseline_logit_diff": float(df["baseline_logit_diff"].mean()),
+        "median_baseline_logit_diff": float(df["baseline_logit_diff"].median()),
+        "mean_intervened_logit_diff": float(df["intervened_logit_diff"].mean()),
+        "median_intervened_logit_diff": float(df["intervened_logit_diff"].median()),
         
         # Key presentation metric: sign flip rate
-        "sign_flip_rate": df["sign_flipped"].mean() if "sign_flipped" in df.columns else 0.0,
-        "n_sign_flips": df["sign_flipped"].sum() if "sign_flipped" in df.columns else 0,
+        "sign_flip_rate": float(df["sign_flipped"].mean()) if "sign_flipped" in df.columns else 0.0,
+        "n_sign_flips": int(df["sign_flipped"].sum()) if "sign_flipped" in df.columns else 0,
         
         "timestamp": datetime.now().isoformat(),
         **metadata,
