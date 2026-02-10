@@ -152,7 +152,12 @@ def compute_baselines(args):
     
     # Load model
     logger.info("Loading language model...")
-    model = ModelWrapper(model_name=args.model_name)
+    model = ModelWrapper(
+        model_name=args.model_name,
+        dtype=args.dtype,
+        device=args.device,
+        trust_remote_code=args.trust_remote_code
+    )
     model.model.eval()
     
     # Get device
@@ -198,6 +203,10 @@ def compute_baselines(args):
                 if key in prompt_data:
                     result[key] = prompt_data[key]
             
+            # Reproducibility metadata
+            result['baseline_seed'] = 42
+            result['baseline_n_requested'] = args.n_prompts if args.n_prompts else len(all_prompts)
+
             results.append(result)
         
         except ValueError as e:
@@ -260,6 +269,12 @@ def main():
                         help='Number of prompts to use (default: all)')
     parser.add_argument('--model_name', type=str, default='Qwen/Qwen3-4B',
                         help='Model name')
+    parser.add_argument('--dtype', type=str, default='bfloat16',
+                        help='Model dtype (default: bfloat16)')
+    parser.add_argument('--device', type=str, default='auto',
+                        help='Device (default: auto)')
+    parser.add_argument('--trust_remote_code', action='store_true',
+                        help='Trust remote code for model loading')
     parser.add_argument('--output', type=str, default='data/results/baselines/',
                         help='Output directory')
     

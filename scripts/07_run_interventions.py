@@ -24,6 +24,7 @@ from typing import Dict, List, Tuple, Optional
 import argparse
 import sys
 from tqdm import tqdm
+import dataclasses
 from dataclasses import dataclass, asdict, field
 from datetime import datetime
 import logging
@@ -791,62 +792,105 @@ class TranscoderInterventionExperiment:
 def create_prompt_pairs(
     prompts: List[Dict],
     behaviour: str,
+    source_prompts: Optional[List[Dict]] = None,
 ) -> List[Tuple[Dict, Dict]]:
     """
     Create pairs of prompts for patching experiments.
     
-    IMPROVED: Sorts by margin if available to maximize effect.
-    Target = Low margin (unconfident)
-    Source = High margin (confident donor)
-
-    For grammar: pair singular with plural
-    For sentiment: pair positive with negative
+    If source_prompts is provided (High Margin):
+      Pair Target (from prompts, Low Margin) with Source (from source_prompts, High Margin).
+      Target(Singular) <- Source(Plural)
+      Target(Plural) <- Source(Singular)
+      
+    If only prompts is provided (Single List):
+      Sort by margin and pair Low <-> High from the same list.
     """
     pairs = []
     
     # Helper to sort by margin (ascending: low to high)
     def sort_by_margin(p_list):
-        # If margin present, sort. Else shuffle (random can be better than fixed order).
         if p_list and 'margin' in p_list[0]:
             return sorted(p_list, key=lambda x: float(x.get('margin', 0.0)))
         return p_list
 
     if behaviour == "grammar_agreement":
-        singular = [p for p in prompts if p.get("number") == "singular"]
-        plural = [p for p in prompts if p.get("number") == "plural"]
+        # Split targets (prompts)
+        t_sing = [p for p in prompts if p.get("number") == "singular"]
+        t_plur = [p for p in prompts if p.get("number") == "plural"]
+        
+        # Mode 1: Separate Source/Target lists
+        if source_prompts is not None:
+            s_sing = [p for p in source_prompts if p.get("number") == "singular"]
+            s_plur = [p for p in source_prompts if p.get("number") == "plural"]
+            
+            # Check availability with strict error if classes are missing
+            if not (t_sing and t_plur and s_sing and s_plur):
+                raise ValueError(
+                    f"Cannot build grammar pairs: "
+                    f"targets(sing={len(t_sing)}, plur={len(t_plur)}), "
+                    f"sources(sing={len(s_sing)}, plur={len(s_plur)}). "
+                    f"Fix 07b stratification ranges."
+                )
+
+            # Pair Low Margin Singular Target <- High Margin Plural Source
+            # Assume sets are already filtered by margin in 07b, but sorting helps determinism
+            t_sing = sort_by_margin(t_sing) # Low -> High
+            s_plur = sort_by_margin(s_plur) # Low
+            # We want BEST sources (Highest margin) for BEST targets (Lowest margin)
+            # t_sing: [0.1, 0.2 ... 0.5]
+            # s_plur: [2.5, 2.6 ... 3.0]
+            # zip(t_sing, reversed(s_plur)) -> (0.1, 3.0), (0.2, 2.9)...
+            for t, s in zip(t_sing, reversed(s_plur)):
+                pairs.append((s, t)) # (Source, Target)
+            
+            if not t_plur or not s_sing:
+                logger.warning(f"Missing Plural Targets ({len(t_plur)}) or Singular Sources ({len(s_sing)})")
+            else:
+                # Pair Low Margin Plural Target <- High Margin Singular Source
+                t_plur = sort_by_margin(t_plur)
+                s_sing = sort_by_margin(s_sing)
+                
+                for t, s in zip(t_plur, reversed(s_sing)):
+                    pairs.append((s, t))
+
+            # Validate pair counts
+            if source_prompts:
+                n1 = min(len(t_sing), len(s_plur))
+                n2 = min(len(t_plur), len(s_sing))
+                logger.info(f"Pairing plan: Sing_Target<-Plur_Source: {n1}, Plur_Target<-Sing_Source: {n2}")
+                
+                if n1 + n2 < 2:
+                     raise ValueError("No pairs could be formed (after strict class check). Check your quotas.")
+            
+            return pairs
+
+        # Mode 2: Single List (Fallback)
+        if len(t_sing) == 0 or len(t_plur) == 0:
+            logger.warning(
+                f"Not enough classes for grammar pairing: "
+                f"singular={len(t_sing)}, plural={len(t_plur)}. "
+                f"Falling back to generic consecutive pairing."
+            )
+            pairs = []
+            for i in range(0, len(prompts) - 1, 2):
+                pairs.append((prompts[i], prompts[i+1]))
+            return pairs
         
         # Sort both lists by margin
-        singular = sort_by_margin(singular)
-        plural = sort_by_margin(plural)
+        t_sing = sort_by_margin(t_sing)
+        t_plur = sort_by_margin(t_plur)
         
-        # Pair low-margin singular with high-margin plural (and vice versa)
-        # Strategy: zip(low_singular, high_plural) + zip(low_plural, high_singular)
+        # Pair Low Singular <- High Plural
+        # t_sing is [Low...High], t_plur is [Low...High]
+        # reversed(t_plur) is [High...Low]
+        # zip(t_sing, reversed(t_plur)) -> (Low Sing, High Plur)
+        pairs.extend(zip(reversed(t_plur), t_sing)) # (Source=HighPlur, Target=LowSing)
         
-        # 1. Singular Target (Low Margin) <- Plural Source (High Margin)
-        n_pairs = min(len(singular), len(plural))
-        
-        # If margins are available, use extreme pairing. Else just zip.
-        has_margin = singular and 'margin' in singular[0]
-        
-        if has_margin and n_pairs > 4:
-            # Take top 50% high margin sources, bottom 50% low margin targets
-            # Actually, simpler: reverse the source list to pair Low with High
-            plural_reversed = list(reversed(plural))
-            singular_reversed = list(reversed(singular))
-            
-            # Pair: Sing (Low) <- Plural (High)
-            for s, p in zip(singular, plural_reversed):
-                pairs.append((p, s)) # Source=Plural, Target=Singular
-                
-            # Pair: Plural (Low) <- Sing (High)
-            for p, s in zip(plural, singular_reversed):
-                pairs.append((s, p)) # Source=Singular, Target=Plural
-        else:
-            # Fallback: simple pairing
-            for s, p in zip(singular, plural):
-                pairs.append((s, p)) # Source=Singular, Target=Plural
-                pairs.append((p, s)) # Source=Plural, Target=Singular
+        # Pair Low Plural <- High Singular
+        pairs.extend(zip(reversed(t_sing), t_plur)) # (Source=HighSing, Target=LowPlur)
 
+        return pairs
+        
     elif behaviour == "sentiment_continuation":
         positive = [p for p in prompts if p.get("sentiment") == "positive"]
         negative = [p for p in prompts if p.get("sentiment") == "negative"]
@@ -872,8 +916,25 @@ def save_results(
     """Save intervention results."""
     output_path.mkdir(parents=True, exist_ok=True)
 
+    if len(results) == 0:
+        logger.warning(f"No results to save for {experiment_type} / {behaviour}. Writing empty files.")
+        # save empty CSV with correct columns
+        empty_df = pd.DataFrame(columns=[f.name for f in dataclasses.fields(InterventionResult)])
+        empty_df.to_csv(output_path / f"intervention_{experiment_type}_{behaviour}.csv", index=False)
+
+        summary = {
+            "behaviour": behaviour,
+            "experiment_type": experiment_type,
+            "n_experiments": 0,
+            "timestamp": datetime.now().isoformat(),
+            **metadata,
+        }
+        with open(output_path / f"intervention_{experiment_type}_{behaviour}_summary.json", "w") as f:
+            json.dump(summary, f, indent=2)
+        return
+
     # Convert to DataFrame
-    df = pd.DataFrame([asdict(r) for r in results])
+    df = pd.DataFrame([dataclasses.asdict(r) for r in results])
     df.to_csv(
         output_path / f"intervention_{experiment_type}_{behaviour}.csv",
         index=False,
@@ -976,7 +1037,13 @@ def main():
         "--prompts_file",
         type=str,
         default=None,
-        help="Path to custom prompts JSONL file (overrides default loading)",
+        help="Path to specific JSONL file with prompts (Targets for patching)",
+    )
+    parser.add_argument(
+        "--source_prompts_file",
+        type=str,
+        default=None,
+        help="Path to specific JSONL file with Source prompts (for patching)",
     )
     parser.add_argument(
         "--top_k",
@@ -1086,13 +1153,40 @@ def main():
             print(f"Prompt file not found. Skipping {behaviour}.")
             continue
 
-        print(f"Loaded {len(prompts)} prompts")
+        if args.source_prompts_file:
+            # Custom loader for specific file
+            source_prompts_path = Path(args.source_prompts_file)
+            print(f"Loading SOURCE prompts from {source_prompts_path}")
+            # We can reuse load_prompts with prompts_file arg, ignoring behaviour path logic
+            try:
+                source_prompts = load_prompts(prompt_path, behaviour, args.split, prompts_file=args.source_prompts_file)
+            except FileNotFoundError:
+                logger.error(f"Source prompts file not found: {args.source_prompts_file}")
+                raise
+        else:
+            source_prompts = None
 
+        print(f"Loaded {len(prompts)} target prompts")
+        
+        def _count_numbers(ps):
+            return {
+                "singular": sum(1 for p in ps if p.get("number") == "singular"),
+                "plural": sum(1 for p in ps if p.get("number") == "plural"),
+                "unknown": sum(1 for p in ps if p.get("number") not in ("singular","plural")),
+            }
+            
+        logger.info(f"Targets counts: {_count_numbers(prompts)}")
+
+        if source_prompts:
+            print(f"Loaded {len(source_prompts)} source prompts")
+            logger.info(f"Sources counts: {_count_numbers(source_prompts)}")
+            
         # Load attribution graph for top features
         # FIX: Use existing results_path from config, don't overwrite!
         # load_attribution_graph expects results root, not behaviour subpath
+        graph_n = None if (args.prompts_file or args.source_prompts_file) else args.n_prompts
         graph_data = load_attribution_graph(
-            results_path, behaviour, args.split, n_prompts=args.n_prompts
+            results_path, behaviour, args.split, n_prompts=graph_n
         )
         
         # Build per-layer feature index lists
@@ -1114,9 +1208,10 @@ def main():
         metadata = {
             "model_size": model_size,
             "transcoder_repo": tc_config["transcoders"][model_size]["repo_id"],
-            "layers": layers,
-            "top_k": args.top_k,
             "n_prompts": args.n_prompts,
+            "top_k": args.top_k,
+            "prompts_file": args.prompts_file,
+            "source_prompts_file": args.source_prompts_file,
         }
 
         # Run experiments
@@ -1214,16 +1309,32 @@ def main():
                 results: List[InterventionResult] = []
 
                 # n_prompts = number of PAIRS
-                pairs = create_prompt_pairs(prompts, behaviour)
+                # Use source_prompts if loaded
+                pairs = create_prompt_pairs(prompts, behaviour, source_prompts=source_prompts)
                 pairs = pairs[:args.n_prompts] if args.n_prompts else pairs
                 print(f"  Created {len(pairs)} pairs for patching")
+                
+                # Check for 0 pairs
+                if not pairs:
+                    logger.warning("No pairs created! Check your prompts/margins.")
+                    save_results(results, output_path / behaviour, behaviour, "patching", metadata)
+                    continue
 
                 for idx, (source, target) in enumerate(tqdm(pairs, desc="Patching")):
                     try:
-                        source_correct, _ = get_answer_tokens(source)
+                        source_correct, source_incorrect = get_answer_tokens(source)
                         target_correct, target_incorrect = get_answer_tokens(target)
                     except KeyError as e:
                         logger.warning(f"Skipping pair {idx} due to missing fields: {e}")
+                        continue
+
+                    # Compute source margin ONCE per pair (not per-layer)
+                    try:
+                        source_margin = experiment.compute_logit_diff(
+                            source["prompt"], source_correct, source_incorrect
+                        )
+                    except ValueError as e:
+                        logger.warning(f"Skipping pair {idx} due to source margin error: {e}")
                         continue
 
                     for layer in layers:
@@ -1241,7 +1352,7 @@ def main():
                             layer_features = list(range(min(args.top_k, d)))
 
                         try:
-                            res = experiment.run_patching_experiment(
+                            result = experiment.run_patching_experiment(
                                 source_prompt=source["prompt"],
                                 target_prompt=target["prompt"],
                                 prompt_idx=idx,
@@ -1251,8 +1362,20 @@ def main():
                                 layer=layer,
                                 feature_indices=layer_features,
                             )
-                            results.append(res)
-                        except ValueError as e:
+
+                            # Enrich metadata
+                            result.metadata.update({
+                                "source_margin": float(source_margin),
+                                "target_margin": float(result.baseline_logit_diff),
+                                "source_number": source.get("number", "unknown"),
+                                "target_number": target.get("number", "unknown"),
+                                "source_orig_idx": source.get("orig_idx", -1),
+                                "target_orig_idx": target.get("orig_idx", -1),
+                            })
+
+                            results.append(result)
+
+                        except (ValueError, KeyError) as e:
                             logger.warning(f"Skipping pair {idx} layer {layer}: {e}")
                             continue
 
