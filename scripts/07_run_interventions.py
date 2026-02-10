@@ -680,7 +680,8 @@ class TranscoderInterventionExperiment:
         prompts: List[Dict],
         layer: int,
         n_prompts: int = 20,
-        top_k_features: int = 50,
+        candidate_feature_indices: Optional[List[int]] = None,  # FIX: Accept candidates
+        top_k_features: int = 50,  # Fallback if candidates not provided
     ) -> pd.DataFrame:
         """
         Sweep through top features and measure importance via ablation.
@@ -691,7 +692,8 @@ class TranscoderInterventionExperiment:
         Returns:
             DataFrame with feature importance scores
         """
-        sample_prompts = prompts[:n_prompts]
+        # If prompts are fewer than requested, use all (don't crash if subset < n_prompts)
+        sample_prompts = prompts[:n_prompts] if len(prompts) > n_prompts else prompts
         transcoder = self.transcoder_set[layer]
 
         # Collect feature activations across prompts
@@ -733,13 +735,35 @@ class TranscoderInterventionExperiment:
             feature_activations.append(to_numpy(features))
             logit_diffs.append(logit_diff)
 
+        # SAFETY: Check if we have enough data
+        if len(feature_activations) < 3:
+            msg = f"Too few valid prompts for importance sweep (got {len(feature_activations)}, need >=3)."
+            logger.error(msg)
+            # Return empty DataFrame with correct columns to avoid downstream crashes
+            return pd.DataFrame(columns=[
+                "layer", "feature_idx", "mean_activation", 
+                "std_activation", "activation_frequency", 
+                "correlation_with_logit_diff", "abs_correlation"
+            ])
+
         # Stack features
         feature_matrix = np.vstack(feature_activations)  # (n_prompts, d_transcoder)
         logit_diffs = np.array(logit_diffs)
 
+        # Determine features to analyze
+        if candidate_feature_indices is not None:
+            features_to_analyze = candidate_feature_indices
+        else:
+            # Fallback: analyze top_k features (0..k)
+            features_to_analyze = list(range(min(top_k_features, feature_matrix.shape[1])))
+
         # Compute correlation between each feature and logit diff
         results = []
-        for feat_idx in range(min(top_k_features, feature_matrix.shape[1])):
+        for feat_idx in features_to_analyze:
+            # Bounds check
+            if feat_idx >= feature_matrix.shape[1]:
+                continue
+                
             feat_acts = feature_matrix[:, feat_idx]
 
             # Only compute for features that have variance
@@ -770,23 +794,65 @@ def create_prompt_pairs(
 ) -> List[Tuple[Dict, Dict]]:
     """
     Create pairs of prompts for patching experiments.
+    
+    IMPROVED: Sorts by margin if available to maximize effect.
+    Target = Low margin (unconfident)
+    Source = High margin (confident donor)
 
     For grammar: pair singular with plural
     For sentiment: pair positive with negative
     """
     pairs = []
+    
+    # Helper to sort by margin (ascending: low to high)
+    def sort_by_margin(p_list):
+        # If margin present, sort. Else shuffle (random can be better than fixed order).
+        if p_list and 'margin' in p_list[0]:
+            return sorted(p_list, key=lambda x: float(x.get('margin', 0.0)))
+        return p_list
 
     if behaviour == "grammar_agreement":
         singular = [p for p in prompts if p.get("number") == "singular"]
         plural = [p for p in prompts if p.get("number") == "plural"]
-        for s, p in zip(singular[:len(plural)], plural):
-            pairs.append((s, p))
+        
+        # Sort both lists by margin
+        singular = sort_by_margin(singular)
+        plural = sort_by_margin(plural)
+        
+        # Pair low-margin singular with high-margin plural (and vice versa)
+        # Strategy: zip(low_singular, high_plural) + zip(low_plural, high_singular)
+        
+        # 1. Singular Target (Low Margin) <- Plural Source (High Margin)
+        n_pairs = min(len(singular), len(plural))
+        
+        # If margins are available, use extreme pairing. Else just zip.
+        has_margin = singular and 'margin' in singular[0]
+        
+        if has_margin and n_pairs > 4:
+            # Take top 50% high margin sources, bottom 50% low margin targets
+            # Actually, simpler: reverse the source list to pair Low with High
+            plural_reversed = list(reversed(plural))
+            singular_reversed = list(reversed(singular))
+            
+            # Pair: Sing (Low) <- Plural (High)
+            for s, p in zip(singular, plural_reversed):
+                pairs.append((p, s)) # Source=Plural, Target=Singular
+                
+            # Pair: Plural (Low) <- Sing (High)
+            for p, s in zip(plural, singular_reversed):
+                pairs.append((s, p)) # Source=Singular, Target=Plural
+        else:
+            # Fallback: simple pairing
+            for s, p in zip(singular, plural):
+                pairs.append((s, p)) # Source=Singular, Target=Plural
+                pairs.append((p, s)) # Source=Plural, Target=Singular
 
     elif behaviour == "sentiment_continuation":
         positive = [p for p in prompts if p.get("sentiment") == "positive"]
         negative = [p for p in prompts if p.get("sentiment") == "negative"]
         for pos, neg in zip(positive[:len(negative)], negative):
             pairs.append((pos, neg))
+            pairs.append((neg, pos))
 
     else:
         # Generic pairing: consecutive prompts
@@ -906,6 +972,18 @@ def main():
         default=20,
         help="Number of prompts to use",
     )
+    parser.add_argument(
+        "--prompts_file",
+        type=str,
+        default=None,
+        help="Path to custom prompts JSONL file (overrides default loading)",
+    )
+    parser.add_argument(
+        "--top_k",
+        type=int,
+        default=5,
+        help="Number of top features to ablate (default: 5). Increase for ensemble ablation.",
+    )
     args = parser.parse_args()
 
     # Load configs
@@ -1016,17 +1094,29 @@ def main():
         graph_data = load_attribution_graph(
             results_path, behaviour, args.split, n_prompts=args.n_prompts
         )
+        
+        # Build per-layer feature index lists
+        top_features_by_layer: Dict[int, List[int]] = {}
+        top_features = []
+        
         if graph_data:
-            top_features = get_top_attributed_features(graph_data, n_features=20)
-            print(f"Loaded {len(top_features)} top attributed features from graph")
+            # FIX: Load enough features for ensemble ablation (at least 200 or requested k)
+            n_load = max(200, args.top_k)
+            top_features = get_top_attributed_features(graph_data, n_features=n_load)
+            print(f"Loaded {len(top_features)} top attributed features from graph (requested top {n_load})")
+            
+            # Populate dictionary
+            for L, fidx, score in top_features:
+                top_features_by_layer.setdefault(L, []).append(fidx)
         else:
-            top_features = []
-            print("No attribution graph found, will use random features")
+            print("No attribution graph found, will use random/first features")
 
         metadata = {
             "model_size": model_size,
             "transcoder_repo": tc_config["transcoders"][model_size]["repo_id"],
             "layers": layers,
+            "top_k": args.top_k,
+            "n_prompts": args.n_prompts,
         }
 
         # Run experiments
@@ -1043,32 +1133,45 @@ def main():
                 # Feature importance sweep
                 for layer in layers:
                     print(f"\nLayer {layer} feature importance...")
+                    
+                    # FIX: Use graph candidates if available
+                    layer_candidates = top_features_by_layer.get(layer, None)
+                    
+                    if layer_candidates:
+                        print(f"  Using {len(layer_candidates)} candidate features from attribution graph")
+                    else:
+                        print("  No attribution graph; using first 50 features (baseline/control)")
+
                     importance_df = experiment.run_feature_importance_sweep(
-                        prompts,
-                        layer=layer,
+                        prompts, 
+                        layer=layer, 
                         n_prompts=args.n_prompts,
+                        candidate_feature_indices=layer_candidates,
+                        top_k_features=50 # Fallback if candidates is None
                     )
 
                     # Save importance results (create directory first!)
-                    out_dir = output_path / behaviour
-                    out_dir.mkdir(parents=True, exist_ok=True)
+                    imp_out_path = output_path / behaviour / "importance"
+                    imp_out_path.mkdir(parents=True, exist_ok=True)
                     importance_df.to_csv(
-                        out_dir / f"feature_importance_layer_{layer}.csv",
-                        index=False,
+                        imp_out_path / f"feature_importance_layer_{layer}.csv", 
+                        index=False
                     )
-                    print(f"  Top 5 features by correlation:")
+                    print(f"  Saved importance results to {imp_out_path}")
+                    
+                    # Print top 5 features for quick verification
+                    print("  Top 5 features by abs_correlation:")
                     for _, row in importance_df.head(5).iterrows():
-                        print(f"    F{int(row['feature_idx'])}: corr={row['correlation_with_logit_diff']:.3f}")
+                        print(f"    F{int(row['feature_idx'])}: abs_corr={row['abs_correlation']:.3f} corr={row['correlation_with_logit_diff']:.3f}")
 
             elif exp_type == "ablation":
-                # Ablation experiments on top features
-                results = []
+                # Feature ablation
+                all_results: List[InterventionResult] = []
                 sample_prompts = prompts[:args.n_prompts]
 
                 for i, prompt_data in enumerate(tqdm(sample_prompts, desc="Ablation")):
                     prompt = prompt_data["prompt"]
                     
-                    # FIX: Use helper for answer tokens
                     try:
                         correct, incorrect = get_answer_tokens(prompt_data)
                     except KeyError as e:
@@ -1076,78 +1179,85 @@ def main():
                         continue
 
                     for layer in layers:
-                        # Get feature indices from top attributed or use top-k by activation
-                        layer_features = [f[1] for f in top_features if f[0] == layer][:5]
-                        
-                        # SAFETY: Filter out indices >= d_transcoder (graph may be outdated)
+                        # Use graph-derived features if available, else fallback
+                        if top_features_by_layer and layer in top_features_by_layer:
+                            layer_features = top_features_by_layer[layer][:args.top_k]
+                        else:
+                            layer_features = []
+
                         d = experiment.transcoder_set[layer].d_transcoder
-                        layer_features = [i for i in layer_features if 0 <= i < d]
-                        
+                        layer_features = [fi for fi in layer_features if 0 <= fi < d]
+
                         if not layer_features:
-                            logger.warning(f"No valid features for layer {layer}, using first 5")
-                            layer_features = list(range(min(5, d)))  # Default to first 5
+                            logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
+                            layer_features = list(range(min(args.top_k, d)))
 
                         try:
                             result = experiment.run_ablation_experiment(
                                 prompt=prompt,
-                                prompt_idx=i,  # FIX: Pass prompt_idx!
+                                prompt_idx=i,
                                 correct_token=correct,
                                 incorrect_token=incorrect,
                                 layer=layer,
                                 feature_indices=layer_features,
                                 mode="zero",
                             )
-                            results.append(result)
+                            all_results.append(result)
                         except ValueError as e:
                             logger.warning(f"Skipping prompt {i} layer {layer}: {e}")
                             continue
 
-                save_results(results, output_path / behaviour, behaviour, "ablation", metadata)
+                save_results(all_results, output_path / behaviour, behaviour, "ablation", metadata)
 
             elif exp_type == "patching":
-                # Patching experiments
-                pairs = create_prompt_pairs(prompts, behaviour)[:args.n_prompts // 2]
-                results = []
+                # Activation patching
+                results: List[InterventionResult] = []
+
+                # n_prompts = number of PAIRS
+                pairs = create_prompt_pairs(prompts, behaviour)
+                pairs = pairs[:args.n_prompts] if args.n_prompts else pairs
+                print(f"  Created {len(pairs)} pairs for patching")
 
                 for idx, (source, target) in enumerate(tqdm(pairs, desc="Patching")):
-                    # FIX: Use helper for answer tokens
                     try:
                         source_correct, _ = get_answer_tokens(source)
                         target_correct, target_incorrect = get_answer_tokens(target)
                     except KeyError as e:
                         logger.warning(f"Skipping pair {idx} due to missing fields: {e}")
                         continue
-                    
+
                     for layer in layers:
-                        # Get top features for this layer
-                        layer_features = [f[1] for f in top_features if f[0] == layer][:5]
-                        
-                        # SAFETY: Filter out indices >= d_transcoder (graph may be outdated)
+                        # Use graph-derived features if available, else fallback
+                        if top_features_by_layer and layer in top_features_by_layer:
+                            layer_features = top_features_by_layer[layer][:args.top_k]
+                        else:
+                            layer_features = []
+
                         d = experiment.transcoder_set[layer].d_transcoder
-                        layer_features = [i for i in layer_features if 0 <= i < d]
-                        
+                        layer_features = [fi for fi in layer_features if 0 <= fi < d]
+
                         if not layer_features:
-                            logger.warning(f"No valid features for layer {layer}, using first 5")
-                            layer_features = list(range(min(5, d)))  # Fallback
-                        
+                            logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
+                            layer_features = list(range(min(args.top_k, d)))
+
                         try:
-                            result = experiment.run_patching_experiment(
+                            res = experiment.run_patching_experiment(
                                 source_prompt=source["prompt"],
                                 target_prompt=target["prompt"],
-                                prompt_idx=idx,  # FIX: Pass prompt_idx!
+                                prompt_idx=idx,
                                 source_correct=source_correct,
                                 target_correct=target_correct,
                                 target_incorrect=target_incorrect,
                                 layer=layer,
-                                feature_indices=layer_features,  # FIX: Patch only top features!
+                                feature_indices=layer_features,
                             )
-                            results.append(result)
+                            results.append(res)
                         except ValueError as e:
                             logger.warning(f"Skipping pair {idx} layer {layer}: {e}")
                             continue
 
                 save_results(results, output_path / behaviour, behaviour, "patching", metadata)
-
+                
     print("\n" + "=" * 70)
     print("INTERVENTION EXPERIMENTS COMPLETE")
     print("=" * 70)
