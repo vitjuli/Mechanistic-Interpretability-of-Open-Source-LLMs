@@ -1,6 +1,0 @@
-experiment_type,prompt_idx,layer,feature_indices,baseline_logit_diff,intervened_logit_diff,effect_size,abs_effect_size,relative_effect,sign_flipped,metadata
-ablation_zero,0,15,"[63206, 148735, 8150, 75187, 3079]",1.4375,1.28125,-0.15625,0.15625,0.10869565141776939,False,"{'prompt': 'The chair', 'correct_token': ' writes', 'incorrect_token': ' write', 'mode': 'zero'}"
-ablation_zero,1,15,"[63206, 148735, 8150, 75187, 3079]",0.625,0.5625,-0.0625,0.0625,0.09999999840000001,False,"{'prompt': 'The flower', 'correct_token': ' sleeps', 'incorrect_token': ' sleep', 'mode': 'zero'}"
-ablation_zero,2,15,"[63206, 148735, 8150, 75187, 3079]",1.375,1.34375,-0.03125,0.03125,0.022727272561983473,False,"{'prompt': 'The chair', 'correct_token': ' walks', 'incorrect_token': ' walk', 'mode': 'zero'}"
-ablation_zero,3,15,"[63206, 148735, 8150, 75187, 3079]",0.25,-1.125,-1.375,1.375,5.499999780000009,True,"{'prompt': 'The scientist', 'correct_token': ' sleeps', 'incorrect_token': ' sleep', 'mode': 'zero'}"
-ablation_zero,4,15,"[63206, 148735, 8150, 75187, 3079]",0.5,0.25,-0.25,0.25,0.49999999000000017,False,"{'prompt': 'The dog', 'correct_token': ' sits', 'incorrect_token': ' sit', 'mode': 'zero'}"
