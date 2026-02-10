@@ -1,0 +1,6 @@
+orig_idx,prompt,margin,correct_token,incorrect_token,number,subject
+25,The chair,1.4375, writes, write,singular,chair
+77,The flower,0.625, sleeps, sleep,singular,flower
+66,The chair,1.375, walks, walk,singular,chair
+6,The scientist,0.25, sleeps, sleep,singular,scientist
+69,The dog,0.5, sits, sit,singular,dog

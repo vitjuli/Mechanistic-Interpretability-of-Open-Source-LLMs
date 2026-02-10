@@ -1,3 +1,1 @@
-experiment_type,prompt_idx,layer,feature_indices,baseline_logit_diff,intervened_logit_diff,effect_size,abs_effect_size,relative_effect,sign_flipped,metadata
-patching,0,15,"[63206, 148735]",2.96875,2.8125,-0.15625,0.15625,0.05263157877008311,False,"{'source_prompt': 'The flower', 'target_prompt': 'The dogs', 'source_correct': ' is', 'target_correct': ' sleep', 'target_incorrect': ' sleeps'}"
-patching,1,15,"[63206, 148735]",2.734375,2.953125,0.21875,0.21875,0.07999999970742858,False,"{'source_prompt': 'The scientist', 'target_prompt': 'The flowers', 'source_correct': ' sleeps', 'target_correct': ' think', 'target_incorrect': ' thinks'}"
+

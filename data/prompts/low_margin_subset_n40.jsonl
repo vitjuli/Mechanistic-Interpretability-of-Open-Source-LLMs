@@ -1,0 +1,5 @@
+{"prompt": "The chair", "correct_answer": " writes", "incorrect_answer": " write", "number": "singular", "orig_idx": 25, "margin": 1.4375, "subject": "chair"}
+{"prompt": "The flower", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 77, "margin": 0.625, "subject": "flower"}
+{"prompt": "The chair", "correct_answer": " walks", "incorrect_answer": " walk", "number": "singular", "orig_idx": 66, "margin": 1.375, "subject": "chair"}
+{"prompt": "The scientist", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 6, "margin": 0.25, "subject": "scientist"}
+{"prompt": "The dog", "correct_answer": " sits", "incorrect_answer": " sit", "number": "singular", "orig_idx": 69, "margin": 0.5, "subject": "dog"}

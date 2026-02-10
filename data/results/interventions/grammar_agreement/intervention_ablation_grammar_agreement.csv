@@ -1,6 +1,6 @@
 experiment_type,prompt_idx,layer,feature_indices,baseline_logit_diff,intervened_logit_diff,effect_size,abs_effect_size,relative_effect,sign_flipped,metadata
-ablation_zero,0,15,"[63206, 148735]",2.96875,2.8125,-0.15625,0.15625,0.05263157877008311,False,"{'prompt': 'The dogs', 'correct_token': ' sleep', 'incorrect_token': ' sleeps', 'mode': 'zero'}"
-ablation_zero,1,15,"[63206, 148735]",2.734375,2.921875,0.1875,0.1875,0.06857142832065306,False,"{'prompt': 'The flowers', 'correct_token': ' think', 'incorrect_token': ' thinks', 'mode': 'zero'}"
-ablation_zero,2,15,"[63206, 148735]",4.96875,4.03125,-0.9375,0.9375,0.18867924490328705,False,"{'prompt': 'The flowers', 'correct_token': ' stand', 'incorrect_token': ' stands', 'mode': 'zero'}"
-ablation_zero,3,15,"[63206, 148735]",3.15625,3.296875,0.140625,0.140625,0.04455445530438192,False,"{'prompt': 'The engineers', 'correct_token': ' sleep', 'incorrect_token': ' sleeps', 'mode': 'zero'}"
-ablation_zero,4,15,"[63206, 148735]",3.9375,4.6875,0.75,0.75,0.19047618999244142,False,"{'prompt': 'The tables', 'correct_token': ' think', 'incorrect_token': ' thinks', 'mode': 'zero'}"
+ablation_zero,0,15,"[63206, 148735, 8150, 75187, 3079]",1.4375,1.28125,-0.15625,0.15625,0.10869565141776939,False,"{'prompt': 'The chair', 'correct_token': ' writes', 'incorrect_token': ' write', 'mode': 'zero'}"
+ablation_zero,1,15,"[63206, 148735, 8150, 75187, 3079]",0.625,0.5625,-0.0625,0.0625,0.09999999840000001,False,"{'prompt': 'The flower', 'correct_token': ' sleeps', 'incorrect_token': ' sleep', 'mode': 'zero'}"
+ablation_zero,2,15,"[63206, 148735, 8150, 75187, 3079]",1.375,1.34375,-0.03125,0.03125,0.022727272561983473,False,"{'prompt': 'The chair', 'correct_token': ' walks', 'incorrect_token': ' walk', 'mode': 'zero'}"
+ablation_zero,3,15,"[63206, 148735, 8150, 75187, 3079]",0.25,-1.125,-1.375,1.375,5.499999780000009,True,"{'prompt': 'The scientist', 'correct_token': ' sleeps', 'incorrect_token': ' sleep', 'mode': 'zero'}"
+ablation_zero,4,15,"[63206, 148735, 8150, 75187, 3079]",0.5,0.25,-0.25,0.25,0.49999999000000017,False,"{'prompt': 'The dog', 'correct_token': ' sits', 'incorrect_token': ' sit', 'mode': 'zero'}"
