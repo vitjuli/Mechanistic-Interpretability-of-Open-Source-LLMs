@@ -2762,8 +2762,8 @@
     163791,
     163826
   ],
-  "token_positions": "last_2",
-  "context_tokens": 2,
+  "token_positions": "last_5",
+  "context_tokens": 5,
   "activation_threshold": 0.0,
   "saved_full_activations": false
 }
