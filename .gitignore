@@ -1,47 +1,110 @@
-# macOS
+############################
+# OS
+############################
 .DS_Store
 **/.DS_Store
 
+############################
 # Python
+############################
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
 venv/
 env/
 ENV/
-.venv
+.venv/
 
+############################
 # Jupyter
-.ipynb_checkpoints
+############################
+.ipynb_checkpoints/
 *.ipynb
 
+############################
 # IDE
+############################
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+############################
 # Testing
+############################
 .pytest_cache/
 .coverage
 htmlcov/
 test_output/
 tests_local/
 
-# Project specific
-archive/
-notebooks/
-jobs/
-slurm_scripts/
-
+############################
 # Build artifacts
+############################
 *.egg-info/
 dist/
 build/
 
-# Temporary files
+############################
+# Logs (SLURM + runtime)
+############################
+logs/
+*.out
+*.err
 *.log
+
+############################
+# ML / HF cache
+############################
+.cache/
+.huggingface/
+transcoders/
+hf_cache/
+
+############################
+# Experiment outputs
+############################
+data/results/
+figures/
+
+############################
+# Large data files
+############################
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.npy
+*.npz
+*.h5
+*.pickle
+*.pkl
+
+############################
+# Temporary files
+############################
 *.tmp
+*.bak
+*.orig
+
+############################
+# Archives
+############################
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.7z
+
+############################
+# OPTIONAL: keep sbatch jobs tracked
+############################
+# If you DO want to version-control sbatch scripts,
+# REMOVE jobs/ from ignore below.
+# If not — keep it.
+# jobs/
