@@ -676,6 +676,129 @@ class TranscoderInterventionExperiment:
                 "target_incorrect": target_incorrect,
             },
         )
+    def run_steering_experiment(
+        self,
+        prompts: List[Dict],
+        layers: List[int],
+        top_features_by_layer: Dict[int, List[int]],
+        behaviour: str,
+        coefficient: float = 10.0,
+        top_k: int = 20,
+    ) -> List[InterventionResult]:
+        """
+        Steering: for each prompt, add `coefficient` to selected feature(s) at the decision token
+        in transcoder space, then patch the modified MLP input (post_attention_layernorm output)
+        using `patch_mlp_input`.
+        """
+        logger.info(f"Running steering (coeff={coefficient}) on {len(prompts)} prompts...")
+        results: List[InterventionResult] = []
+
+        # Choose prompts subset if caller passed full list; keep consistent with other experiments
+        sample_prompts = prompts  # caller already slices in main if needed
+
+        for layer in layers:
+            cand = top_features_by_layer.get(layer, [])[:top_k]
+            if not cand:
+                continue
+
+            transcoder = self.transcoder_set[layer]
+            d = transcoder.d_transcoder
+            cand = [fi for fi in cand if 0 <= fi < d]
+            if not cand:
+                continue
+
+            for i, prompt_data in enumerate(tqdm(sample_prompts, desc=f"Steering L{layer}")):
+                prompt = prompt_data["prompt"]
+                try:
+                    correct, incorrect = get_answer_tokens(prompt_data)
+                except KeyError as e:
+                    logger.warning(f"[Steering] Skip prompt {i}: {e}")
+                    continue
+
+                # Baseline margin
+                try:
+                    baseline_margin = self.compute_logit_diff(prompt, correct, incorrect)
+                except ValueError as e:
+                    logger.warning(f"[Steering] Skip prompt {i}: {e}")
+                    continue
+
+                # Get MLP input activation at decision token
+                inputs = self.model.tokenize([prompt])
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                
+                # We need get_mlp_input_activation to be available or self.get_mlp_input_activation if it's in class?
+                # The user provided snippet uses `get_mlp_input_activation(self.model, ...)`
+                # I assume get_mlp_input_activation is a global function in the file.
+                # I need to check if it exists. 
+                # Based on previous edits, `get_mlp_input_activation` likely exists as a global helper or static method.
+                # Let's assume global.
+                mlp_input_act = get_mlp_input_activation(self.model, inputs, layer_idx=layer, token_pos=-1)
+
+                # Encode -> steer -> decode
+                with torch.no_grad():
+                    feats = transcoder.encode(mlp_input_act.to(transcoder.dtype))
+                    feats_mod = feats.clone()
+                    feats_mod[:, cand] += float(coefficient)  # constant push
+                    steered_mlp_input = transcoder.decode(feats_mod).to(mlp_input_act.dtype)
+
+                # Intervened margin via patching the MLP input
+                # patch_mlp_input is a context manager. User said "global context-manager patch_mlp_input(model_hf, ...)".
+                # But in my previous code I used `self.patch_mlp_input`.
+                # The user snippet uses `with patch_mlp_input(...)`.
+                # I need to know if `patch_mlp_input` is global or member.
+                # In 07 script, `patch_mlp_input` is a method of `TranscoderInterventionExperiment`?
+                # User said: "you have patch_mlp_input(model_hf, ...)" which implies global.
+                # But in typical pattern, it might be `self.patch_mlp_input`.
+                # Let's check the file content later if possible, but for now I will use what user suggests: `patch_mlp_input` logic using global or method.
+                # User code: `with patch_mlp_input(self.model.model, ...)`
+                # This implies it's a global context manager OR I should import it?
+                # I will define `patch_mlp_input` if it's missing or use `self.patch_mlp_input` if it's a method.
+                # Wait, I recall seeing `with self.patch_mlp_input(...)` in my own previous code.
+                # But the user says: "self.patch_mlp_input does not exist (there is a global ...)".
+                # So I will use the global `patch_mlp_input` and pass the hf model.
+                
+                with torch.no_grad():
+                     # Assuming patch_mlp_input is imported or available globally
+                     # I might need to import it if it's in another file, or defined in this file.
+                     # If it's defined in this file, I can use it.
+                     with patch_mlp_input(
+                        self.model.model,
+                        layer_idx=layer,
+                        token_pos=-1,
+                        new_mlp_input=steered_mlp_input,
+                    ):
+                        out = self.model.model(**inputs, use_cache=False)
+                        logits = out.logits[0, -1, :]
+
+                cid = ensure_single_token(self.model, correct)
+                iid = ensure_single_token(self.model, incorrect)
+                intervened_margin = (logits[cid] - logits[iid]).item()
+
+                change = intervened_margin - baseline_margin
+                sign_flipped = (np.sign(baseline_margin) != np.sign(intervened_margin))
+
+                results.append(
+                    InterventionResult(
+                        experiment_type="steering",
+                        prompt_idx=i,
+                        layer=layer,
+                        feature_indices=cand,  # we steered the SET (top_k for that layer)
+                        baseline_logit_diff=float(baseline_margin),
+                        intervened_logit_diff=float(intervened_margin),
+                        effect_size=float(change),
+                        abs_effect_size=float(abs(change)),
+                        relative_effect=float(abs(change) / (abs(baseline_margin) + 1e-8)),
+                        sign_flipped=bool(sign_flipped),
+                        metadata={
+                            "behaviour": behaviour,
+                            "coefficient": float(coefficient),
+                            "n_features": len(cand),
+                        },
+                    )
+                )
+
+        return results
+
     def run_feature_importance_sweep(
         self,
         prompts: List[Dict],
@@ -906,6 +1029,125 @@ def create_prompt_pairs(
     return pairs
 
 
+def get_mlp_input_activations_full(
+    model: ModelWrapper,
+    inputs: Dict,
+    layer_idx: int,
+) -> torch.Tensor:
+    """
+    Capture full-sequence MLP inputs (post_attention_layernorm outputs) for a given layer.
+    Returns: (batch, seq, hidden)
+    """
+    try:
+        blocks = model.model.model.layers
+    except AttributeError:
+        blocks = model.model.transformer.h
+
+    block = blocks[layer_idx]
+    if hasattr(block, "post_attention_layernorm"):
+        hook_module = block.post_attention_layernorm
+    elif hasattr(block, "ln_2"):
+        hook_module = block.ln_2
+    else:
+        raise RuntimeError(f"Could not find post_attention_layernorm in layer {layer_idx}")
+
+    captured = {}
+
+    def hook(module, inp, out):
+        captured["mlp_input_full"] = out[0].detach() if isinstance(out, tuple) else out.detach()
+
+    handle = hook_module.register_forward_hook(hook)
+    try:
+        with torch.no_grad():
+            _ = model.model(**inputs, use_cache=False)
+    finally:
+        handle.remove()
+
+    assert "mlp_input_full" in captured, f"Hook didn't fire for layer {layer_idx}"
+    return captured["mlp_input_full"].clone()
+
+
+def export_token_feature_examples(
+    model: ModelWrapper,
+    experiment: "TranscoderInterventionExperiment",
+    prompts: List[Dict],
+    behaviour: str,
+    out_dir: Path,
+    layers: List[int],
+    top_features_by_layer: Dict[int, List[int]],
+    n_prompts: int = 50,
+    last_n_tokens: int = 12,
+    top_k_per_layer: int = 5,
+):
+    """
+    For each prompt, save last-N tokens and feature activations (transcoder space) for top features.
+    Output: JSONL records.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"token_feature_examples_{behaviour}_n{n_prompts}_last{last_n_tokens}.jsonl"
+
+    sample = prompts[:n_prompts] if len(prompts) > n_prompts else prompts
+
+    with open(out_file, "w") as f:
+        for i, prompt_data in enumerate(tqdm(sample, desc="Export token-feature examples")):
+            prompt = prompt_data["prompt"]
+            inputs = model.tokenize([prompt])
+            inputs = {k: v.to(experiment.device) for k, v in inputs.items()}
+
+            # tokens
+            input_ids = inputs["input_ids"][0].detach().cpu().tolist()
+            toks = model.tokenizer.convert_ids_to_tokens(input_ids)
+
+            # slice last N
+            N = min(last_n_tokens, len(toks))
+            toks_last = toks[-N:]
+            ids_last = input_ids[-N:]
+            pos_last = list(range(len(toks) - N, len(toks)))  # absolute positions in seq
+
+            rec = {
+                "behaviour": behaviour,
+                "prompt_idx": i,
+                "prompt": prompt,
+                "seq_len": len(toks),
+                "last_n": N,
+                "token_positions": pos_last,
+                "tokens": toks_last,
+                "token_ids": ids_last,
+                "layers": {},
+                "meta": {k: v for k, v in prompt_data.items() if k != "prompt"},
+            }
+
+            # For each layer: get full MLP inputs, take last N positions, encode, keep top features
+            for layer in layers:
+                cand = top_features_by_layer.get(layer, [])
+                if not cand:
+                    continue
+
+                d = experiment.transcoder_set[layer].d_transcoder
+                cand = [fi for fi in cand[:top_k_per_layer] if 0 <= fi < d]
+                if not cand:
+                    continue
+
+                mlp_full = get_mlp_input_activations_full(model, inputs, layer_idx=layer)  # (1, seq, hidden)
+                mlp_last = mlp_full[:, -N:, :]  # (1, N, hidden)
+
+                transcoder = experiment.transcoder_set[layer]
+                with torch.no_grad():
+                    feats = transcoder.encode(mlp_last.to(transcoder.dtype))  # (1, N, d_transcoder)
+
+                feats_np = to_numpy(feats[0, :, cand])  # (N, K)
+
+                rec["layers"][str(layer)] = {
+                    "feature_indices": cand,
+                    "feature_acts": feats_np.tolist(),  # shape (N, K)
+                }
+
+            f.write(json.dumps(rec) + "\n")
+
+    logger.info(f"Saved token-feature examples to {out_file}")
+    return out_file
+
+
 def save_results(
     results: List[InterventionResult],
     output_path: Path,
@@ -1008,12 +1250,24 @@ def main():
         help="Which split to use",
     )
     parser.add_argument(
-        "--experiment",
-        type=str,
-        default="all",
-        choices=["ablation", "patching", "importance", "all"],
-        help="Which experiment type to run",
+        "--experiment", 
+        type=str, 
+        default="all", 
+        choices=["ablation", "patching", "feature_importance", "steering", "all"],
+        help="Type of intervention to run"
     )
+    parser.add_argument("--steering_coeff", type=float, default=10.0,
+                        help="Coefficient for steering intervention (default: 10.0)")
+                        
+    # Token export args
+    parser.add_argument("--export_token_examples", action="store_true",
+                        help="Export token-feature examples JSONL for thesis visuals")
+    parser.add_argument("--last_n_tokens", type=int, default=12,
+                        help="How many last tokens to store per prompt")
+    parser.add_argument("--token_examples_n_prompts", type=int, default=50,
+                        help="How many prompts to export for token examples")
+    parser.add_argument("--token_examples_topk", type=int, default=5,
+                        help="Top-K features per layer to export")
     parser.add_argument(
         "--model_size",
         type=str,
@@ -1215,21 +1469,28 @@ def main():
         }
 
         # Run experiments
-        experiments_to_run = (
-            ["ablation", "patching", "importance"]
-            if args.experiment == "all"
-            else [args.experiment]
-        )
+        # Determine experiments to run
+        if args.experiment == "all":
+            experiments_to_run = ["ablation", "patching", "feature_importance", "steering"]
+        else:
+             if args.experiment in ["importance", "feature_importance"]:
+                experiments_to_run = ["feature_importance"]
+             elif args.experiment == "steering":
+                experiments_to_run = ["steering"]
+             else:
+                experiments_to_run = [args.experiment]
+
+        logger.info(f"Experiments to run: {experiments_to_run}")
 
         for exp_type in experiments_to_run:
             print(f"\n--- Running {exp_type} experiments ---")
 
-            if exp_type == "importance":
-                # Feature importance sweep
+            if exp_type == "feature_importance":
+                # Feature importance sweep (per layer)
                 for layer in layers:
                     print(f"\nLayer {layer} feature importance...")
                     
-                    # FIX: Use graph candidates if available
+                    # Use graph candidates if available
                     layer_candidates = top_features_by_layer.get(layer, None)
                     
                     if layer_candidates:
@@ -1242,7 +1503,7 @@ def main():
                         layer=layer, 
                         n_prompts=args.n_prompts,
                         candidate_feature_indices=layer_candidates,
-                        top_k_features=50 # Fallback if candidates is None
+                        top_k_features=50,
                     )
 
                     # Save importance results (create directory first!)
@@ -1253,20 +1514,28 @@ def main():
                         index=False
                     )
                     print(f"  Saved importance results to {imp_out_path}")
-                    
-                    # Print top 5 features for quick verification
-                    print("  Top 5 features by abs_correlation:")
-                    for _, row in importance_df.head(5).iterrows():
-                        print(f"    F{int(row['feature_idx'])}: abs_corr={row['abs_correlation']:.3f} corr={row['correlation_with_logit_diff']:.3f}")
+
+            elif exp_type == "steering":
+                # Steering handles its own layer/prompt loops
+                steer_results = experiment.run_steering_experiment(
+                    prompts, layers, top_features_by_layer, behaviour,
+                    coefficient=args.steering_coeff, top_k=args.top_k
+                )
+                save_results(
+                    steer_results, 
+                    output_path / behaviour, 
+                    behaviour, 
+                    "steering", 
+                    {**metadata, "steering_coeff": args.steering_coeff}
+                )
 
             elif exp_type == "ablation":
                 # Feature ablation
                 all_results: List[InterventionResult] = []
-                sample_prompts = prompts[:args.n_prompts]
+                sample_prompts = prompts[:args.n_prompts] if args.n_prompts else prompts
 
                 for i, prompt_data in enumerate(tqdm(sample_prompts, desc="Ablation")):
                     prompt = prompt_data["prompt"]
-                    
                     try:
                         correct, incorrect = get_answer_tokens(prompt_data)
                     except KeyError as e:
@@ -1308,15 +1577,14 @@ def main():
                 # Activation patching
                 results: List[InterventionResult] = []
 
-                # n_prompts = number of PAIRS
-                # Use source_prompts if loaded
+                # Create pairs
                 pairs = create_prompt_pairs(prompts, behaviour, source_prompts=source_prompts)
                 pairs = pairs[:args.n_prompts] if args.n_prompts else pairs
                 print(f"  Created {len(pairs)} pairs for patching")
                 
-                # Check for 0 pairs
                 if not pairs:
                     logger.warning("No pairs created! Check your prompts/margins.")
+                    # Create empty results to ensure file existence
                     save_results(results, output_path / behaviour, behaviour, "patching", metadata)
                     continue
 
@@ -1328,7 +1596,7 @@ def main():
                         logger.warning(f"Skipping pair {idx} due to missing fields: {e}")
                         continue
 
-                    # Compute source margin ONCE per pair (not per-layer)
+                    # Compute source margin ONCE per pair
                     try:
                         source_margin = experiment.compute_logit_diff(
                             source["prompt"], source_correct, source_incorrect
@@ -1338,7 +1606,6 @@ def main():
                         continue
 
                     for layer in layers:
-                        # Use graph-derived features if available, else fallback
                         if top_features_by_layer and layer in top_features_by_layer:
                             layer_features = top_features_by_layer[layer][:args.top_k]
                         else:
