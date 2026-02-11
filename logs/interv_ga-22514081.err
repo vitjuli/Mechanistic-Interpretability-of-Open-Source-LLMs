@@ -38,4 +38,29 @@ INFO:src.transcoder.single_layer_transcoder:Loaded transcoder for layer 20 from 
 INFO:src.transcoder.transcoder_loader:Loaded 6 transcoders
 INFO:__main__:Targets counts: {'singular': 34, 'plural': 46, 'unknown': 0}
 Patching:   0%|          | 0/10 [00:00<?, ?it/s]INFO:__main__:✓ MLP input captured successfully! Shape: torch.Size([1, 2, 2560])
-Patching:  10%|█         | 1/10 [01:00<09:03, 60.40s/it]
+Patching:  10%|█         | 1/10 [01:00<09:03, 60.40s/it]Patching:  20%|██        | 2/10 [01:08<03:56, 29.59s/it]Patching:  30%|███       | 3/10 [01:16<02:17, 19.66s/it]Patching:  40%|████      | 4/10 [01:24<01:29, 14.99s/it]Patching:  50%|█████     | 5/10 [01:31<01:02, 12.41s/it]Patching:  60%|██████    | 6/10 [01:39<00:43, 10.85s/it]Patching:  70%|███████   | 7/10 [01:47<00:29,  9.86s/it]Patching:  80%|████████  | 8/10 [01:55<00:18,  9.22s/it]Patching:  90%|█████████ | 9/10 [02:03<00:08,  8.78s/it]Patching: 100%|██████████| 10/10 [02:11<00:00,  8.49s/it]Patching: 100%|██████████| 10/10 [02:11<00:00, 13.11s/it]
+INFO:__main__:Saved 60 results to data/results/interventions/grammar_agreement
+usage: 07_run_interventions.py [-h] [--config CONFIG]
+                               [--transcoder_config TRANSCODER_CONFIG]
+                               [--behaviour {grammar_agreement}]
+                               [--split {train,test}]
+                               [--experiment {ablation,patching,importance,all}]
+                               [--model_size MODEL_SIZE]
+                               [--layers LAYERS [LAYERS ...]]
+                               [--n_prompts N_PROMPTS]
+                               [--prompts_file PROMPTS_FILE]
+                               [--source_prompts_file SOURCE_PROMPTS_FILE]
+                               [--top_k TOP_K]
+07_run_interventions.py: error: argument --experiment: invalid choice: 'feature_importance' (choose from 'ablation', 'patching', 'importance', 'all')
+usage: 07_run_interventions.py [-h] [--config CONFIG]
+                               [--transcoder_config TRANSCODER_CONFIG]
+                               [--behaviour {grammar_agreement}]
+                               [--split {train,test}]
+                               [--experiment {ablation,patching,importance,all}]
+                               [--model_size MODEL_SIZE]
+                               [--layers LAYERS [LAYERS ...]]
+                               [--n_prompts N_PROMPTS]
+                               [--prompts_file PROMPTS_FILE]
+                               [--source_prompts_file SOURCE_PROMPTS_FILE]
+                               [--top_k TOP_K]
+07_run_interventions.py: error: argument --experiment: invalid choice: 'activation' (choose from 'ablation', 'patching', 'importance', 'all')

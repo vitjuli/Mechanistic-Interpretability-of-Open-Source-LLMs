@@ -52,3 +52,27 @@ Loaded 160 top attributed features from graph (requested top 200)
 
 --- Running patching experiments ---
   Created 10 pairs for patching
+
+======================================================================
+INTERVENTION EXPERIMENTS COMPLETE
+======================================================================
+
+Output: /rds/user/iv294/hpc-work/thesis/project/data/results/interventions
+
+Next step: python scripts/08_generate_figures.py
+DONE: patching
+
+============================================================
+Running EXPERIMENT: feature_importance
+============================================================
+Wed 11 Feb 11:18:48 GMT 2026
+FAILED: feature_importance (exit code 2)
+
+============================================================
+Running EXPERIMENT: activation
+============================================================
+Wed 11 Feb 11:18:59 GMT 2026
+FAILED: activation (exit code 2)
+
+All requested experiments attempted.
+Wed 11 Feb 11:19:05 GMT 2026

@@ -1,0 +1,162 @@
+Running on node:
+gpu-q-29
+Wed 11 Feb 12:21:32 GMT 2026
+GPU check:
+Wed Feb 11 12:21:32 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.195.03             Driver Version: 570.195.03     CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-80GB          On  |   00000000:41:00.0 Off |                    0 |
+| N/A   33C    P0             69W /  500W |       0MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+CUDA available: True
+GPU: NVIDIA A100-SXM4-80GB
+
+============================================================
+Running EXPERIMENT: patching
+============================================================
+Wed 11 Feb 12:24:12 GMT 2026
+======================================================================
+INTERVENTION EXPERIMENTS (TRANSCODER-BASED)
+======================================================================
+
+Configuration:
+  Model size: 4b
+  Layers: [15, 16, 17, 18, 19, 20]
+  Behaviours: ['grammar_agreement']
+  N prompts: 10
+  Experiments: patching
+
+Loading language model...
+Model: Qwen/Qwen3-4B
+Loading transcoders...
+
+======================================================================
+BEHAVIOUR: grammar_agreement
+======================================================================
+Loaded 80 target prompts
+Loaded 160 top attributed features from graph (requested top 200)
+
+--- Running patching experiments ---
+  Created 10 pairs for patching
+
+======================================================================
+INTERVENTION EXPERIMENTS COMPLETE
+======================================================================
+
+Output: /rds/user/iv294/hpc-work/thesis/project/data/results/interventions
+
+Next step: python scripts/08_generate_figures.py
+DONE: patching
+
+============================================================
+Running EXPERIMENT: importance
+============================================================
+Wed 11 Feb 12:32:10 GMT 2026
+======================================================================
+INTERVENTION EXPERIMENTS (TRANSCODER-BASED)
+======================================================================
+
+Configuration:
+  Model size: 4b
+  Layers: [15, 16, 17, 18, 19, 20]
+  Behaviours: ['grammar_agreement']
+  N prompts: 10
+  Experiments: importance
+
+Loading language model...
+Model: Qwen/Qwen3-4B
+Loading transcoders...
+
+======================================================================
+BEHAVIOUR: grammar_agreement
+======================================================================
+Loaded 80 target prompts
+Loaded 160 top attributed features from graph (requested top 200)
+
+--- Running importance experiments ---
+
+Layer 15 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F63206: abs_corr=0.750 corr=-0.750
+    F148735: abs_corr=0.657 corr=0.657
+    F8150: abs_corr=0.583 corr=0.583
+    F125632: abs_corr=0.384 corr=-0.384
+    F127839: abs_corr=0.375 corr=0.375
+
+Layer 16 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F8755: abs_corr=0.736 corr=-0.736
+    F12462: abs_corr=0.635 corr=0.635
+    F127425: abs_corr=0.532 corr=0.532
+    F102190: abs_corr=0.481 corr=0.481
+    F72055: abs_corr=0.404 corr=-0.404
+
+Layer 17 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F13095: abs_corr=0.811 corr=0.811
+    F142046: abs_corr=0.622 corr=-0.622
+    F84988: abs_corr=0.575 corr=0.575
+    F32948: abs_corr=0.538 corr=0.538
+    F126715: abs_corr=0.532 corr=0.532
+
+Layer 18 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F87741: abs_corr=0.646 corr=0.646
+    F37524: abs_corr=0.622 corr=-0.622
+    F79487: abs_corr=0.599 corr=-0.599
+    F101375: abs_corr=0.595 corr=-0.595
+    F152652: abs_corr=0.532 corr=0.532
+
+Layer 19 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F40714: abs_corr=0.756 corr=-0.756
+    F143705: abs_corr=0.656 corr=0.656
+    F54268: abs_corr=0.621 corr=0.621
+    F133982: abs_corr=0.584 corr=0.584
+    F103010: abs_corr=0.552 corr=0.552
+
+Layer 20 feature importance...
+  Using 10 candidate features from attribution graph
+  Saved importance results to data/results/interventions/grammar_agreement/importance
+  Top 5 features by abs_correlation:
+    F33983: abs_corr=0.694 corr=-0.694
+    F149388: abs_corr=0.645 corr=0.645
+    F97777: abs_corr=0.552 corr=0.552
+    F24864: abs_corr=0.547 corr=0.547
+    F68589: abs_corr=0.532 corr=0.532
+
+======================================================================
+INTERVENTION EXPERIMENTS COMPLETE
+======================================================================
+
+Output: /rds/user/iv294/hpc-work/thesis/project/data/results/interventions
+
+Next step: python scripts/08_generate_figures.py
+DONE: importance
+
+All requested experiments completed.
+Wed 11 Feb 12:32:53 GMT 2026
