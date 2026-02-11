@@ -726,12 +726,7 @@ class TranscoderInterventionExperiment:
                 inputs = self.model.tokenize([prompt])
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 
-                # We need get_mlp_input_activation to be available or self.get_mlp_input_activation if it's in class?
-                # The user provided snippet uses `get_mlp_input_activation(self.model, ...)`
-                # I assume get_mlp_input_activation is a global function in the file.
-                # I need to check if it exists. 
-                # Based on previous edits, `get_mlp_input_activation` likely exists as a global helper or static method.
-                # Let's assume global.
+                # Get clean activation
                 mlp_input_act = get_mlp_input_activation(self.model, inputs, layer_idx=layer, token_pos=-1)
 
                 # Encode -> steer -> decode
@@ -742,25 +737,8 @@ class TranscoderInterventionExperiment:
                     steered_mlp_input = transcoder.decode(feats_mod).to(mlp_input_act.dtype)
 
                 # Intervened margin via patching the MLP input
-                # patch_mlp_input is a context manager. User said "global context-manager patch_mlp_input(model_hf, ...)".
-                # But in my previous code I used `self.patch_mlp_input`.
-                # The user snippet uses `with patch_mlp_input(...)`.
-                # I need to know if `patch_mlp_input` is global or member.
-                # In 07 script, `patch_mlp_input` is a method of `TranscoderInterventionExperiment`?
-                # User said: "you have patch_mlp_input(model_hf, ...)" which implies global.
-                # But in typical pattern, it might be `self.patch_mlp_input`.
-                # Let's check the file content later if possible, but for now I will use what user suggests: `patch_mlp_input` logic using global or method.
-                # User code: `with patch_mlp_input(self.model.model, ...)`
-                # This implies it's a global context manager OR I should import it?
-                # I will define `patch_mlp_input` if it's missing or use `self.patch_mlp_input` if it's a method.
-                # Wait, I recall seeing `with self.patch_mlp_input(...)` in my own previous code.
-                # But the user says: "self.patch_mlp_input does not exist (there is a global ...)".
-                # So I will use the global `patch_mlp_input` and pass the hf model.
-                
+                # Note: patch_mlp_input is a global context manager in this file
                 with torch.no_grad():
-                     # Assuming patch_mlp_input is imported or available globally
-                     # I might need to import it if it's in another file, or defined in this file.
-                     # If it's defined in this file, I can use it.
                      with patch_mlp_input(
                         self.model.model,
                         layer_idx=layer,
