@@ -100,21 +100,6 @@ def load_attribution_graph(graph_path: Path, behaviour: str, split: str) -> Opti
     return None
 
 
-def canonical_intervention_name(stem: str, behaviour: str) -> str:
-    """Normalize intervention filename to standard keys (patching, ablation, etc)."""
-    s = stem
-    s = s.replace("intervention_", "")
-    s = s.replace(f"_{behaviour}", "")
-    # specific normalization
-    if s.startswith("ablation"):
-        return "ablation"
-    if s.startswith("patch"):
-        return "patching"
-    if "feature_importance" in s:
-        return "feature_importance"
-    return s
-
-
 def load_importance_results(results_path: Path, behaviour: str) -> Optional[pd.DataFrame]:
     """
     Load per-layer importance CSVs saved by 07_run_interventions.py and concatenate into one DF.
@@ -242,7 +227,7 @@ def visualize_importance_results(
 
 def canonical_intervention_name(stem: str, behaviour: str) -> str:
     """Map messy filenames to standard keys."""
-    if stem == "canonical_intervention_name": return "" # Safety for self-call
+    # Safety not needed here as this is unique
     s = stem.replace("intervention_", "")
     s = s.replace(f"_{behaviour}", "")
     
@@ -258,15 +243,25 @@ def load_intervention_results(results_path: Path, behaviour: str) -> Dict[str, p
     intervention_path = results_path / "interventions" / behaviour
     results = {}
 
-    if intervention_path.exists():
-        for csv_file in intervention_path.glob("*.csv"):
-            name = canonical_intervention_name(csv_file.stem, behaviour)
-            results[name] = pd.read_csv(csv_file)
-            print(f"  Loaded {name} from {csv_file.name}")
-            
-            if name == "ablation" and "experiment_type" in results[name].columns:
-                types = results[name]["experiment_type"].unique().tolist()
-                print(f"    ablation experiment_type: {types}")
+    if not intervention_path.exists():
+        return results
+
+    # Only load intervention_*.csv to avoid loading importance files or other junk
+    for csv_file in intervention_path.glob("intervention_*.csv"):
+        try:
+            df = pd.read_csv(csv_file)
+            # Use canonical name to map filenames like "intervention_ablation_grammar_agreement.csv" -> "ablation"
+            key = canonical_intervention_name(csv_file.stem, behaviour)
+            if key:
+                results[key] = df
+                # Log the type of experiment found
+                if "experiment_type" in df.columns:
+                    types = df["experiment_type"].unique()
+                    print(f"    Loaded {key} (types: {types})")
+                else:
+                    print(f"    Loaded {key}")
+        except Exception as e:
+            print(f"    Warning: failed to read {csv_file.name}: {e}")
 
     return results
 
@@ -1118,7 +1113,6 @@ def main():
              print("  No importance results found")
         
         if intervention_results:
-            visualize_feature_importance(intervention_results, figures_path, behaviour)
             visualize_patching_results(intervention_results, figures_path, behaviour)
             visualize_ablation_results(intervention_results, figures_path, behaviour)
             visualize_prompt_stability(intervention_results, figures_path, behaviour)
