@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-02-10T11:58:00.684691",
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "split": "train",
+  "behaviours": {
+    "grammar_agreement": {
+      "accuracy": 0.85,
+      "accuracy_valid_only": 0.85,
+      "accuracy_sign": 0.9875,
+      "mean_logprob_diff": 4.114211431145668,
+      "mean_logprob_diff_normalized": 4.114211431145668,
+      "median_logprob_diff_normalized": 4.402674078941345,
+      "std_logprob_diff_normalized": 1.8547257921539466,
+      "mean_correct_token_len": 1.0,
+      "mean_incorrect_token_len": 1.0,
+      "length_mismatch_rate": 0.0,
+      "n_success": 68,
+      "n_total": 80,
+      "n_valid": 80,
+      "n_errors": 0,
+      "passed": true,
+      "score_method": "teacher_forced_logprob",
+      "success_metric": "normalized_per_token",
+      "threshold": 2.0
+    }
+  }
+}

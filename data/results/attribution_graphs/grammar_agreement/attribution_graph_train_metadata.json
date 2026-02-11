@@ -1,0 +1,22 @@
+{
+  "behaviour": "grammar_agreement",
+  "split": "train",
+  "model_size": "4b",
+  "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
+  "layers": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "n_prompts": 80,
+  "timestamp": "2026-02-10T12:53:06.224751",
+  "attribution_method": "correlation",
+  "feature_score": "abs_corr",
+  "edge_weight": "corr",
+  "missing_feature_activation": 0.0,
+  "activation_observation": "topk_truncated",
+  "topk_per_token": 50
+}

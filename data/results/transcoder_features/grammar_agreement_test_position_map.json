@@ -1,0 +1,182 @@
+[
+  {
+    "prompt_idx": 0,
+    "token_pos": 1,
+    "token_id": 13702,
+    "is_decision_position": true,
+    "prompt_hash": "d651fe4d682210b6",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 1,
+    "token_pos": 1,
+    "token_id": 1803,
+    "is_decision_position": true,
+    "prompt_hash": "96c12d52cd942de8",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 2,
+    "token_pos": 1,
+    "token_id": 6916,
+    "is_decision_position": true,
+    "prompt_hash": "dd5a4927b4ddd0a9",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 3,
+    "token_pos": 1,
+    "token_id": 49452,
+    "is_decision_position": true,
+    "prompt_hash": "23604b3baf3d47b9",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 4,
+    "token_pos": 1,
+    "token_id": 10049,
+    "is_decision_position": true,
+    "prompt_hash": "8498e7f505f33d14",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 5,
+    "token_pos": 1,
+    "token_id": 19281,
+    "is_decision_position": true,
+    "prompt_hash": "4c0d17a07a5f53e8",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 6,
+    "token_pos": 1,
+    "token_id": 6916,
+    "is_decision_position": true,
+    "prompt_hash": "dd5a4927b4ddd0a9",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 7,
+    "token_pos": 1,
+    "token_id": 2311,
+    "is_decision_position": true,
+    "prompt_hash": "77219ddbe6dad86e",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 8,
+    "token_pos": 1,
+    "token_id": 5562,
+    "is_decision_position": true,
+    "prompt_hash": "4d31b93b2435e541",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 9,
+    "token_pos": 1,
+    "token_id": 19423,
+    "is_decision_position": true,
+    "prompt_hash": "a9d24fde647cd64f",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 10,
+    "token_pos": 1,
+    "token_id": 25904,
+    "is_decision_position": true,
+    "prompt_hash": "ef9cf641f0270388",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 11,
+    "token_pos": 1,
+    "token_id": 17619,
+    "is_decision_position": true,
+    "prompt_hash": "930e13cd3d9881f9",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 12,
+    "token_pos": 1,
+    "token_id": 8251,
+    "is_decision_position": true,
+    "prompt_hash": "0f62241d54fb6b6b",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 13,
+    "token_pos": 1,
+    "token_id": 19423,
+    "is_decision_position": true,
+    "prompt_hash": "a9d24fde647cd64f",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 14,
+    "token_pos": 1,
+    "token_id": 18495,
+    "is_decision_position": true,
+    "prompt_hash": "01bd12acb4d5350b",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 15,
+    "token_pos": 1,
+    "token_id": 16093,
+    "is_decision_position": true,
+    "prompt_hash": "616669a7d9deb888",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 16,
+    "token_pos": 1,
+    "token_id": 4143,
+    "is_decision_position": true,
+    "prompt_hash": "74ea280b0412ef35",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 17,
+    "token_pos": 1,
+    "token_id": 8251,
+    "is_decision_position": true,
+    "prompt_hash": "0f62241d54fb6b6b",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 18,
+    "token_pos": 1,
+    "token_id": 2311,
+    "is_decision_position": true,
+    "prompt_hash": "77219ddbe6dad86e",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  },
+  {
+    "prompt_idx": 19,
+    "token_pos": 1,
+    "token_id": 11079,
+    "is_decision_position": true,
+    "prompt_hash": "5953201fae48f5be",
+    "within_window_index": 0,
+    "prompt_window_len": 1
+  }
+]
