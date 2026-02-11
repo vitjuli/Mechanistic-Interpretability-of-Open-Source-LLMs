@@ -378,7 +378,7 @@ def get_mlp_input_activation(
     
     # Log shape once for sanity (first call only)
     if not hasattr(get_mlp_input_activation, '_logged_shape'):
-        logger.info(f"✓ MLP input captured successfully! Shape: {mlp_input_full.shape}")
+        logger.info(f"MLP input captured successfully! Shape: {mlp_input_full.shape}")
         get_mlp_input_activation._logged_shape = True
     
     return mlp_input_full[:, token_pos, :].clone()  # (batch, hidden)
@@ -509,7 +509,7 @@ class TranscoderInterventionExperiment:
                 mean_val = 0.0  # Could load from candidate_features if needed
                 features[:, feat_idx] = mean_val
         else:
-            raise ValueError(f"Unknown ablation mode: {mode}")
+            raise ValueError(f"Unknown ablation mode : {mode}")
             
         # Decode to modified MLP input
         modified_mlp_input = transcoder.decode(features).to(mlp_input_act.dtype)
@@ -518,7 +518,7 @@ class TranscoderInterventionExperiment:
         delta_norm = (modified_mlp_input - mlp_input_act).norm().item()
         if prompt_idx % 10 == 0:  # Log occasionally
             logger.info(
-                f"[Ablation] prompt={prompt_idx} layer={layer} "
+                f"[ Ablation ] prompt={prompt_idx} layer={layer} "
                 f"||Δmlp_input||={delta_norm:.4f} baseline_margin={baseline_margin:.4f}"
             )
         

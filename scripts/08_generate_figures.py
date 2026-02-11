@@ -22,6 +22,8 @@ import argparse
 import sys
 from datetime import datetime
 
+import matplotlib
+matplotlib.use("Agg") # Safe for HPC/headless environments
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
@@ -223,6 +225,82 @@ def visualize_importance_results(
     plt.close()
     print(f"  Saved: {fig_path.name}")
     return fig_path
+
+
+def visualize_activation_heatmaps(
+    importance_df: pd.DataFrame,
+    output_path: Path,
+    behaviour: str,
+    metrics: Optional[List[str]] = None,
+):
+    """
+    Heatmaps over (layer x feature_idx) for activation/correlation metrics.
+
+    Requires columns: layer, feature_idx and each metric in `metrics`.
+    Produces one heatmap per metric.
+    """
+    if importance_df is None or importance_df.empty:
+        print("  No importance results for heatmaps")
+        return
+
+    df = importance_df.copy()
+
+    required = {"layer", "feature_idx"}
+    if not required.issubset(df.columns):
+        print(f"  Heatmaps: missing columns: {required - set(df.columns)}")
+        return
+
+    if metrics is None:
+        metrics = ["mean_activation", "std_activation", "activation_frequency", "abs_correlation"]
+
+    # Ensure numeric layer/feature_idx (safe)
+    df["layer"] = pd.to_numeric(df["layer"], errors="coerce")
+    df["feature_idx"] = pd.to_numeric(df["feature_idx"], errors="coerce")
+    df = df.dropna(subset=["layer", "feature_idx"])
+
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    for m in metrics:
+        if m not in df.columns:
+            # Try to be smart about abs_correlation if missing but correlation exists
+            if m == "abs_correlation" and "abs_corr" in df.columns:
+                 m = "abs_corr" # use the short name
+            elif m == "abs_correlation" and "correlation_with_logit_diff" in df.columns:
+                 df["abs_correlation"] = df["correlation_with_logit_diff"].abs()
+            elif m == "abs_correlation" and "correlation" in df.columns:
+                 df["abs_correlation"] = df["correlation"].abs()
+            else:
+                 print(f"  Heatmaps: metric '{m}' not found; skipping")
+                 continue
+
+        # Build matrix: rows=layer, cols=feature_idx
+        mat = (
+            df.pivot_table(index="layer", columns="feature_idx", values=m, aggfunc="mean")
+              .sort_index()
+        )
+
+        if mat.empty:
+            print(f"  Heatmaps: empty matrix for {m}; skipping")
+            continue
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.heatmap(
+            mat,
+            ax=ax,
+            cmap="viridis",
+            cbar_kws={"label": m},
+            linewidths=0.2,
+            linecolor="white",
+        )
+        ax.set_title(f"{behaviour}: Heatmap of {m} (layer × feature_idx)")
+        ax.set_xlabel("feature_idx")
+        ax.set_ylabel("layer")
+
+        fig_path = output_path / f"heatmap_{m}_{behaviour}.png"
+        plt.savefig(fig_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+        print(f"  Saved: {fig_path.name}")
 
 
 def canonical_intervention_name(stem: str, behaviour: str) -> str:
@@ -1109,6 +1187,7 @@ def main():
         importance_df = load_importance_results(results_path, behaviour)
         if importance_df is not None:
              visualize_importance_results(importance_df, figures_path, behaviour, top_n=20)
+             visualize_activation_heatmaps(importance_df, figures_path, behaviour)
         else:
              print("  No importance results found")
         
