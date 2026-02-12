@@ -15,7 +15,7 @@
   "median_intervened_logit_diff": 3.90625,
   "sign_flip_rate": 0.041666666666666664,
   "n_sign_flips": 5,
-  "timestamp": "2026-02-12T08:28:28.048379",
+  "timestamp": "2026-02-12T09:34:52.572272",
   "model_size": "4b",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
   "n_prompts": 20,
