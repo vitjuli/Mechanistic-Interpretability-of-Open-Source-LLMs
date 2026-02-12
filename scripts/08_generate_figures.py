@@ -990,6 +990,70 @@ def create_summary_figure(
     return fig_path
 
 
+def visualize_steering_results(intervention_results: Dict[str, pd.DataFrame],
+                               output_path: Path, behaviour: str):
+    if "steering" not in intervention_results:
+        return
+    df = intervention_results["steering"]
+    if df.empty:
+        return
+
+    print(f"Visualizing steering results ({len(df)} rows)...")
+    # ensure effect_size
+    if "effect_size" not in df.columns:
+        if "abs_effect_size" in df.columns:
+            df = df.copy()
+            df["effect_size"] = df["abs_effect_size"]
+        else:
+            print("  Steering missing effect_size; skipping")
+            return
+
+    # Layer summary
+    if "layer" in df.columns:
+        g = df.groupby("layer").agg(
+            mean_abs=("effect_size", lambda x: np.mean(np.abs(x))),
+            mean_signed=("effect_size", "mean"),
+            std=("effect_size", "std"),
+        ).reset_index().sort_values("layer")
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(g["layer"], g["mean_abs"], marker="o", linewidth=2, label="Mean |effect|")
+        ax.errorbar(g["layer"], g["mean_signed"], yerr=g["std"], fmt='o', linestyle="--", alpha=0.6, label="Mean signed ± std")
+        ax.set_title(f"Steering impact by layer ({behaviour})")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("Effect size")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        
+        output_path.mkdir(parents=True, exist_ok=True)
+        fig_path = output_path / f"steering_layer_effect_{behaviour}.png"
+        plt.savefig(fig_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+        print(f"  Saved: {fig_path.name}")
+
+    # Scatter baseline vs intervened
+    if "baseline_logit_diff" in df.columns and "intervened_logit_diff" in df.columns:
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.scatter(df["baseline_logit_diff"], df["intervened_logit_diff"], alpha=0.5, s=12)
+        
+        try:
+            lo = min(df["baseline_logit_diff"].min(), df["intervened_logit_diff"].min())
+            hi = max(df["baseline_logit_diff"].max(), df["intervened_logit_diff"].max())
+            ax.plot([lo, hi], [lo, hi], "k--", alpha=0.6)
+        except ValueError:
+            pass # handle empty or nan cases gracefully
+
+        ax.set_xlabel("Baseline logit diff")
+        ax.set_ylabel("Steered logit diff")
+        ax.set_title(f"Steering: baseline vs steered ({behaviour})")
+        ax.grid(True, alpha=0.3)
+        
+        fig_path = output_path / f"steering_logits_scatter_{behaviour}.png"
+        plt.savefig(fig_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+        print(f"  Saved: {fig_path.name}")
+
+
 def visualize_ablation_results(intervention_results: Dict[str, pd.DataFrame],
                                output_path: Path, behaviour: str):
     if "ablation" not in intervention_results:
@@ -1194,6 +1258,7 @@ def main():
         if intervention_results:
             visualize_patching_results(intervention_results, figures_path, behaviour)
             visualize_ablation_results(intervention_results, figures_path, behaviour)
+            visualize_steering_results(intervention_results, figures_path, behaviour)
             visualize_prompt_stability(intervention_results, figures_path, behaviour)
 
         else:
