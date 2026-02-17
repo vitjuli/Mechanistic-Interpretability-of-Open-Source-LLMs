@@ -5,7 +5,7 @@ Implements a simplified version of the methodology from:
 "On the Biology of a Large Language Model" (Lindsey, Gurnee, et al., 2025)
 
 This version uses pre-trained transcoders instead of custom-trained SAEs.
-The attribution graph shows causal relationships:
+The attribution graph shows CANDIDATE/PROXY pathways (not causal):
     Input tokens -> Transcoder features -> ... -> Output logits
 
 Pre-trained transcoders from: https://github.com/safety-research/circuit-tracer
@@ -20,7 +20,7 @@ import yaml
 import torch
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Dict, Optional, Tuple
 import argparse
 import sys
 from tqdm import tqdm
@@ -368,13 +368,117 @@ class TranscoderAttributionBuilder:
             topk_val = layer_data["top_k_values"][sample_indices]    # (1, K)
 
             layer_act = {}
-            # Since we have exactly 1 sample, no averaging needed
-            for feat_idx, feat_val in zip(topk_idx[0].tolist(), topk_val[0].tolist()):
+            # PERFORMANCE: Use numpy instead of .tolist() to avoid GPU→CPU sync overhead
+            # This is critical in loops over prompts × layers × features
+            idx = topk_idx[0].cpu().numpy() if topk_idx.is_cuda else topk_idx[0].numpy()
+            val = topk_val[0].cpu().numpy() if topk_val.is_cuda else topk_val[0].numpy()
+            
+            for feat_idx, feat_val in zip(idx, val):
                 layer_act[int(feat_idx)] = float(feat_val)
 
             activations[layer] = layer_act
 
         return activations
+
+    def top_features_for_prompt(
+        self, 
+        prompt_idx: int, 
+        beta: Dict[Tuple[int, int], float],
+        k: int = 20,
+        use_abs: bool = True,
+    ) -> List[Tuple[Tuple[int, int], float]]:
+        """
+        Get top-k features for specific prompt using activation * beta scoring.
+        
+        This is a correlation-based LINEAR PROXY for attribution, not causal.
+        The score combines:
+        - Feature activation on this prompt (how active is feature f?)
+        - Beta coefficient (how predictive is feature f globally?)
+        
+        This gives a prompt-specific importance score that can differ across prompts.
+        
+        Args:
+            prompt_idx: Index of prompt
+            beta: Dict mapping (layer, feat) -> regression coefficient
+            k: Number of top features to return
+            use_abs: If True, sort by |score|; if False, sort by signed score (largest positive first)
+        
+        Returns:
+            List of ((layer, feat_idx), score) sorted by |score|
+            
+        Note:
+            This is NOT causal attribution. Use interventions (ablation/patching)
+            to validate which features are actually causal for this prompt.
+        """
+        acts = self.collect_feature_activations(prompt_idx)
+        scores = []
+        
+        for layer, feats in acts.items():
+            for feat, x in feats.items():
+                b = beta.get((layer, feat), 0.0)
+                score = x * b
+                scores.append(((layer, feat), score))
+        
+        # If use_abs: sort by |score| descending (most important by magnitude).
+        # Else: sort by signed score descending (largest positive first, then negative).
+        if use_abs:
+            return sorted(scores, key=lambda t: abs(t[1]), reverse=True)[:k]
+        else:
+            return sorted(scores, key=lambda t: t[1], reverse=True)[:k]
+
+    def compute_beta(self, prompt_indices: List[int]) -> Dict[Tuple[int, int], float]:
+        """
+        Compute beta coefficients for prompt-specific scoring.
+        
+        Beta = Cov(x, y) / Var(x) using missing=0 model (consistent with correlation).
+        
+        IMPORTANT: This assumes top-k truncation: features not in top-k have x=0.
+        This is a LINEAR PROXY for attribution, not causal. The formulas are:
+        - Var(x) = E[x²] - E[x]² where E is over all N prompts (missing → 0)
+        - Cov(x,y) = E[xy] - E[x]E[y] where missing x → 0 (so xy term is only from nonzero)
+        
+        Performance: sum_x, sum_x2, sum_xy accumulate only over nonzero (zeros don't contribute),
+        but division by N treats all prompts equally (missing=0 assumption).
+        
+        Args:
+            prompt_indices: List of prompt indices to compute beta over
+        
+        Returns:
+            Dict mapping (layer, feat_idx) -> beta coefficient
+        """
+        N = len(prompt_indices)
+        if N < 2:
+            raise ValueError(f"Need at least 2 prompts to compute beta, got {N}")
+        
+        y = np.array([self.margins[p] for p in prompt_indices], dtype=np.float64)
+        sum_y = float(y.sum())
+        # Note: sum_y2 not needed for beta = Cov(x,y) / Var(x)
+        
+        stats = defaultdict(lambda: {"sum_x": 0.0, "sum_x2": 0.0, "sum_xy": 0.0, "count": 0})
+        
+        for p in prompt_indices:
+            acts_by_layer = self.collect_feature_activations(p)
+            yp = float(self.margins[p])
+            for layer, layer_acts in acts_by_layer.items():
+                for feat_idx, x in layer_acts.items():
+                    st = stats[(layer, int(feat_idx))]
+                    st["sum_x"] += x
+                    st["sum_x2"] += x * x
+                    st["sum_xy"] += x * yp
+                    st["count"] += 1
+        
+        beta = {}
+        for (layer, feat_idx), st in stats.items():
+            if st["count"] < 2:
+                continue
+            sum_x, sum_x2, sum_xy = st["sum_x"], st["sum_x2"], st["sum_xy"]
+            # CRITICAL: Use global N (missing=0 model) - consistent with correlation
+            var_x = sum_x2 - (sum_x * sum_x) / N
+            cov_xy = sum_xy - (sum_x * sum_y) / N
+            beta[(layer, feat_idx)] = (cov_xy / var_x) if var_x > 1e-12 else 0.0
+        
+        logger.info(f"Computed beta for {len(beta)} features over {N} prompts (missing=0 model)")
+        return beta
 
     def aggregate_graphs(
         self,
@@ -399,16 +503,23 @@ class TranscoderAttributionBuilder:
         We treat features absent from top-k as zero; this approximates sparse 
         transcoder activations under top-k truncation.
         """
-        N = min(n_prompts, len(prompts))
+        # Correlation aggregation: compute Pearson r between feature activations and margins
+        # Current implementation: GLOBAL graph (top features by overall correlation)
+        # Future: Phase C will use union of per-prompt top-k for more diversity
         
-        # CRITICAL: Need at least 2 samples to compute correlation
+        # CRITICAL: Get actual prompt indices first, then set N
+        # This ensures N matches len(prompt_indices) for variance/covariance formulas
+        available_prompts = sorted(list(self.prompt_to_samples.keys()))
+        prompt_indices = available_prompts[: min(n_prompts, len(available_prompts))]
+        
+        N = len(prompt_indices)
         if N < 2:
             raise ValueError(
                 f"Need at least 2 prompts to compute correlation (got N={N}). "
-                f"Set --n_prompts >= 2."
+                f"Check that position_map has sufficient prompts."
             )
         
-        prompt_indices = list(range(N))
+        logger.info(f"Using {N} prompts: indices {prompt_indices[:5]}... (first 5)")
 
         y = np.array([self.margins[p] for p in prompt_indices], dtype=np.float64)
         
@@ -422,6 +533,7 @@ class TranscoderAttributionBuilder:
         sum_y2 = float((y * y).sum())
 
         # stats[(layer, feat)] = {sum_x, sum_x2, sum_xy, count_nonzero}
+        # CRITICAL: Missing features treated as x=0 (consistent with correlation)
         stats = defaultdict(lambda: {"sum_x": 0.0, "sum_x2": 0.0, "sum_xy": 0.0, "count": 0})
 
         logger.info(f"Correlation aggregation over N={N} prompts. min_frequency={min_frequency:.2f}")
@@ -439,14 +551,44 @@ class TranscoderAttributionBuilder:
                     st["sum_xy"] += x * yp
                     st["count"] += 1
 
+        # Compute beta coefficients for prompt-specific scoring
+        # CRITICAL: Use global N (treating missing features as x=0)
+        # This is consistent with correlation computation below
+        beta = {}
+        for (layer, feat_idx), st in stats.items():
+            if st["count"] < 2:  # Need at least 2 prompts where feature is active
+                continue
+            
+            sum_x = st["sum_x"]
+            sum_x2 = st["sum_x2"]
+            sum_xy = st["sum_xy"]
+            
+            # Variance and covariance using global N (missing = 0 model)
+            var_x = sum_x2 - (sum_x * sum_x) / N
+            cov_xy = sum_xy - (sum_x * sum_y) / N
+            
+            if var_x > 1e-12:
+                beta[(layer, feat_idx)] = cov_xy / var_x
+            else:
+                beta[(layer, feat_idx)] = 0.0
+        
+        logger.info(f"Computed beta for {len(beta)} features (using missing=0 model)")
+        
+        # Store beta in builder for prompt-specific scoring
+        self._last_beta = beta  # Temporary storage for diagnostic access
+        
         # Build aggregated graph
         G = nx.DiGraph()
         G.add_node("input", type="input")
         G.add_node("output_correct", type="output")
         G.add_node("output_incorrect", type="output")
 
-        min_count = max(1, int(np.ceil(min_frequency * N)))
-        logger.info(f"Feature filter: min_count_nonzero >= {min_count} (of N={N})")
+        # CRITICAL: Respect min_frequency=0.0 from config (allows rare features)
+        if min_frequency <= 0.0:
+            min_count = 1  # Include all features that appear at least once
+        else:
+            min_count = max(1, int(np.ceil(min_frequency * N)))
+        logger.info(f"Feature filter: min_count_nonzero >= {min_count} (of N={N}, min_frequency={min_frequency})")
 
         added = 0
 
@@ -521,6 +663,123 @@ class TranscoderAttributionBuilder:
         logger.info(f"Aggregated correlation graph: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}, features_added={added}")
         if added == 0:
             logger.warning("No features survived thresholds. Consider lowering min_frequency or attribution_threshold.")
+        return G
+
+    def aggregate_graphs_per_prompt_union(
+        self,
+        n_prompts: int = 20,
+        k_per_prompt: int = 20,
+        min_prompts: Optional[int] = None,
+    ) -> nx.DiGraph:
+        """
+        Build attribution graph from UNION of per-prompt top-k features.
+        
+        This is the TRUE prompt-specific graph:
+        1. For each prompt, get top-k features (ranked by activation * beta)
+        2. Take union of all these features
+        3. Filter: keep only features appearing in >= min_prompts prompts
+        4. Build graph with these features
+        
+        This captures prompt-specific diversity unlike global correlation graph.
+        
+        Args:
+            n_prompts: Number of prompts to analyze
+            k_per_prompt: Top-k features to extract per prompt
+            min_prompts: Feature must appear in >= this many prompts to be included
+        
+        Returns:
+            NetworkX graph with union of per-prompt features
+        """
+        # Get actual prompt indices
+        available_prompts = sorted(list(self.prompt_to_samples.keys()))
+        prompt_indices = available_prompts[: min(n_prompts, len(available_prompts))]
+        
+        N = len(prompt_indices)
+        if N < 2:
+            raise ValueError(f"Need at least 2 prompts, got {N}")
+        
+        # Adaptive min_prompts: avoid empty graphs for small N
+        if min_prompts is None:
+            min_prompts = 1 if N <= 5 else max(1, int(np.ceil(0.1 * N)))
+        
+        logger.info(f"Building per-prompt union graph: N={N}, k_per_prompt={k_per_prompt}, min_prompts={min_prompts}")
+        
+        # Compute beta coefficients
+        beta = self.compute_beta(prompt_indices)
+        
+        # Collect per-prompt top-k features
+        feature_scores = defaultdict(list)  # (layer, feat) -> [score per prompt where it's top-k]
+        
+        for p in tqdm(prompt_indices, desc="Collecting per-prompt top-k"):
+            topk = self.top_features_for_prompt(p, beta, k=k_per_prompt)
+            for (layer, feat), score in topk:
+                feature_scores[(layer, feat)].append(float(score))
+        
+        # Build graph from union
+        G = nx.DiGraph()
+        G.add_node("input", type="input")
+        G.add_node("output_correct", type="output")
+        G.add_node("output_incorrect", type="output")
+        
+        added = 0
+        for (layer, feat), scores in feature_scores.items():
+            # Filter by min_prompts
+            if len(scores) < min_prompts:
+                continue
+            
+            # Conditional mean (over prompts where feature in top-k)
+            mean_score_given = float(np.mean(scores))
+            mean_abs_given = float(np.mean([abs(s) for s in scores]))
+            std_score = float(np.std(scores))
+            
+            # Missing=0 mean (over all N prompts, treating absent as 0)
+            mean_score_missing0 = float(np.sum(scores) / N)
+            mean_abs_missing0 = float(np.sum([abs(s) for s in scores]) / N)
+            
+            feat_id = f"L{layer}_F{feat}"
+            
+            G.add_node(
+                feat_id,
+                type="feature",
+                layer=int(layer),
+                feature_idx=int(feat),
+                n_prompts=int(len(scores)),  # How many prompts had this in top-k
+                frequency=float(len(scores) / N),
+                # Conditional means (over prompts where in top-k)
+                mean_score_conditional=mean_score_given,
+                mean_abs_score_conditional=mean_abs_given,
+                std_score=std_score,
+                # Missing=0 means (over all N prompts - frequency-penalized)
+                mean_score_missing0=mean_score_missing0,
+                mean_abs_missing0=mean_abs_missing0,
+            )
+            
+            # Edge weight: use conditional mean_score (signed)
+            # Positive -> promotes output_correct
+            # Negative -> promotes output_incorrect
+            w = mean_score_given
+            G.add_edge("input", feat_id, weight=w)
+            G.add_edge(feat_id, "output_correct", weight=w)
+            G.add_edge(feat_id, "output_incorrect", weight=-w)
+            
+            added += 1
+        
+        logger.info(
+            f"Per-prompt union graph: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}, "
+            f"features={added}, total_candidates={len(feature_scores)}"
+        )
+        
+        if added == 0:
+            logger.warning(f"No features appeared in >= {min_prompts} prompts. Try lowering min_prompts.")
+        
+        # Store union params in graph for accurate metadata and reproducibility
+        G.graph["union_params"] = {
+            "prompt_indices": [int(p) for p in prompt_indices],  # Exact prompts used
+            "N": int(N),
+            "k_per_prompt": int(k_per_prompt),
+            "min_prompts": int(min_prompts),
+        }
+        
         return G
 
     def compute_virtual_weights(
@@ -744,8 +1003,8 @@ def main():
             )
     logger.info(f"✓ All layers use token_positions={tokpos}")
     
-    # PATCH 4: Validate decision mode consistency
-    if tokpos in ("decision", "last"):
+    # PATCH 4:    # Validate decision positions if in decision mode
+    if tokpos == "decision":
         # CRITICAL: For correlation attribution, validate is_decision_position exists
         dec_samples = [i for i, e in enumerate(position_map) if e.get("is_decision_position", False)]
         n_prompts_in_map = len(set(e["prompt_idx"] for e in position_map))
@@ -768,6 +1027,17 @@ def main():
                 f"Each prompt must have exactly 1 decision sample for correlation attribution. "
                 f"Check script 04 extraction logic for token_positions='{tokpos}'."
             )
+    
+    # CRITICAL: Enforce decision-only mode (1 sample/prompt)
+    # This script's correlation attribution requires exactly 1 decision sample per prompt
+    # Train data with token_positions="last_5" will crash collect_feature_activations()
+    if tokpos != "decision":
+        raise ValueError(
+            f"This script requires token_positions='decision' (1 sample/prompt). "
+            f"Got token_positions={tokpos!r}. "
+            f"Re-run script 04 in decision mode (ensure exactly one is_decision_position=True per prompt)."
+        )
+    logger.info("✓ Validation passed: token_positions='decision' (1 sample/prompt)")
     
     # PATCH 6: Load prompts BEFORE builder (required for margins)
     prompt_path = Path(config["paths"]["prompts"])
@@ -795,6 +1065,18 @@ def main():
         layers=layers,
     )
 
+    # DIAGNOSTIC: Test prompt-specific scoring on test data
+    # This validates that different prompts get different top-k features
+    if args.split == "test":
+        logger.info("=" * 70)
+        logger.info("DIAGNOSTIC: Testing prompt-specific scoring")
+        logger.info("=" * 70)
+        
+        # We'll run aggregate_graphs once to compute beta, then test per-prompt scoring
+        # Note: This is a temporary diagnostic approach for Phase A
+        # In Phase C, we'll refactor to make beta computation a separate method
+        pass  # Diagnostic code will be added after graph building loop
+
     # Process behaviours
     output_base = Path(config["paths"]["results"]) / "attribution_graphs"
 
@@ -804,27 +1086,39 @@ def main():
         print(f"BEHAVIOUR: {behaviour}")
         print("=" * 70)
         
-        print(f"Using {len(prompts)} prompts (already loaded)")
+        # CRITICAL: Log actual prompts used (not loaded prompts)
+        available_prompts = sorted(list(builder.prompt_to_samples.keys()))
+        print(f"Prompts loaded: {len(prompts)} | prompts with extracted samples: {len(available_prompts)}")
 
-        # Build aggregated graph
-        print(f"\nBuilding aggregated attribution graph...")
-        G = builder.aggregate_graphs(
-            prompts,
+        # Build aggregated graph using PER-PROMPT UNION (not global correlation)
+        print(f"\nBuilding per-prompt union attribution graph...")
+        k_per_prompt = tc_config.get("features", {}).get("top_k_per_prompt", 20)
+        G = builder.aggregate_graphs_per_prompt_union(
             n_prompts=args.n_prompts,
-            min_frequency=tc_config["attribution"]["min_feature_frequency"],
+            k_per_prompt=k_per_prompt,
+            min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
         )
 
         # Save graph
         output_path = output_base / behaviour
         
-        # STABILITY FIX: Add _nN suffix to differentiate runs with different sample sizes
-        # This allows us to compare stability across train_n20, train_n80, test_n20
-        n_used = min(args.n_prompts, len(prompts)) if args.n_prompts else len(prompts)
+        # STABILITY FIX: Get actual N from graph (not from len(prompts))
+        # builder.prompt_to_samples may have fewer prompts than loaded
+        union_params = G.graph.get("union_params", {})
+        # Fallback should use actual available prompts, not len(prompts)
+        available_prompts = sorted(list(builder.prompt_to_samples.keys()))
+        n_fallback = min(args.n_prompts, len(available_prompts)) if args.n_prompts else len(available_prompts)
+        n_used = int(union_params.get("N", n_fallback))
         name = f"attribution_graph_{args.split}_n{n_used}"
         
         # Get topk size from extracted_features for metadata
         first_layer = list(extracted_features.keys())[0]
         topk_size = extracted_features[first_layer]["top_k_indices"].shape[1]
+        
+        # Get actual params from graph
+        union_params = G.graph.get("union_params", {})
+        actual_min_prompts = int(union_params.get("min_prompts", 1))
+        actual_k_per_prompt = int(union_params.get("k_per_prompt", k_per_prompt))
         
         metadata = {
             "behaviour": behaviour,
@@ -833,13 +1127,19 @@ def main():
             "transcoder_repo": tc_config["transcoders"][model_size]["repo_id"],
             "layers": layers,
             "n_prompts": args.n_prompts,
+            "n_prompts_used": int(n_used),
             "timestamp": datetime.now().isoformat(),
-            # Patch E: Attribution method metadata
-            "attribution_method": "correlation",
-            "feature_score": "abs_corr",
-            "edge_weight": "corr",
-            "missing_feature_activation": 0.0,
-            # Patch 5: Top-k truncation metadata
+            "graph_type": "per_prompt_union",
+            "attribution_method": "linear_proxy",  # Not causal, correlation-based
+            "scoring": {
+                "per_prompt_score": "activation_times_beta",
+                "beta_model": "missing_is_zero",
+                "edge_weight": "mean_score_conditional",  # Uses mean_score_conditional from nodes
+                "feature_rank": "mean_abs_score_conditional",
+                "k_per_prompt": int(actual_k_per_prompt),
+                "min_prompts": int(actual_min_prompts),
+                "note": "Nodes have mean_score_conditional (over top-k prompts) and mean_score_missing0 (frequency-penalized)",
+            },
             "activation_observation": "topk_truncated",
             "topk_per_token": int(topk_size),
         }
@@ -850,20 +1150,97 @@ def main():
         n_edges = G.number_of_edges()
 
         print(f"\nGraph summary:")
+        print(f"  Edges: {n_edges}")
         print(f"  Feature nodes: {n_features}")
-        print(f" Edges: {n_edges}")
+        print(f"  Layers: {sorted(set(d['layer'] for _, d in G.nodes(data=True) if d.get('type') == 'feature'))}")
+        
+        # DIAGNOSTIC: Test prompt-specific scoring (validation)
+        if args.split == "test":
+            print("\n" + "=" * 70)
+            print("DIAGNOSTIC: Prompt-Specific Scoring Test")
+            print("=" * 70)
+            
+            # Get actual prompt indices (not range!)
+            available_prompts = sorted(list(builder.prompt_to_samples.keys()))
+            prompt_indices = available_prompts[:min(args.n_prompts, len(available_prompts))]
+            
+            # Compute beta on SAME set as graph (not just 3 prompts - too unstable)
+            beta = builder.compute_beta(prompt_indices)
+            
+            # But show diversity on subset for readability
+            n_test = min(3, len(prompt_indices))
+            test_prompts = prompt_indices[:n_test]
+            
+            print(f"\nBeta computed on {len(prompt_indices)} prompts, showing diversity on first {n_test}...")
+            print(f"Beta coefficients for {len(beta)} features")
+            
+            # Show top-k by |score| AND by signed score (to see positive vs negative drivers)
+            for p in test_prompts:
+                top_k_abs = builder.top_features_for_prompt(p, beta, k=10, use_abs=True)
+                top_k_signed = builder.top_features_for_prompt(p, beta, k=10, use_abs=False)
+                
+                prompt_text = prompts[p]['prompt'][:50] if p < len(prompts) else "???"
+                print(f"\nPrompt {p} ('{prompt_text}...') top-10 by |score|:")
+                for (layer, feat), score in top_k_abs:
+                    print(f"  L{layer}_F{feat}: score={score:.4f}")
+                
+                print(f"\n  Top-10 by signed score (positive drivers):")
+                for (layer, feat), score in top_k_signed[:5]:
+                    print(f"    L{layer}_F{feat}: score={score:+.4f}")
+            
+            
+            # Check for diversity using Jaccard similarity
+            all_tops = [
+                set(layer_feat for (layer_feat, _) in builder.top_features_for_prompt(p, beta, k=10)) 
+                for p in test_prompts
+            ]
+            
+            if n_test > 1:
+                print(f"\nDiversity Check (Jaccard Similarity):")
+                
+                # Compute pairwise Jaccard
+                jaccard_scores = []
+                for i in range(n_test):
+                    for j in range(i+1, n_test):
+                        intersection = len(all_tops[i] & all_tops[j])
+                        union = len(all_tops[i] | all_tops[j])
+                        jaccard = intersection / max(1, union)
+                        jaccard_scores.append(jaccard)
+                        print(f"  J(p{test_prompts[i]}, p{test_prompts[j]}) = {jaccard:.2%} ({intersection}/{union} features overlap)")
+                
+                avg_jaccard = np.mean(jaccard_scores) if jaccard_scores else 0.0
+                print(f"\n  Average Jaccard: {avg_jaccard:.2%}")
+                
+                if avg_jaccard < 0.3:
+                    print("  ✓ EXCELLENT: Prompts have highly diverse top features (J < 30%)")
+                elif avg_jaccard < 0.5:
+                    print("  ✓ GOOD: Prompts show different top features (J < 50%)")
+                elif avg_jaccard < 0.7:
+                    print("  ~ MODERATE: Some overlap but still prompt-specific (J < 70%)")
+                else:
+                    print("  ⚠ WARNING: High overlap, prompt-specific scoring may need tuning (J >= 70%)")
+            else:
+                print(f"\n(Skipping diversity check for single prompt)")
+            print("=" * 70)
 
-        # PATCH 7: Print top features by correlation (not avg_attribution)
+        # Print top features by mean |score| (for union graph)
         feature_rows = [
-            (n, d.get("abs_corr", 0.0), d.get("corr", 0.0), d.get("frequency", 0.0))
+            (n,
+             d.get("mean_abs_score_conditional", 0.0),
+             d.get("mean_score_conditional", 0.0),
+             d.get("frequency", 0.0),
+             d.get("n_prompts", 0))
             for n, d in G.nodes(data=True)
             if d.get("type") == "feature"
         ]
         feature_rows.sort(key=lambda x: x[1], reverse=True)
 
-        print("\nTop 10 features by |corr|:")
-        for feat_id, abs_r, r, freq in feature_rows[:10]:
-            print(f"  {feat_id}: corr={r:+.4f}, |corr|={abs_r:.4f}, freq={freq:.1%}")
+        print("\nTop 10 features by mean |score| (x*beta):")
+        for feat_id, mean_abs, mean_signed, freq, npr in feature_rows[:10]:
+            print(
+                f"  {feat_id}: mean_score={mean_signed:+.4f}, "
+                f"mean|score|={mean_abs:.4f}, freq={freq:.1%}, n_prompts={npr}"
+            )
 
         # Patch C: Only print what we actually save
         print(f"\nSaved graph to {output_path / f'{name}.graphml'}")
