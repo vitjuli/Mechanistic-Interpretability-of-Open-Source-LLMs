@@ -812,12 +812,11 @@ class TranscoderAttributionBuilder:
 
 
 def save_graph(G: nx.DiGraph, output_path: Path, name: str, metadata: Dict = None):
-    """Save graph to multiple formats."""
+    """Save graph as JSON only (GraphML disabled: doesn't support dict values)."""
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # Save as GraphML
-    graphml_path = output_path / f"{name}.graphml"
-    nx.write_graphml(G, graphml_path)
+    # GraphML disabled: nx.write_graphml fails on dict/list node attrs (e.g. union_params)
+    # and requires lxml. JSON is simpler and fully supports all value types.
 
     # Save as JSON
     json_path = output_path / f"{name}.json"
@@ -831,20 +830,21 @@ def save_graph(G: nx.DiGraph, output_path: Path, name: str, metadata: Dict = Non
             for u, v, d in G.edges(data=True)
         ],
         "metadata": metadata or {},
+        "graph_attrs": dict(G.graph),  # includes union_params for reproducibility
     }
     with open(json_path, "w") as f:
         json.dump(graph_data, f, indent=2)
 
-    logger.info(f"Saved graph: {graphml_path.name}, {json_path.name}")
-    
+    logger.info(f"Saved graph JSON: {json_path.name}")
+
     # Save metadata separately for easier access
     if metadata is not None:
         meta_path = output_path / f"{name}_metadata.json"
         with open(meta_path, "w") as f:
             json.dump(metadata, f, indent=2)
         logger.info(f"Saved metadata: {meta_path.name}")
-    
-    return graphml_path, json_path
+
+    return None, json_path
 
 
 def main():
@@ -1243,7 +1243,7 @@ def main():
             )
 
         # Patch C: Only print what we actually save
-        print(f"\nSaved graph to {output_path / f'{name}.graphml'}")
+        print(f"\nSaved graph to {output_path / f'{name}.json'}")
     print("\n" + "=" * 70)
     print("ATTRIBUTION GRAPH CONSTRUCTION COMPLETE")
     print("=" * 70)
