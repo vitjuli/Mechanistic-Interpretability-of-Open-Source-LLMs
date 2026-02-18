@@ -670,6 +670,8 @@ class TranscoderAttributionBuilder:
         n_prompts: int = 20,
         k_per_prompt: int = 20,
         min_prompts: Optional[int] = None,
+        max_frequency: float = 0.90,
+        seed: int = 0,
     ) -> nx.DiGraph:
         """
         Build attribution graph from UNION of per-prompt top-k features.
@@ -686,12 +688,16 @@ class TranscoderAttributionBuilder:
             n_prompts: Number of prompts to analyze
             k_per_prompt: Top-k features to extract per prompt
             min_prompts: Feature must appear in >= this many prompts to be included
+            max_frequency: Drop features appearing in >= this fraction of prompts (always-on noise)
+            seed: RNG seed for prompt shuffling (reproducible but unbiased selection)
         
         Returns:
             NetworkX graph with union of per-prompt features
         """
-        # Get actual prompt indices
+        # Seed-shuffled prompt selection: avoids dataset ordering bias
+        rng = np.random.default_rng(seed)
         available_prompts = sorted(list(self.prompt_to_samples.keys()))
+        rng.shuffle(available_prompts)
         prompt_indices = available_prompts[: min(n_prompts, len(available_prompts))]
         
         N = len(prompt_indices)
@@ -722,9 +728,20 @@ class TranscoderAttributionBuilder:
         G.add_node("output_incorrect", type="output")
         
         added = 0
+        skipped_rare = 0
+        skipped_always_on = 0
         for (layer, feat), scores in feature_scores.items():
-            # Filter by min_prompts
-            if len(scores) < min_prompts:
+            n_seen = len(scores)
+            freq = n_seen / N
+            
+            # Filter 1: must appear in enough prompts
+            if n_seen < min_prompts:
+                skipped_rare += 1
+                continue
+            
+            # Filter 2: drop always-on features (background/positional noise)
+            if freq >= max_frequency:
+                skipped_always_on += 1
                 continue
             
             # Conditional mean (over prompts where feature in top-k)
@@ -736,6 +753,10 @@ class TranscoderAttributionBuilder:
             mean_score_missing0 = float(np.sum(scores) / N)
             mean_abs_missing0 = float(np.sum([abs(s) for s in scores]) / N)
             
+            # Specificity score: penalises high-frequency features
+            # Features active on many prompts are less discriminative
+            specific_score = mean_abs_given * (1.0 - freq)
+            
             feat_id = f"L{layer}_F{feat}"
             
             G.add_node(
@@ -743,8 +764,8 @@ class TranscoderAttributionBuilder:
                 type="feature",
                 layer=int(layer),
                 feature_idx=int(feat),
-                n_prompts=int(len(scores)),  # How many prompts had this in top-k
-                frequency=float(len(scores) / N),
+                n_prompts=int(n_seen),
+                frequency=float(freq),
                 # Conditional means (over prompts where in top-k)
                 mean_score_conditional=mean_score_given,
                 mean_abs_score_conditional=mean_abs_given,
@@ -752,6 +773,8 @@ class TranscoderAttributionBuilder:
                 # Missing=0 means (over all N prompts - frequency-penalized)
                 mean_score_missing0=mean_score_missing0,
                 mean_abs_missing0=mean_abs_missing0,
+                # Specificity: high score + low frequency = most prompt-specific
+                specific_score=float(specific_score),
             )
             
             # Edge weight: use conditional mean_score (signed)
@@ -766,7 +789,8 @@ class TranscoderAttributionBuilder:
         
         logger.info(
             f"Per-prompt union graph: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}, "
-            f"features={added}, total_candidates={len(feature_scores)}"
+            f"features={added}, total_candidates={len(feature_scores)}, "
+            f"skipped_rare={skipped_rare}, skipped_always_on={skipped_always_on}"
         )
         
         if added == 0:
@@ -774,10 +798,12 @@ class TranscoderAttributionBuilder:
         
         # Store union params in graph for accurate metadata and reproducibility
         G.graph["union_params"] = {
-            "prompt_indices": [int(p) for p in prompt_indices],  # Exact prompts used
+            "prompt_indices": [int(p) for p in prompt_indices],
             "N": int(N),
             "k_per_prompt": int(k_per_prompt),
             "min_prompts": int(min_prompts),
+            "max_frequency": float(max_frequency),
+            "seed": int(seed),
         }
         
         return G
@@ -1093,10 +1119,12 @@ def main():
         # Build aggregated graph using PER-PROMPT UNION (not global correlation)
         print(f"\nBuilding per-prompt union attribution graph...")
         k_per_prompt = tc_config.get("features", {}).get("top_k_per_prompt", 20)
+        max_frequency = tc_config.get("features", {}).get("max_frequency", 0.90)
         G = builder.aggregate_graphs_per_prompt_union(
             n_prompts=args.n_prompts,
             k_per_prompt=k_per_prompt,
             min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
+            max_frequency=max_frequency,
         )
 
         # Save graph
@@ -1160,11 +1188,18 @@ def main():
             print("DIAGNOSTIC: Prompt-Specific Scoring Test")
             print("=" * 70)
             
-            # Get actual prompt indices (not range!)
-            available_prompts = sorted(list(builder.prompt_to_samples.keys()))
-            prompt_indices = available_prompts[:min(args.n_prompts, len(available_prompts))]
+            # Use EXACT same prompt_indices as graph (from union_params)
+            # This guarantees diagnostic beta matches the graph's beta
+            union_params = G.graph.get("union_params", {})
+            prompt_indices = union_params.get("prompt_indices", [])
+            if not prompt_indices:
+                # Fallback: recompute with same seed
+                rng = np.random.default_rng(union_params.get("seed", 0))
+                avail = sorted(list(builder.prompt_to_samples.keys()))
+                rng.shuffle(avail)
+                prompt_indices = avail[:min(args.n_prompts, len(avail))]
             
-            # Compute beta on SAME set as graph (not just 3 prompts - too unstable)
+            # Compute beta on SAME set as graph
             beta = builder.compute_beta(prompt_indices)
             
             # But show diversity on subset for readability
@@ -1188,34 +1223,45 @@ def main():
                 for (layer, feat), score in top_k_signed[:5]:
                     print(f"    L{layer}_F{feat}: score={score:+.4f}")
             
-            
-            # Check for diversity using Jaccard similarity
-            all_tops = [
-                set(layer_feat for (layer_feat, _) in builder.top_features_for_prompt(p, beta, k=10)) 
-                for p in test_prompts
-            ]
-            
             if n_test > 1:
                 print(f"\nDiversity Check (Jaccard Similarity):")
                 
-                # Compute pairwise Jaccard
-                jaccard_scores = []
+                # Compute pairwise Jaccard for BOTH abs and signed rankings
+                # abs: overall importance; signed: direction-specific (correct vs incorrect)
+                tops_abs = [
+                    set(lf for lf, _ in builder.top_features_for_prompt(p, beta, k=10, use_abs=True))
+                    for p in test_prompts
+                ]
+                tops_signed = [
+                    set(lf for lf, _ in builder.top_features_for_prompt(p, beta, k=10, use_abs=False))
+                    for p in test_prompts
+                ]
+                
+                j_abs_scores, j_signed_scores = [], []
                 for i in range(n_test):
                     for j in range(i+1, n_test):
-                        intersection = len(all_tops[i] & all_tops[j])
-                        union = len(all_tops[i] | all_tops[j])
-                        jaccard = intersection / max(1, union)
-                        jaccard_scores.append(jaccard)
-                        print(f"  J(p{test_prompts[i]}, p{test_prompts[j]}) = {jaccard:.2%} ({intersection}/{union} features overlap)")
+                        inter_abs = len(tops_abs[i] & tops_abs[j])
+                        union_abs = len(tops_abs[i] | tops_abs[j])
+                        j_abs = inter_abs / max(1, union_abs)
+                        j_abs_scores.append(j_abs)
+                        
+                        inter_signed = len(tops_signed[i] & tops_signed[j])
+                        union_signed = len(tops_signed[i] | tops_signed[j])
+                        j_signed = inter_signed / max(1, union_signed)
+                        j_signed_scores.append(j_signed)
+                        
+                        print(f"  J(p{test_prompts[i]}, p{test_prompts[j]}): "
+                              f"|score|={j_abs:.2%}, signed={j_signed:.2%}")
                 
-                avg_jaccard = np.mean(jaccard_scores) if jaccard_scores else 0.0
-                print(f"\n  Average Jaccard: {avg_jaccard:.2%}")
+                avg_j_abs = float(np.mean(j_abs_scores)) if j_abs_scores else 0.0
+                avg_j_signed = float(np.mean(j_signed_scores)) if j_signed_scores else 0.0
+                print(f"\n  Average Jaccard: |score|={avg_j_abs:.2%}, signed={avg_j_signed:.2%}")
                 
-                if avg_jaccard < 0.3:
+                if avg_j_abs < 0.3:
                     print("  ✓ EXCELLENT: Prompts have highly diverse top features (J < 30%)")
-                elif avg_jaccard < 0.5:
+                elif avg_j_abs < 0.5:
                     print("  ✓ GOOD: Prompts show different top features (J < 50%)")
-                elif avg_jaccard < 0.7:
+                elif avg_j_abs < 0.7:
                     print("  ~ MODERATE: Some overlap but still prompt-specific (J < 70%)")
                 else:
                     print("  ⚠ WARNING: High overlap, prompt-specific scoring may need tuning (J >= 70%)")
@@ -1226,6 +1272,7 @@ def main():
         # Print top features by mean |score| (for union graph)
         feature_rows = [
             (n,
+             d.get("specific_score", 0.0),
              d.get("mean_abs_score_conditional", 0.0),
              d.get("mean_score_conditional", 0.0),
              d.get("frequency", 0.0),
@@ -1233,13 +1280,13 @@ def main():
             for n, d in G.nodes(data=True)
             if d.get("type") == "feature"
         ]
-        feature_rows.sort(key=lambda x: x[1], reverse=True)
+        feature_rows.sort(key=lambda x: x[1], reverse=True)  # sort by specific_score
 
-        print("\nTop 10 features by mean |score| (x*beta):")
-        for feat_id, mean_abs, mean_signed, freq, npr in feature_rows[:10]:
+        print("\nTop 10 features by specific_score (mean|score| × (1-freq)):")
+        for feat_id, spec, mean_abs, mean_signed, freq, npr in feature_rows[:10]:
             print(
-                f"  {feat_id}: mean_score={mean_signed:+.4f}, "
-                f"mean|score|={mean_abs:.4f}, freq={freq:.1%}, n_prompts={npr}"
+                f"  {feat_id}: specific={spec:.4f}, mean|score|={mean_abs:.4f}, "
+                f"mean_score={mean_signed:+.4f}, freq={freq:.1%}, n_prompts={npr}"
             )
 
         # Patch C: Only print what we actually save
