@@ -85,7 +85,7 @@ attribution:
   top_k_edges_per_node: 10
   min_attribution_magnitude: 0.01
   # Graph aggregation
-  min_feature_frequency: 0.2  # Feature must appear in 20% of prompts
+  min_feature_frequency: 0.0  # CHANGED: Was 0.2 - now allows rare but important features
 
 # Transcoder intervention settings
 interventions:

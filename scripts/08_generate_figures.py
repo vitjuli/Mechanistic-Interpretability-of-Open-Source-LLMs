@@ -5,7 +5,6 @@ Creates figures suitable for thesis including:
 - Attribution graph diagrams
 - Feature activation heatmaps
 - Intervention effect plots
-- Comparison with Anthropic's results
 
 Usage:
     python scripts/08_generate_figures.py
