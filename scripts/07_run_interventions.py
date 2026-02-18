@@ -205,34 +205,53 @@ def load_attribution_graph(
 def get_top_attributed_features(
     graph_data: Dict,
     n_features: int = 10,
-) -> List[Tuple[int, int, float]]:
+) -> List[Tuple[int, int, float, dict]]:
     """
     Extract top attributed features from graph.
 
+    Detects graph type from graph_attrs.union_params or metadata.graph_type:
+    - per_prompt_union: uses mean_abs_score_conditional (or specific_score)
+    - correlation (old): uses abs_corr
+
     Returns:
-        List of (layer, feature_idx, attribution_score) tuples
+        List of (layer, feature_idx, attribution_score, node_dict) tuples
     """
-    # Safety: handle None or malformed graph
     if not graph_data or "nodes" not in graph_data:
         logger.warning("Graph data is None or missing 'nodes' key")
         return []
-    
+
+    # Detect graph type
+    meta = graph_data.get("metadata", {}) or {}
+    gattrs = graph_data.get("graph_attrs", {}) or {}
+    graph_type = meta.get("graph_type", None)
+    if graph_type is None and "union_params" in gattrs:
+        graph_type = "per_prompt_union"
+
     features = []
     for node in graph_data["nodes"]:
-        if node.get("type") == "feature":
-            # FIX: Read abs_corr (not avg_differential_attribution)
+        if node.get("type") != "feature":
+            continue
+
+        if graph_type == "per_prompt_union":
+            # Fields written by 06_build_attribution_graph.py union method
+            score = node.get("mean_abs_score_conditional", None)
+            if score is None:
+                score = node.get("specific_score", None)
+            if score is None:
+                score = abs(node.get("mean_score_conditional", 0.0))
+        else:
+            # Old correlation-style graph
             score = node.get("abs_corr", None)
             if score is None:
-                # Fallback: compute from corr if abs_corr missing
                 score = abs(node.get("corr", 0.0))
-            
-            features.append((
-                int(node["layer"]),
-                int(node["feature_idx"]),
-                float(score),
-            ))
 
-    # Sort by attribution magnitude  
+        features.append((
+            int(node["layer"]),
+            int(node["feature_idx"]),
+            float(score),
+            node,  # full node dict for sign info
+        ))
+
     features.sort(key=lambda x: x[2], reverse=True)
     return features[:n_features]
 
@@ -250,9 +269,14 @@ def patch_mlp_input(
 ):
     """
     *** CRITICAL FIX: Patch MLP INPUT not residual stream! ***
-    
+
     Transcoders are trained on MLP inputs (post_attention_layernorm output).
     This hook intercepts post_attention_layernorm and replaces its output.
+
+    WARNING: torch.compile() may silently disable or reorder forward hooks.
+    If the model was compiled with torch.compile(), hook_called will still be
+    >0 (the hook fires) but the patched tensor may not propagate correctly
+    through the compiled graph. Avoid torch.compile() when running interventions.
     
     Qwen3/Llama architecture:
         mlp_input = self.post_attention_layernorm(hidden_states)  ← WE HOOK HERE!
@@ -291,18 +315,41 @@ def patch_mlp_input(
     # Track hook execution for sanity check
     hook_called = {"count": 0}
     
+    # capture the patched tensor for error diagnostic
+    _patch_err_logged = {"done": False}
+
     def hook(module, inp, out):
         """Replace MLP input at token position."""
         hook_called["count"] += 1
         if isinstance(out, tuple):
             h = out[0].clone()
-            h[:, token_pos, :] = new_mlp_input.to(h.dtype).to(h.device)
+            new_tok = new_mlp_input.to(h.dtype).to(h.device)
+            # Log BEFORE assignment: pre_patch_diff measures how different the
+            # original activation is from the patch value.
+            # >0 = patch is doing real work; ~0 = patch has no effect on this prompt.
+            # Logged at INFO so it's visible at default log level.
+            if not _patch_err_logged["done"]:
+                pre_err = (h[:, token_pos, :] - new_tok).norm().item()
+                logger.info(
+                    f"[patch_mlp_input] layer={layer_idx} "
+                    f"pre_patch_diff={pre_err:.4e} (>0 means patch changes something)"
+                )
+                _patch_err_logged["done"] = True
+            h[:, token_pos, :] = new_tok
             return (h,) + out[1:]
         else:
             h = out.clone()
-            h[:, token_pos, :] = new_mlp_input.to(h.dtype).to(h.device)
+            new_tok = new_mlp_input.to(h.dtype).to(h.device)
+            if not _patch_err_logged["done"]:
+                pre_err = (h[:, token_pos, :] - new_tok).norm().item()
+                logger.info(
+                    f"[patch_mlp_input] layer={layer_idx} "
+                    f"pre_patch_diff={pre_err:.4e} (>0 means patch changes something)"
+                )
+                _patch_err_logged["done"] = True
+            h[:, token_pos, :] = new_tok
             return h
-    
+
     handle = hook_module.register_forward_hook(hook)
     exc = None  # Track if exception occurred
     try:
@@ -422,24 +469,25 @@ class TranscoderInterventionExperiment:
         incorrect_token: str,
     ) -> float:
         """
-        Compute logit difference (margin) between correct and incorrect tokens.
-        
-        Returns:
-            logits[correct] - logits[incorrect]
+        Compute log-probability difference (margin) between correct and incorrect tokens.
+
+        Uses log_softmax for consistency with script 06 (which also uses log_probs).
+        Returns log_prob[correct] - log_prob[incorrect].
         """
         inputs = self.model.tokenize([prompt])
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            # FIX: use_cache=False for consistency with get_mlp_input_activation
             outputs = self.model.model(**inputs, use_cache=False)
             logits = outputs.logits[0, -1, :]
 
-        # FIX: Validate single-token and get IDs
+        # Use log_softmax for consistency with script 06
+        log_probs = torch.log_softmax(logits, dim=0)
+
         cid = ensure_single_token(self.model, correct_token)
         iid = ensure_single_token(self.model, incorrect_token)
 
-        return (logits[cid] - logits[iid]).item()
+        return (log_probs[cid] - log_probs[iid]).item()
 
     def run_ablation_experiment(
         self,
@@ -535,16 +583,18 @@ class TranscoderInterventionExperiment:
                 intervened_outputs = self.model.model(**inputs, use_cache=False)
                 logits = intervened_outputs.logits[0, -1, :]
         
-        # Get intervened margin
+        # Get intervened margin (log_softmax — same scale as baseline)
         cid = ensure_single_token(self.model, correct_token)
         iid = ensure_single_token(self.model, incorrect_token)
-        intervened_margin = (logits[cid] - logits[iid]).item()
-        
+        log_probs = torch.log_softmax(logits, dim=0)
+        intervened_margin = (log_probs[cid] - log_probs[iid]).item()
+
         # Step 5: Compute causal effects
         margin_change = intervened_margin - baseline_margin  # SIGNED!
-        baseline_sign = 1 if baseline_margin > 0 else -1
-        intervened_sign = 1 if intervened_margin > 0 else -1
-        sign_flipped = (baseline_sign != intervened_sign)
+        eps = 1e-6
+        baseline_sign = 1 if baseline_margin > eps else (-1 if baseline_margin < -eps else 0)
+        intervened_sign = 1 if intervened_margin > eps else (-1 if intervened_margin < -eps else 0)
+        sign_flipped = (baseline_sign != 0 and intervened_sign != 0 and baseline_sign != intervened_sign)
         
         return InterventionResult(
             experiment_type=f"ablation_{mode}",
@@ -575,10 +625,12 @@ class TranscoderInterventionExperiment:
         target_incorrect: str,
         layer: int,
         feature_indices: Optional[List[int]] = None,
+        candidate_features: Optional[List[int]] = None,
+        top_k: int = 10,
     ) -> InterventionResult:
         """
         Run activation patching with REAL forward pass intervention.
-        
+
         Patches features from source prompt into target prompt using hooks.
         This measures the causal effect of transferring specific features.
 
@@ -590,7 +642,9 @@ class TranscoderInterventionExperiment:
             target_correct: Correct answer for target
             target_incorrect: Incorrect answer for target
             layer: Layer to patch
-            feature_indices: Specific features to patch (None = all, NOT RECOMMENDED)
+            feature_indices: Exact features to patch (overrides candidate_features selection)
+            candidate_features: Pool of candidate features; top_k selected by |src-tgt| diff
+            top_k: How many features to select from candidate_features
 
         Returns:
             InterventionResult with TRUE patching effects
@@ -615,22 +669,39 @@ class TranscoderInterventionExperiment:
 
         # Step 3: Patch features in transcoder space
         transcoder = self.transcoder_set[layer]
-        
+
         source_features = transcoder.encode(source_mlp_input.to(transcoder.dtype))
         target_features = transcoder.encode(target_mlp_input.to(transcoder.dtype))
 
-        # SAFETY: Refuse to patch ALL features (too broad, hard to interpret!)
-        if feature_indices is None:
+        # Resolve which features to patch:
+        # - feature_indices (explicit) takes priority
+        # - else: pick top_k from candidate_features by |source - target| diff
+        # - else: raise (patching all is too broad)
+        if feature_indices is not None:
+            selected = feature_indices
+            _selected_by_diff = False
+        elif candidate_features is not None:
+            d = transcoder.d_transcoder
+            cands = [fi for fi in candidate_features if 0 <= fi < d]
+            if not cands:
+                raise ValueError(f"No valid candidate features for layer {layer}")
+            cand_t = torch.tensor(cands, device=source_features.device, dtype=torch.long)
+            diff = (source_features - target_features).abs()[0]  # (d_tc,)
+            k = min(top_k, len(cands))
+            topk_idx = torch.topk(diff[cand_t], k=k).indices
+            selected = cand_t[topk_idx].tolist()
+            _selected_by_diff = True
+        else:
             raise ValueError(
                 f"Refusing to patch ALL {transcoder.d_transcoder} features! "
-                f"This is too broad for meaningful interpretation. "
-                f"Pass feature_indices explicitly (e.g., top 5-20 features from attribution graph)."
+                f"Pass feature_indices or candidate_features."
             )
+            _selected_by_diff = False  # unreachable but keeps linter happy
         
         # Patch only specified features
         patched_features = target_features.clone()
-        patched_features[:, feature_indices] = source_features[:, feature_indices]
-        features_patched = feature_indices
+        patched_features[:, selected] = source_features[:, selected]
+        features_patched = selected
 
         # Decode to patched MLP input
         patched_mlp_input = transcoder.decode(patched_features).to(target_mlp_input.dtype)
@@ -650,12 +721,14 @@ class TranscoderInterventionExperiment:
         # Step 5: Get intervened margin and compute causal effects
         cid = ensure_single_token(self.model, target_correct)
         iid = ensure_single_token(self.model, target_incorrect)
-        intervened_margin = (logits[cid] - logits[iid]).item()
-        
+        log_probs = torch.log_softmax(logits, dim=0)
+        intervened_margin = (log_probs[cid] - log_probs[iid]).item()
+
         margin_change = intervened_margin - baseline_margin  # SIGNED!
-        baseline_sign = 1 if baseline_margin > 0 else -1
-        intervened_sign = 1 if intervened_margin > 0 else -1
-        sign_flipped = (baseline_sign != intervened_sign)
+        eps = 1e-6
+        baseline_sign = 1 if baseline_margin > eps else (-1 if baseline_margin < -eps else 0)
+        intervened_sign = 1 if intervened_margin > eps else (-1 if intervened_margin < -eps else 0)
+        sign_flipped = (baseline_sign != 0 and intervened_sign != 0 and baseline_sign != intervened_sign)
         
         return InterventionResult(
             experiment_type="patching",
@@ -674,6 +747,8 @@ class TranscoderInterventionExperiment:
                 "source_correct": source_correct,
                 "target_correct": target_correct,
                 "target_incorrect": target_incorrect,
+                "selected_by_diff": _selected_by_diff,
+                "candidate_pool_size": len(candidate_features) if candidate_features is not None else 0,
             },
         )
     def run_steering_experiment(
@@ -733,6 +808,9 @@ class TranscoderInterventionExperiment:
                 with torch.no_grad():
                     feats = transcoder.encode(mlp_input_act.to(transcoder.dtype))
                     feats_mod = feats.clone()
+                    # D2: uniform coefficient push — all top_k features get same delta.
+                    # Note: features may have different natural scales; consider z-score
+                    # steering (coefficient * std) for more calibrated experiments.
                     feats_mod[:, cand] += float(coefficient)  # constant push
                     steered_mlp_input = transcoder.decode(feats_mod).to(mlp_input_act.dtype)
 
@@ -750,10 +828,14 @@ class TranscoderInterventionExperiment:
 
                 cid = ensure_single_token(self.model, correct)
                 iid = ensure_single_token(self.model, incorrect)
-                intervened_margin = (logits[cid] - logits[iid]).item()
+                log_probs = torch.log_softmax(logits, dim=0)
+                intervened_margin = (log_probs[cid] - log_probs[iid]).item()
 
                 change = intervened_margin - baseline_margin
-                sign_flipped = (np.sign(baseline_margin) != np.sign(intervened_margin))
+                eps = 1e-6
+                b_sign = 1 if baseline_margin > eps else (-1 if baseline_margin < -eps else 0)
+                i_sign = 1 if intervened_margin > eps else (-1 if intervened_margin < -eps else 0)
+                sign_flipped = (b_sign != 0 and i_sign != 0 and b_sign != i_sign)
 
                 results.append(
                     InterventionResult(
@@ -879,7 +961,8 @@ class TranscoderInterventionExperiment:
                 "feature_idx": feat_idx,
                 "mean_activation": np.mean(feat_acts),
                 "std_activation": np.std(feat_acts),
-                "activation_frequency": np.mean(feat_acts > 0),
+                # Fix D1: use small threshold to avoid counting near-zero activations as active
+                "activation_frequency": np.mean(feat_acts > 1e-6),
                 "correlation_with_logit_diff": correlation,
                 "abs_correlation": abs(correlation) if not np.isnan(correlation) else 0,
             })
@@ -910,7 +993,7 @@ def create_prompt_pairs(
     
     # Helper to sort by margin (ascending: low to high)
     def sort_by_margin(p_list):
-        if p_list and 'margin' in p_list[0]:
+        if p_list and any('margin' in p for p in p_list):
             return sorted(p_list, key=lambda x: float(x.get('margin', 0.0)))
         return p_list
 
@@ -1111,7 +1194,12 @@ def export_token_feature_examples(
 
                 transcoder = experiment.transcoder_set[layer]
                 with torch.no_grad():
-                    feats = transcoder.encode(mlp_last.to(transcoder.dtype))  # (1, N, d_transcoder)
+                    # Fix C: reshape to 2D before encode — many SAE/Transcoder impls
+                    # expect (batch, hidden), not (batch, seq, hidden).
+                    B, Nseq, H = mlp_last.shape
+                    x2 = mlp_last.reshape(B * Nseq, H).to(transcoder.dtype)
+                    z2 = transcoder.encode(x2)          # (B*N, d_transcoder)
+                    feats = z2.reshape(B, Nseq, -1)     # (1, N, d_transcoder)
 
                 feats_np = to_numpy(feats[0, :, cand])  # (N, K)
 
@@ -1283,6 +1371,29 @@ def main():
         default=5,
         help="Number of top features to ablate (default: 5). Increase for ensemble ablation.",
     )
+    parser.add_argument(
+        "--ablation_sign",
+        type=str,
+        default="pos",
+        choices=["pos", "neg", "all"],
+        help="Which features to ablate by sign of mean_score_conditional: "
+             "pos=positive drivers (expect margin↓), neg=negative drivers (expect margin↑), all=both",
+    )
+    parser.add_argument(
+        "--graph_n_prompts",
+        type=int,
+        default=None,
+        help="Explicit n_prompts suffix for loading attribution graph (e.g. 100 loads _n100.json). "
+             "Defaults to --n_prompts if not set.",
+    )
+    parser.add_argument(
+        "--allow_sharded",
+        action="store_true",
+        default=False,
+        help="Allow running interventions on a model sharded across multiple devices (device_map). "
+             "By default this raises an error because hooks may fire on the wrong device. "
+             "Use only if you know what you are doing.",
+    )
     args = parser.parse_args()
 
     # Load configs
@@ -1345,13 +1456,24 @@ def main():
     device = model_device
     logger.info(f"Model loaded on device: {device}")
     
-    # CRITICAL: Warn if model is sharded across devices
+    # Fix B: Raise on sharded model unless --allow_sharded is explicitly set.
+    # With accelerate device_map, hooks may fire on wrong device/time.
     if hasattr(model.model, "hf_device_map"):
-        logger.warning(
-            f"Model has device_map (multi-GPU/offload): {model.model.hf_device_map}. "
-            f"Interventions may behave unexpectedly with sharded models. "
-            f"For best results, use single-device loading."
-        )
+        unique_devices = set(model.model.hf_device_map.values())
+        if len(unique_devices) > 1:
+            if not getattr(args, "allow_sharded", False):
+                raise RuntimeError(
+                    f"Model is sharded across {len(unique_devices)} devices: {unique_devices}. "
+                    f"Forward hooks may fire on the wrong device, making interventions unreliable. "
+                    f"Either load on a single GPU (remove device_map) or pass --allow_sharded to override."
+                )
+            else:
+                logger.warning(
+                    f"--allow_sharded set: proceeding with sharded model ({unique_devices}). "
+                    f"Intervention results may be unreliable."
+                )
+        else:
+            logger.info(f"Model device_map uses single device {unique_devices} — OK.")
     
     # NOW load transcoders on the SAME device as model
     print("Loading transcoders...")
@@ -1413,27 +1535,40 @@ def main():
             print(f"Loaded {len(source_prompts)} source prompts")
             logger.info(f"Sources counts: {_count_numbers(source_prompts)}")
             
-        # Load attribution graph for top features
-        # FIX: Use existing results_path from config, don't overwrite!
-        # load_attribution_graph expects results root, not behaviour subpath
-        graph_n = None if (args.prompts_file or args.source_prompts_file) else args.n_prompts
+        # Load attribution graph — use --graph_n_prompts if set, else --n_prompts
+        graph_n = args.graph_n_prompts if args.graph_n_prompts is not None else args.n_prompts
         graph_data = load_attribution_graph(
             results_path, behaviour, args.split, n_prompts=graph_n
         )
         
-        # Build per-layer feature index lists
+        # Build per-layer feature index lists (unsigned and signed)
         top_features_by_layer: Dict[int, List[int]] = {}
-        top_features = []
-        
+        # (feature_idx, signed_mean_score_conditional) — for sign-aware ablation
+        top_features_by_layer_signed: Dict[int, List[Tuple[int, float]]] = {}
+        top_nodes = []
+
         if graph_data:
-            # FIX: Load enough features for ensemble ablation (at least 200 or requested k)
-            n_load = max(200, args.top_k)
-            top_features = get_top_attributed_features(graph_data, n_features=n_load)
-            print(f"Loaded {len(top_features)} top attributed features from graph (requested top {n_load})")
-            
-            # Populate dictionary
-            for L, fidx, score in top_features:
+            # Load enough features to cover all layers/signs after filtering.
+            # Scale with top_k (we filter by sign and activation later), cap at 5000.
+            n_load = max(200, args.top_k * 20)
+            n_load = min(n_load, 5000)
+            top_nodes = get_top_attributed_features(graph_data, n_features=n_load)
+            print(f"Loaded {len(top_nodes)} top attributed features from graph (requested top {n_load})")
+
+            for L, fidx, score, node in top_nodes:
                 top_features_by_layer.setdefault(L, []).append(fidx)
+                # Fix 2: correct signed fallback — don't use abs score as sign
+                signed = node.get("mean_score_conditional", None)
+                if signed is None:
+                    signed = node.get("mean_score", None)
+                if signed is None:
+                    logger.warning(
+                        f"Signed score missing in node L{L}_F{fidx}; "
+                        "--ablation_sign pos/neg may be unreliable for this feature."
+                    )
+                    signed = 0.0
+                signed = float(signed)
+                top_features_by_layer_signed.setdefault(L, []).append((fidx, signed))
         else:
             print("No attribution graph found, will use random/first features")
 
@@ -1445,6 +1580,23 @@ def main():
             "prompts_file": args.prompts_file,
             "source_prompts_file": args.source_prompts_file,
         }
+
+        # Export token-feature examples if requested (before running experiments)
+        if args.export_token_examples:
+            out_dir = output_path / behaviour / "token_feature_examples"
+            print(f"\nExporting token-feature examples to {out_dir}...")
+            export_token_feature_examples(
+                model=model,
+                experiment=experiment,
+                prompts=prompts,
+                behaviour=behaviour,
+                out_dir=out_dir,
+                layers=layers,
+                top_features_by_layer=top_features_by_layer,
+                n_prompts=args.token_examples_n_prompts,
+                last_n_tokens=args.last_n_tokens,
+                top_k_per_layer=args.token_examples_topk,
+            )
 
         # Run experiments
         # Determine experiments to run
@@ -1521,11 +1673,19 @@ def main():
                         continue
 
                     for layer in layers:
-                        # Use graph-derived features if available, else fallback
-                        if top_features_by_layer and layer in top_features_by_layer:
-                            layer_features = top_features_by_layer[layer][:args.top_k]
+                        # Select features by sign of mean_score_conditional
+                        cands = top_features_by_layer_signed.get(layer, [])
+                        if cands:
+                            if args.ablation_sign == "pos":
+                                # Positive drivers: ablating should decrease margin
+                                layer_features = [fi for fi, s in cands if s > 0][:args.top_k]
+                            elif args.ablation_sign == "neg":
+                                # Negative drivers: ablating should increase margin
+                                layer_features = [fi for fi, s in cands if s < 0][:args.top_k]
+                            else:  # "all"
+                                layer_features = [fi for fi, _ in cands][:args.top_k]
                         else:
-                            layer_features = []
+                            layer_features = top_features_by_layer.get(layer, [])[:args.top_k]
 
                         d = experiment.transcoder_set[layer].d_transcoder
                         layer_features = [fi for fi in layer_features if 0 <= fi < d]
@@ -1533,6 +1693,25 @@ def main():
                         if not layer_features:
                             logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
                             layer_features = list(range(min(args.top_k, d)))
+
+                        # Fix 7: Activation-aware selection — prefer features active on THIS prompt
+                        try:
+                            abl_inputs = experiment.model.tokenize([prompt])
+                            abl_inputs = {k: v.to(experiment.device) for k, v in abl_inputs.items()}
+                            abl_mlp = get_mlp_input_activation(
+                                experiment.model, abl_inputs, layer_idx=layer, token_pos=-1
+                            )
+                            tc = experiment.transcoder_set[layer]
+                            abl_feats = tc.encode(abl_mlp.to(tc.dtype))[0]  # (d_tc,)
+                            cand_t = torch.tensor(layer_features, device=abl_feats.device, dtype=torch.long)
+                            # Use relu: transcoder features are typically non-negative (JumpReLU/ReLU)
+                            act_scores = torch.relu(abl_feats[cand_t])
+                            k = min(args.top_k, len(layer_features))
+                            topk_idx = torch.topk(act_scores, k=k).indices
+                            layer_features = cand_t[topk_idx].tolist()
+                        except Exception as e:
+                            logger.warning(f"Activation-aware selection failed for layer {layer}: {e}. Using sign-filtered list.")
+                            layer_features = layer_features[:args.top_k]
 
                         try:
                             result = experiment.run_ablation_experiment(
@@ -1584,17 +1763,13 @@ def main():
                         continue
 
                     for layer in layers:
-                        if top_features_by_layer and layer in top_features_by_layer:
-                            layer_features = top_features_by_layer[layer][:args.top_k]
-                        else:
-                            layer_features = []
-
+                        # Candidate features from graph (pair-specific selection happens inside run_patching_experiment)
+                        cands = top_features_by_layer.get(layer, [])
                         d = experiment.transcoder_set[layer].d_transcoder
-                        layer_features = [fi for fi in layer_features if 0 <= fi < d]
-
-                        if not layer_features:
+                        cands = [fi for fi in cands if 0 <= fi < d]
+                        if not cands:
                             logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
-                            layer_features = list(range(min(args.top_k, d)))
+                            cands = list(range(min(args.top_k, d)))
 
                         try:
                             result = experiment.run_patching_experiment(
@@ -1605,7 +1780,8 @@ def main():
                                 target_correct=target_correct,
                                 target_incorrect=target_incorrect,
                                 layer=layer,
-                                feature_indices=layer_features,
+                                candidate_features=cands,  # pair-specific top-k selected inside
+                                top_k=args.top_k,
                             )
 
                             # Enrich metadata

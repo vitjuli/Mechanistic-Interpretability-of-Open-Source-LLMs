@@ -1,12 +1,8 @@
 """
 Build attribution graphs from transcoder features to model outputs.
 
-Implements a simplified version of the methodology from:
-"On the Biology of a Large Language Model" (Lindsey, Gurnee, et al., 2025)
-
-This version uses pre-trained transcoders instead of custom-trained SAEs.
-The attribution graph shows CANDIDATE/PROXY pathways (not causal):
-    Input tokens -> Transcoder features -> ... -> Output logits
+This version uses pre-trained transcoders.
+Input tokens -> Transcoder features -> ... -> Output logits
 
 Pre-trained transcoders from: https://github.com/safety-research/circuit-tracer
 
@@ -1229,6 +1225,7 @@ def main():
                 # Compute pairwise Jaccard for BOTH abs and signed rankings
                 # abs: overall importance; signed: direction-specific (correct vs incorrect)
                 tops_abs = [
+
                     set(lf for lf, _ in builder.top_features_for_prompt(p, beta, k=10, use_abs=True))
                     for p in test_prompts
                 ]

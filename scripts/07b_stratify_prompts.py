@@ -51,18 +51,21 @@ def save_subset(df, output_path, label):
                 'prompt': row['prompt'],
                 'correct_answer': row['correct_token'],
                 'incorrect_answer': row['incorrect_token'],
+                # row.get() is correct for pd.Series (checks index, not values)
                 'number': row.get('number', 'unknown'),
             }
-            # Optional metadata
+            # check df.columns (not `col in row` which checks Series VALUES)
             for col in ['orig_idx', 'margin', 'subject', 'template']:
-                if col in row:
+                if col in df.columns:
                     val = row[col]
-                    if col == 'margin': val = float(val)
-                    if col == 'orig_idx': val = int(val)
+                    if col == 'margin':
+                        val = float(val)
+                    elif col == 'orig_idx':
+                        val = int(val)
                     record[col] = val
-            
+
             f.write(json.dumps(record) + '\n')
-    
+
     logger.info(f"Saved {label} JSONL to {jsonl_path}")
 
 
@@ -141,23 +144,34 @@ def stratify_prompts(args):
     # Load baselines
     df = pd.read_csv(args.baselines)
     logger.info(f"Loaded {len(df)} baselines")
+
+    # Fix 5.1: normalise 'number' column before any filtering/balancing
+    # Handles: Singular/Plural, sing/plur, 0/1, or already correct lowercase
+    if 'number' in df.columns:
+        df['number'] = df['number'].astype(str).str.strip().str.lower()
+        df['number'] = df['number'].replace({
+            'sing': 'singular', 'plur': 'plural',
+            '0': 'singular', '1': 'plural',
+        })
+        logger.info(f"Number values after normalisation: {sorted(df['number'].unique())}")
     
-    # 1. Select Targets (Low Margin)
+    # Fix 5.2: disjoint ranges — targets strictly <= low_max, sources strictly >= high_min
+    # This guarantees no prompt can appear in both subsets.
     targets = balance_and_select(
-        df, 
-        margin_min=args.low_min, 
-        margin_max=args.low_max, 
-        n_per_class=args.n_low_per_class, 
+        df,
+        margin_min=args.low_min,
+        margin_max=args.low_max,
+        n_per_class=args.n_low_per_class,
         label="TARGETS",
         strict=args.strict_classes
     )
-    
+
     # 2. Select Sources (High Margin)
     sources = balance_and_select(
-        df, 
-        margin_min=args.high_min, 
-        margin_max=args.high_max, 
-        n_per_class=args.n_high_per_class, 
+        df,
+        margin_min=args.high_min,
+        margin_max=args.high_max,
+        n_per_class=args.n_high_per_class,
         label="SOURCES",
         strict=args.strict_classes
     )
@@ -205,23 +219,30 @@ def main():
     parser.add_argument('--n_per_class', type=int, help='DEPRECATED')
 
     args = parser.parse_args()
-    
+
     # Handle legacy arguments
     if args.output_prefix is None:
         if args.output:
             p = Path(args.output)
-            args.output_prefix = str(p.with_suffix('')) # Strip extension
+            args.output_prefix = str(p.with_suffix(''))  # Strip extension
             logger.warning(f"Mapping legacy --output to --output_prefix={args.output_prefix}")
         else:
-             parser.error("At least one of --output_prefix or --output is required.")
-        
+            parser.error("At least one of --output_prefix or --output is required.")
+
     if args.n_per_class:
         args.n_low_per_class = args.n_per_class
         args.n_high_per_class = args.n_per_class
-        
+
     if args.max_margin:
         args.low_max = args.max_margin
-        
+
+    # Fix 5.2: guard against overlapping ranges
+    if args.low_max >= args.high_min:
+        parser.error(
+            f"--low_max ({args.low_max}) must be strictly less than --high_min ({args.high_min}). "
+            f"Overlapping ranges would put the same prompts in both targets and sources."
+        )
+
     stratify_prompts(args)
 
 

@@ -86,36 +86,36 @@ def compute_logit_diff(
     incorrect_token: str
 ) -> float:
     """
-    Compute logit difference: logit(correct) - logit(incorrect).
-    
-    Matches intervention script exactly (same device, use_cache=False).
-    
+    Compute log-prob margin: log_softmax(correct) - log_softmax(incorrect).
+
+    Uses log_softmax to match 07_run_interventions.py exactly.
+    Raw logit diff and log-prob diff have different scales; using the same
+    metric here ensures stratification thresholds are meaningful in 07.
+
     Args:
         model: ModelWrapper instance
         device: Device to use
         prompt: Input text
         correct_token: Correct answer token (must be single-token)
         incorrect_token: Incorrect answer token (must be single-token)
-    
+
     Returns:
-        Logit difference (margin). Positive = model prefers correct.
+        Log-prob margin. Positive = model prefers correct.
     """
-    # Tokenize
     inputs = model.tokenize([prompt])
     inputs = {k: v.to(device) for k, v in inputs.items()}
-    
-    # Get token IDs with validation
+
     correct_id = ensure_single_token(model.tokenizer, correct_token)
     incorrect_id = ensure_single_token(model.tokenizer, incorrect_token)
-    
-    # Forward pass (matches intervention script)
+
     with torch.no_grad():
         outputs = model.model(**inputs, use_cache=False)
         logits = outputs.logits[0, -1, :]  # Last token logits
-    
-    # Compute difference
-    margin = (logits[correct_id] - logits[incorrect_id]).item()
-    
+
+    # Fix: use log_softmax to match 07_run_interventions.py
+    log_probs = torch.log_softmax(logits, dim=0)
+    margin = (log_probs[correct_id] - log_probs[incorrect_id]).item()
+
     return margin
 
 
@@ -215,60 +215,66 @@ def compute_baselines(args):
     
     # Save results
     df = pd.DataFrame(results)
-    
+
     # Generate output filename
     output_file = output_dir / f"baselines_{args.behaviour}_{args.split}_n{len(results)}.csv"
     df.to_csv(output_file, index=False)
-    
+
     logger.info(f"Saved {len(results)} baseline margins to {output_file}")
-    
+
     # Print summary statistics
     logger.info("\n" + "="*60)
-    logger.info("BASELINE STATISTICS")
+    logger.info("BASELINE STATISTICS  (metric: log_softmax margin)")
     logger.info("="*60)
     logger.info(f"Total prompts: {len(df)}")
-    logger.info(f"Mean margin: {df['margin'].mean():.3f}")
-    logger.info(f"Median margin: {df['margin'].median():.3f}")
-    logger.info(f"Std margin: {df['margin'].std():.3f}")
-    logger.info(f"Min margin: {df['margin'].min():.3f}")
-    logger.info(f"Max margin: {df['margin'].max():.3f}")
-    
-    # Count by margin ranges
-    low = df[(df['margin'] > 0) & (df['margin'] < 1.5)]
-    medium = df[(df['margin'] >= 1.5) & (df['margin'] < 3.0)]
-    high = df[df['margin'] >= 3.0]
+    logger.info(f"Mean margin:   {df['margin'].mean():.4f}")
+    logger.info(f"Median margin: {df['margin'].median():.4f}")
+    logger.info(f"Std margin:    {df['margin'].std():.4f}")
+    logger.info(f"Min margin:    {df['margin'].min():.4f}")
+    logger.info(f"Max margin:    {df['margin'].max():.4f}")
+
+    # Quantile summary — use these to set thresholds in 07b!
+    qs = [0.10, 0.25, 0.50, 0.75, 0.90]
+    q_vals = df['margin'].quantile(qs)
+    logger.info("\nQuantiles (use for --low_max / --high_min in 07b):")
+    for q, v in zip(qs, q_vals):
+        logger.info(f"  q{int(q*100):02d}: {v:.4f}")
+    logger.info("  Suggested: --low_max q25  --high_min q75")
+    logger.info(f"  => --low_max {q_vals[0.25]:.3f} --high_min {q_vals[0.75]:.3f}")
+
+    # Negative / positive split
     negative = df[df['margin'] <= 0]
-    
-    logger.info(f"\nMargin distribution:")
-    logger.info(f"  Negative (≤0): {len(negative)} ({len(negative)/len(df)*100:.1f}%)")
-    logger.info(f"  Low (0-1.5): {len(low)} ({len(low)/len(df)*100:.1f}%)")
-    logger.info(f"  Medium (1.5-3.0): {len(medium)} ({len(medium)/len(df)*100:.1f}%)")
-    logger.info(f"  High (≥3.0): {len(high)} ({len(high)/len(df)*100:.1f}%)")
-    
-    # Number distribution (using correct field name)
+    positive = df[df['margin'] > 0]
+    logger.info(f"\nNegative margin (model wrong): {len(negative)} ({len(negative)/len(df)*100:.1f}%)")
+    logger.info(f"Positive margin (model correct): {len(positive)} ({len(positive)/len(df)*100:.1f}%)")
+
+    # Number distribution
     if 'number' in df.columns and df['number'].nunique() > 1:
-        logger.info(f"\nNumber distribution:")
+        logger.info("\nNumber distribution:")
         for num in df['number'].unique():
             if num != 'unknown':
                 count = len(df[df['number'] == num])
                 logger.info(f"  {num}: {count} ({count/len(df)*100:.1f}%)")
-    
+
     logger.info("="*60)
-    
+
     return output_file
 
 
 def main():
     parser = argparse.ArgumentParser(description="Compute baseline margins for prompts")
-    
+
     parser.add_argument('--behaviour', type=str, default='grammar_agreement',
                         help='Behavior name')
     parser.add_argument('--split', type=str, default='train', choices=['train', 'test'],
                         help='Data split')
     parser.add_argument('--n_prompts', type=int, default=None,
                         help='Number of prompts to use (default: all)')
-    parser.add_argument('--model_name', type=str, default='Qwen/Qwen3-4B',
-                        help='Model name')
+    parser.add_argument('--model_name', type=str, default=None,
+                        help='Model name. If not set, read from configs/transcoder_config.yaml '
+                             '(same source as 07_run_interventions.py).')
+    parser.add_argument('--model_size', type=str, default='4b',
+                        help='Model size key in transcoder_config.yaml (default: 4b)')
     parser.add_argument('--dtype', type=str, default='bfloat16',
                         help='Model dtype (default: bfloat16)')
     parser.add_argument('--device', type=str, default='auto',
@@ -277,8 +283,43 @@ def main():
                         help='Trust remote code for model loading')
     parser.add_argument('--output', type=str, default='data/results/baselines/',
                         help='Output directory')
-    
+
     args = parser.parse_args()
+
+    # Resolve model name: prefer explicit arg, else read from transcoder_config.yaml
+    # (same file used by 07_run_interventions.py — guarantees model consistency)
+    if args.model_name is None:
+        import yaml
+        tc_config_path = project_root / "configs" / "transcoder_config.yaml"
+        if not tc_config_path.exists():
+            raise FileNotFoundError(
+                f"transcoder_config.yaml not found at {tc_config_path}. "
+                f"Pass --model_name explicitly to bypass."
+            )
+        with open(tc_config_path) as fh:
+            tc_cfg = yaml.safe_load(fh)
+        # Strict guard: raise rather than silently fall back to wrong model
+        if "transcoders" not in tc_cfg:
+            raise KeyError(
+                f"'transcoders' key missing in {tc_config_path}. "
+                f"Pass --model_name explicitly."
+            )
+        if args.model_size not in tc_cfg["transcoders"]:
+            available = list(tc_cfg["transcoders"].keys())
+            raise KeyError(
+                f"model_size '{args.model_size}' not found in transcoder_config.yaml. "
+                f"Available: {available}. Use --model_size to select the right one."
+            )
+        tc_entry = tc_cfg["transcoders"][args.model_size]
+        if "model_name" not in tc_entry:
+            raise KeyError(
+                f"'model_name' missing for size '{args.model_size}' in transcoder_config.yaml. "
+                f"Pass --model_name explicitly."
+            )
+        args.model_name = tc_entry["model_name"]
+        repo_id = tc_entry.get("repo_id", "<unknown>")
+        logger.info(f"Model name from transcoder_config.yaml [{args.model_size}]: {args.model_name}")
+        logger.info(f"Transcoder repo_id: {repo_id}  (verify this matches 07_run_interventions.py)")
     
     logger.info("="*60)
     logger.info("BASELINE MARGIN COMPUTATION")
