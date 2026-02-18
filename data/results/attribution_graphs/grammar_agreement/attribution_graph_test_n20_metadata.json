@@ -21,12 +21,20 @@
     24,
     25
   ],
-  "n_prompts": 80,
-  "timestamp": "2026-02-09T11:37:34.025342",
-  "attribution_method": "correlation",
-  "feature_score": "abs_corr",
-  "edge_weight": "corr",
-  "missing_feature_activation": 0.0,
+  "n_prompts": 40,
+  "n_prompts_used": 20,
+  "timestamp": "2026-02-18T12:01:44.195945",
+  "graph_type": "per_prompt_union",
+  "attribution_method": "linear_proxy",
+  "scoring": {
+    "per_prompt_score": "activation_times_beta",
+    "beta_model": "missing_is_zero",
+    "edge_weight": "mean_score_conditional",
+    "feature_rank": "mean_abs_score_conditional",
+    "k_per_prompt": 50,
+    "min_prompts": 2,
+    "note": "Nodes have mean_score_conditional (over top-k prompts) and mean_score_missing0 (frequency-penalized)"
+  },
   "activation_observation": "topk_truncated",
   "topk_per_token": 50
 }
