@@ -140,6 +140,66 @@ def balance_and_select(df, margin_min, margin_max, n_per_class, label, strict=Fa
     return result
 
 
+def select_per_class_extremes(df: pd.DataFrame, n_per_class: int, label: str, strict: bool = False) -> pd.DataFrame:
+    """
+    Select extremes per class WITHOUT margin thresholds.
+
+    TARGETS: smallest margins per class
+    SOURCES: largest margins per class
+    """
+    if "number" not in df.columns:
+        raise ValueError("Column 'number' missing in baselines CSV")
+
+    # normalize number values (defensive)
+    dd = df.copy()
+    dd["number"] = dd["number"].astype(str).str.lower()
+    dd["number"] = dd["number"].replace({"sing": "singular", "plur": "plural", "0": "singular", "1": "plural"})
+
+    classes = [c for c in ("singular", "plural") if c in set(dd["number"])]
+    if strict:
+        need = {"singular", "plural"}
+        missing = need - set(classes)
+        if missing:
+            raise ValueError(f"{label}: missing classes {missing} in baselines. Can't do strict selection.")
+
+    selected = []
+    for cls in classes:
+        cls_df = dd[dd["number"] == cls].copy()
+        if cls_df.empty:
+            continue
+
+        n_avail = len(cls_df)
+        if n_avail < n_per_class:
+            msg = f"{label}: class {cls} has only {n_avail} < {n_per_class}"
+            if strict:
+                raise ValueError(msg)
+            logger.warning(msg + " (will take all available)")
+
+        k = min(n_per_class, n_avail)
+
+        # Stable sort: margin, then orig_idx (if available) for ties
+        sort_cols = ["margin"]
+        if "orig_idx" in cls_df.columns:
+            sort_cols.append("orig_idx")
+
+        cls_df = cls_df.sort_values(sort_cols, ascending=True)
+
+        if label == "TARGETS":
+            # Smallest margins
+            picked = cls_df.head(k)
+        else:
+            # Largest margins
+            picked = cls_df.tail(k)
+
+        logger.info(f"  {cls}: selected {len(picked)} (mean margin={picked['margin'].mean():.3f})")
+        selected.append(picked)
+
+    if not selected:
+        return pd.DataFrame()
+
+    return pd.concat(selected, ignore_index=True)
+
+
 def stratify_prompts(args):
     # Load baselines
     df = pd.read_csv(args.baselines)
@@ -157,24 +217,56 @@ def stratify_prompts(args):
     
     # Fix 5.2: disjoint ranges — targets strictly <= low_max, sources strictly >= high_min
     # This guarantees no prompt can appear in both subsets.
-    targets = balance_and_select(
-        df,
-        margin_min=args.low_min,
-        margin_max=args.low_max,
-        n_per_class=args.n_low_per_class,
-        label="TARGETS",
-        strict=args.strict_classes
-    )
+    if args.mode == "per_class_extremes":
+        logger.info("\nMode: per_class_extremes (no thresholds; extremes within each class)")
 
-    # 2. Select Sources (High Margin)
-    sources = balance_and_select(
-        df,
-        margin_min=args.high_min,
-        margin_max=args.high_max,
-        n_per_class=args.n_high_per_class,
-        label="SOURCES",
-        strict=args.strict_classes
-    )
+        targets = select_per_class_extremes(
+            df,
+            n_per_class=args.n_low_per_class,
+            label="TARGETS",
+            strict=args.strict_classes,
+        )
+
+        # Fix: remove overlaps (targets cannot be sources)
+        if not targets.empty:
+            if "orig_idx" in df.columns and "orig_idx" in targets.columns:
+                existing_ids = set(targets["orig_idx"])
+                remaining = df[~df["orig_idx"].isin(existing_ids)].copy()
+            else:
+                existing_prompts = set(targets["prompt"])
+                remaining = df[~df["prompt"].isin(existing_prompts)].copy()
+            
+            logger.info(f"After selecting targets, {len(remaining)} prompts remain for sources.")
+        else:
+            remaining = df.copy()
+
+        sources = select_per_class_extremes(
+            remaining,
+            n_per_class=args.n_high_per_class,
+            label="SOURCES",
+            strict=args.strict_classes,
+        )
+    else:
+        logger.info("\nMode: thresholds (using low/high margin ranges)")
+        
+        targets = balance_and_select(
+            df,
+            margin_min=args.low_min,
+            margin_max=args.low_max,
+            n_per_class=args.n_low_per_class,
+            label="TARGETS",
+            strict=args.strict_classes
+        )
+
+        # 2. Select Sources (High Margin)
+        sources = balance_and_select(
+            df,
+            margin_min=args.high_min,
+            margin_max=args.high_max,
+            n_per_class=args.n_high_per_class,
+            label="SOURCES",
+            strict=args.strict_classes
+        )
     
     # Save files
     out_prefix = Path(args.output_prefix)
@@ -197,6 +289,14 @@ def main():
     
     parser.add_argument('--baselines', type=str, required=True, help='Path to baselines CSV')
     parser.add_argument('--output_prefix', type=str, default=None, help='Output path prefix (e.g. data/prompts/grammar)')
+
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="thresholds",
+        choices=["thresholds", "per_class_extremes"],
+        help="Selection mode: thresholds (old) or per_class_extremes (recommended for balanced targets/sources)."
+    )
     
     # Ranges
     parser.add_argument('--low_min', type=float, default=0.0)
@@ -236,8 +336,8 @@ def main():
     if args.max_margin:
         args.low_max = args.max_margin
 
-    # Fix 5.2: guard against overlapping ranges
-    if args.low_max >= args.high_min:
+    # Fix 5.2: guard against overlapping ranges (ONLY for thresholds mode)
+    if args.mode == "thresholds" and args.low_max >= args.high_min:
         parser.error(
             f"--low_max ({args.low_max}) must be strictly less than --high_min ({args.high_min}). "
             f"Overlapping ranges would put the same prompts in both targets and sources."
