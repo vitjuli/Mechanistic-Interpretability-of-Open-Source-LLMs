@@ -183,21 +183,29 @@ def load_attribution_graph(
         Graph data dict or None if not found
     """
     base_path = results_path / "attribution_graphs" / behaviour
-    
-    # Try with _nN suffix first if n_prompts specified
+
+    # IMPORTANT: if n_prompts is provided, require the suffixed graph.
+    # Silent fallback to old naming easily loads the WRONG graph type (or wrong N)
+    # and makes sign-based ablation collapse to 0 -> fallback to features [0..k].
     if n_prompts is not None:
         graph_file = base_path / f"attribution_graph_{split}_n{n_prompts}.json"
-        if graph_file.exists():
-            with open(graph_file, "r") as f:
-                return json.load(f)
-    
-    # Fall back to old naming (no _nN suffix)
-    graph_file = base_path / f"attribution_graph_{split}.json"
-    if graph_file.exists():
+        if not graph_file.exists():
+            raise FileNotFoundError(
+                f"Expected attribution graph not found: {graph_file}. "
+                f"Run script 06 with matching --n_prompts (note: 06 may save n_prompts_used). "
+                f"Tip: in 07 pass --graph_n_prompts equal to the n_used printed by 06."
+            )
+        logger.info(f"Loading attribution graph: {graph_file}")
         with open(graph_file, "r") as f:
             return json.load(f)
-    
-    # Not found
+
+    # If n_prompts is None, allow legacy name as a fallback.
+    graph_file = base_path / f"attribution_graph_{split}.json"
+    if graph_file.exists():
+        logger.info(f"Loading legacy attribution graph: {graph_file}")
+        with open(graph_file, "r") as f:
+            return json.load(f)
+
     logger.warning(f"Attribution graph not found: {graph_file}")
     return None
 
@@ -234,9 +242,10 @@ def get_top_attributed_features(
 
         if graph_type == "per_prompt_union":
             # Fields written by 06_build_attribution_graph.py union method
-            score = node.get("mean_abs_score_conditional", None)
+            # CRITICAL: Prioritize specific_score (prompt-specific) over raw magnitude activation
+            score = node.get("specific_score", None)
             if score is None:
-                score = node.get("specific_score", None)
+                score = node.get("mean_abs_score_conditional", None)
             if score is None:
                 score = abs(node.get("mean_score_conditional", 0.0))
         else:
@@ -268,8 +277,6 @@ def patch_mlp_input(
     new_mlp_input: torch.Tensor,
 ):
     """
-    *** CRITICAL FIX: Patch MLP INPUT not residual stream! ***
-
     Transcoders are trained on MLP inputs (post_attention_layernorm output).
     This hook intercepts post_attention_layernorm and replaces its output.
 
@@ -280,7 +287,7 @@ def patch_mlp_input(
     
     Qwen3/Llama architecture:
         mlp_input = self.post_attention_layernorm(hidden_states)  ← WE HOOK HERE!
-   mlp_output = self.mlp(mlp_input)  ← This receives our MODIFIED mlp_input
+        mlp_output = self.mlp(mlp_input)  ← This receives our MODIFIED mlp_input
     
     Args:
         model_hf: HuggingFace model
@@ -633,6 +640,9 @@ class TranscoderInterventionExperiment:
 
         Patches features from source prompt into target prompt using hooks.
         This measures the causal effect of transferring specific features.
+        
+        NOTE: This is "feature-diff patching" (causal helpfulness via transfer),
+        not "high margin patching" strictly. We select features by |source - target| diff.
 
         Args:
             source_prompt: Prompt to get features from
@@ -759,6 +769,7 @@ class TranscoderInterventionExperiment:
         behaviour: str,
         coefficient: float = 10.0,
         top_k: int = 20,
+        signed_features: Optional[Dict[int, Dict[int, float]]] = None,
     ) -> List[InterventionResult]:
         """
         Steering: for each prompt, add `coefficient` to selected feature(s) at the decision token
@@ -808,10 +819,19 @@ class TranscoderInterventionExperiment:
                 with torch.no_grad():
                     feats = transcoder.encode(mlp_input_act.to(transcoder.dtype))
                     feats_mod = feats.clone()
-                    # D2: uniform coefficient push — all top_k features get same delta.
-                    # Note: features may have different natural scales; consider z-score
-                    # steering (coefficient * std) for more calibrated experiments.
-                    feats_mod[:, cand] += float(coefficient)  # constant push
+                    
+                    # D2: Steer in direction of effect (sign-aware)
+                    # Use signed_features info if available to determine direction
+                    layer_signs = signed_features.get(layer, {}) if signed_features else {}
+                    
+                    for fi in cand:
+                         # Default to +1 if no sign info (or if sign is 0)
+                         s = np.sign(layer_signs.get(fi, 1.0))
+                         if s == 0: s = 1.0
+                         
+                         # Add coefficient * sign
+                         feats_mod[:, fi] += float(coefficient * s)
+                    
                     steered_mlp_input = transcoder.decode(feats_mod).to(mlp_input_act.dtype)
 
                 # Intervened margin via patching the MLP input
@@ -1548,6 +1568,12 @@ def main():
         top_nodes = []
 
         if graph_data:
+            meta = graph_data.get("metadata", {}) or {}
+            gattrs = graph_data.get("graph_attrs", {}) or {}
+            graph_type = meta.get("graph_type", None)
+            if graph_type is None and "union_params" in gattrs:
+                graph_type = "per_prompt_union"
+
             # Load enough features to cover all layers/signs after filtering.
             # Scale with top_k (we filter by sign and activation later), cap at 5000.
             n_load = max(200, args.top_k * 20)
@@ -1557,18 +1583,27 @@ def main():
 
             for L, fidx, score, node in top_nodes:
                 top_features_by_layer.setdefault(L, []).append(fidx)
-                # Fix 2: correct signed fallback — don't use abs score as sign
-                signed = node.get("mean_score_conditional", None)
-                if signed is None:
-                    signed = node.get("mean_score", None)
+                # SIGN source depends on graph type:
+                # - per_prompt_union: prefer beta (stable sign), else mean_score_conditional
+                # - correlation graphs: use corr
+                signed = None
+                if graph_type == "per_prompt_union":
+                    if "beta" in node:
+                        signed = node.get("beta", None)  # stable direction
+                    if signed is None:
+                        signed = node.get("mean_score_conditional", None)
+                    if signed is None:
+                        signed = node.get("mean_score_missing0", None)
+                else:
+                    signed = node.get("corr", None)
+
                 if signed is None:
                     logger.warning(
-                        f"Signed score missing in node L{L}_F{fidx}; "
-                        "--ablation_sign pos/neg may be unreliable for this feature."
+                        f"Signed score missing in node L{L}_F{fidx} (graph_type={graph_type}); "
+                        f"--ablation_sign pos/neg may be unreliable for this feature."
                     )
                     signed = 0.0
-                signed = float(signed)
-                top_features_by_layer_signed.setdefault(L, []).append((fidx, signed))
+                top_features_by_layer_signed.setdefault(L, []).append((fidx, float(signed)))
         else:
             print("No attribution graph found, will use random/first features")
 
@@ -1649,7 +1684,12 @@ def main():
                 # Steering handles its own layer/prompt loops
                 steer_results = experiment.run_steering_experiment(
                     prompts, layers, top_features_by_layer, behaviour,
-                    coefficient=args.steering_coeff, top_k=args.top_k
+                    coefficient=args.steering_coeff, top_k=args.top_k,
+                    # Convert list of tuples to dict for lookup: layer -> {feat: sign}
+                    signed_features={
+                        L: {f: s for f, s in feats} 
+                        for L, feats in top_features_by_layer_signed.items()
+                    }
                 )
                 save_results(
                     steer_results, 
@@ -1684,6 +1724,14 @@ def main():
                                 layer_features = [fi for fi, s in cands if s < 0][:args.top_k]
                             else:  # "all"
                                 layer_features = [fi for fi, _ in cands][:args.top_k]
+
+                            # If sign-filter yields nothing, fall back to top-k UNSIGNED from graph (not [0..k]).
+                            if len(layer_features) == 0:
+                                logger.warning(
+                                    f"No features matched sign={args.ablation_sign} at layer {layer}. "
+                                    f"Falling back to top-{args.top_k} unsigned features from graph."
+                                )
+                                layer_features = [fi for fi, _ in cands][:args.top_k]
                         else:
                             layer_features = top_features_by_layer.get(layer, [])[:args.top_k]
 
@@ -1691,7 +1739,10 @@ def main():
                         layer_features = [fi for fi in layer_features if 0 <= fi < d]
 
                         if not layer_features:
-                            logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
+                            logger.warning(
+                                f"No valid features for layer {layer} after graph selection; "
+                                f"using first {args.top_k} ONLY as last resort."
+                            )
                             layer_features = list(range(min(args.top_k, d)))
 
                         # Fix 7: Activation-aware selection — prefer features active on THIS prompt
@@ -1704,8 +1755,8 @@ def main():
                             tc = experiment.transcoder_set[layer]
                             abl_feats = tc.encode(abl_mlp.to(tc.dtype))[0]  # (d_tc,)
                             cand_t = torch.tensor(layer_features, device=abl_feats.device, dtype=torch.long)
-                            # Use relu: transcoder features are typically non-negative (JumpReLU/ReLU)
-                            act_scores = torch.relu(abl_feats[cand_t])
+                            # Use abs(): features might be signed (though rarely for JumpReLU), safeguards against negative values
+                            act_scores = abl_feats[cand_t].abs()
                             k = min(args.top_k, len(layer_features))
                             topk_idx = torch.topk(act_scores, k=k).indices
                             layer_features = cand_t[topk_idx].tolist()

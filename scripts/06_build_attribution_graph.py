@@ -296,7 +296,7 @@ class TranscoderAttributionBuilder:
         layers: Optional[List[int]] = None,
     ):
         """
-        Initialize correlation-based attribution builder.
+        Initialize union/beta attribution builder.
         
         Device is auto-detected from model parameters (no need to specify).
         """
@@ -318,7 +318,7 @@ class TranscoderAttributionBuilder:
         self.prompt_to_samples = build_prompt_to_samples_map(position_map)
 
         # Compute margins for ALL prompts (robust indexing by prompt_idx)
-        logger.info("Computing margins for correlation attribution (all prompts)...")
+        logger.info("Computing margins...")
         self.margins = compute_margin_batch(model, prompts)
 
         # quick sanity: position_map prompt_idx must be valid
@@ -327,6 +327,17 @@ class TranscoderAttributionBuilder:
             raise ValueError(
                 f"position_map refers to prompt_idx={max_prompt}, but prompts has len={len(prompts)}."
             )
+
+        # CRITICAL: Validate exactly 1 decision sample per prompt
+        for p_idx, s_indices in self.prompt_to_samples.items():
+            dec_samples = [s for s in s_indices if self.position_map[s].get("is_decision_position", False)]
+            if len(dec_samples) != 1:
+                n_tok = len(self.position_map[s_indices[0]].get("token_positions", [])) if s_indices else "?"
+                logger.warning(
+                    f"Prompt {p_idx} has {len(dec_samples)} decision samples (expected 1). "
+                    f"Total samples={len(s_indices)}. "
+                    f"Check extraction logic or 'is_decision_position' flag."
+                )
 
         logger.info(f"Builder initialized. layers={self.layers}")
         logger.info(f"position_map samples={len(position_map)}, prompts_in_map={len(self.prompt_to_samples)}")
@@ -771,6 +782,9 @@ class TranscoderAttributionBuilder:
                 mean_abs_missing0=mean_abs_missing0,
                 # Specificity: high score + low frequency = most prompt-specific
                 specific_score=float(specific_score),
+                # Store beta for stable sign-based ablations downstream (script 07)
+                beta=float(beta.get((layer, feat), 0.0)),
+                beta_sign=int(1 if beta.get((layer, feat), 0.0) > 0 else (-1 if beta.get((layer, feat), 0.0) < 0 else 0)),
             )
             
             # Edge weight: use conditional mean_score (signed)
