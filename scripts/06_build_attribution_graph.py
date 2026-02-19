@@ -212,59 +212,64 @@ def build_prompt_to_samples_map(position_map: List[Dict]) -> Dict[int, List[int]
     return prompt_to_samples
 
 
-def compute_margin_batch(
-    model: ModelWrapper,
-    prompts: List[Dict],
-) -> np.ndarray:
+def continuation_logprob(model: ModelWrapper, prompt_text: str, answer_text: str) -> float:
     """
-    Δ_p = log p(y⁺|c) - log p(y⁻|c) for each prompt (single-token answers only).
+    Compute log p(answer_text | prompt_text) using teacher forcing.
+    """
+    device = next(model.model.parameters()).device
+
+    # Tokenize prompt and answer separately (no special tokens)
+    prompt_ids = model.tokenizer.encode(prompt_text, add_special_tokens=False)
+    ans_ids = model.tokenizer.encode(answer_text, add_special_tokens=False)
+
+    if len(ans_ids) == 0:
+        raise ValueError(f"Empty answer after tokenization: answer_text={answer_text!r}")
+
+    # Build full input: [prompt_ids, ans_ids]
+    input_ids = torch.tensor([prompt_ids + ans_ids], device=device)
+    attn_mask = torch.ones_like(input_ids, device=device)
+
+    with torch.no_grad():
+        out = model.model(input_ids=input_ids, attention_mask=attn_mask, use_cache=False)
+        logits = out.logits  # (1, T, V)
+
+    # We need probabilities of ans tokens at their positions.
+    # Token at position t is predicted by logits at position t-1.
+    start = len(prompt_ids)
+    total_lp = 0.0
+    for i, tok_id in enumerate(ans_ids):
+        pos = start + i
+        prev_pos = pos - 1
+        log_probs = torch.log_softmax(logits[0, prev_pos, :], dim=-1)
+        total_lp += float(log_probs[tok_id].item())
+
+    return total_lp
+
+
+def compute_margin_batch(model: ModelWrapper, prompts: List[Dict]) -> np.ndarray:
+    """
+    Δ_p = log p(y⁺|c) - log p(y⁻|c) for each prompt (multi-token answers supported).
     """
     margins = []
-
-    model_device = next(model.model.parameters()).device
-    logger.info(f"Computing margins for {len(prompts)} prompts on device={model_device}...")
+    logger.info(f"Computing margins for {len(prompts)} prompts on device={next(model.model.parameters()).device}...")
 
     for prompt_data in tqdm(prompts, desc="Computing margins"):
         prompt_text = prompt_data["prompt"]
 
-        # Dataset uses correct_answer/incorrect_answer fields
-        correct_tok = prompt_data.get("correct_answer") or prompt_data.get("answer_matching")
-        incorrect_tok = prompt_data.get("incorrect_answer") or prompt_data.get("answer_not_matching")
-        
-        if not correct_tok or not incorrect_tok:
+        y_pos = prompt_data.get("correct_answer") or prompt_data.get("answer_matching")
+        y_neg = prompt_data.get("incorrect_answer") or prompt_data.get("answer_not_matching")
+
+        if not y_pos or not y_neg:
             raise ValueError(
-                f"Prompt missing answer fields. Found keys: {list(prompt_data.keys())}\n"
-                f"Expected: 'correct_answer'/'incorrect_answer' OR 'answer_matching'/'answer_not_matching'"
+                f"Prompt missing answer fields. Found keys: {list(prompt_data.keys())}"
             )
 
-        inputs = model.tokenizer(prompt_text, return_tensors="pt").to(model_device)
+        lp_pos = continuation_logprob(model, prompt_text, y_pos)
+        lp_neg = continuation_logprob(model, prompt_text, y_neg)
 
-        with torch.no_grad():
-            outputs = model.model(**inputs, use_cache=False)
-            logits = outputs.logits[0, -1, :]  # next-token logits at final position
-            log_probs = torch.log_softmax(logits, dim=0)
-
-        # Enforce single-token answers (critical for correctness)
-        ids_pos = model.tokenizer.encode(correct_tok, add_special_tokens=False)
-        ids_neg = model.tokenizer.encode(incorrect_tok, add_special_tokens=False)
-        
-        # CRITICAL: Use raise instead of assert (assert can be disabled with -O flag)
-        if len(ids_pos) != 1 or len(ids_neg) != 1:
-            raise ValueError(
-                f"Answers must be single token.\n"
-                f"correct_tok={correct_tok!r} -> ids={ids_pos}\n"
-                f"incorrect_tok={incorrect_tok!r} -> ids={ids_neg}\n"
-                f"Fix dataset/tokenization or implement multi-token continuation scoring."
-            )
-
-        correct_id = ids_pos[0]
-        incorrect_id = ids_neg[0]
-
-        margin = (log_probs[correct_id] - log_probs[incorrect_id]).item()
-        margins.append(margin)
+        margins.append(lp_pos - lp_neg)
 
     margins = np.array(margins, dtype=np.float64)
-
     logger.info(
         f"Margins: mean={margins.mean():.4f}, std={margins.std():.4f}, "
         f"min={margins.min():.4f}, max={margins.max():.4f}"
@@ -1063,17 +1068,42 @@ def main():
                 f"Each prompt must have exactly 1 decision sample for correlation attribution. "
                 f"Check script 04 extraction logic for token_positions='{tokpos}'."
             )
-    
-    # CRITICAL: Enforce decision-only mode (1 sample/prompt)
-    # This script's correlation attribution requires exactly 1 decision sample per prompt
-    # Train data with token_positions="last_5" will crash collect_feature_activations()
+    # NEW (leave windowed extraction; require decision-flag)
     if tokpos != "decision":
-        raise ValueError(
-            f"This script requires token_positions='decision' (1 sample/prompt). "
-            f"Got token_positions={tokpos!r}. "
-            f"Re-run script 04 in decision mode (ensure exactly one is_decision_position=True per prompt)."
+        logger.warning(
+            f"token_positions={tokpos!r} (windowed extraction). "
+            "OK: Script 06 will use is_decision_position=True per prompt."
         )
-    logger.info("✓ Validation passed: token_positions='decision' (1 sample/prompt)")
+    dec_samples = [i for i, e in enumerate(position_map) if e.get("is_decision_position", False)]
+    n_prompts_in_map = len(set(e["prompt_idx"] for e in position_map))
+    dec_prompts = len(set(position_map[i]["prompt_idx"] for i in dec_samples))
+
+    if len(dec_samples) == 0:
+        raise ValueError(
+            "No entries have is_decision_position=True in position_map. "
+            "Script 06 requires decision positions to be marked."
+        )
+
+    # Check exactly ONE decision sample per prompt
+    from collections import Counter
+    cnt = Counter(position_map[i]["prompt_idx"] for i in dec_samples)
+    bad = [p for p, c in cnt.items() if c != 1]
+    if bad:
+        raise ValueError(
+            f"Some prompts have !=1 decision sample: e.g. {bad[:10]} (showing first 10). "
+            f"Counts: {[cnt[p] for p in bad[:10]]}"
+        )
+
+    if dec_prompts != n_prompts_in_map:
+        raise ValueError(
+            f"Decision samples cover {dec_prompts} prompts but position_map has {n_prompts_in_map} prompts. "
+            "Each prompt must have exactly 1 decision sample."
+        )
+
+    logger.info(
+        f"✓ Validation passed: windowed extraction OK (samples={len(position_map)}, "
+        f"prompts={n_prompts_in_map}, decision_samples={len(dec_samples)})"
+    )
     
     # PATCH 6: Load prompts BEFORE builder (required for margins)
     prompt_path = Path(config["paths"]["prompts"])
