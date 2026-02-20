@@ -779,8 +779,8 @@ class TranscoderInterventionExperiment:
         logger.info(f"Running steering (coeff={coefficient}) on {len(prompts)} prompts...")
         results: List[InterventionResult] = []
 
-        # Choose prompts subset if caller passed full list; keep consistent with other experiments
-        sample_prompts = prompts  # caller already slices in main if needed
+        # Caller (main) passes the already-sliced sample_prompts
+        sample_prompts = prompts
 
         for layer in layers:
             cand = top_features_by_layer.get(layer, [])[:top_k]
@@ -1607,10 +1607,21 @@ def main():
         else:
             print("No attribution graph found, will use random/first features")
 
+        # ====== UNIFIED PROMPT SUBSETTING ======
+        # Slice ONCE, use everywhere. Prevents steering/feature_importance
+        # from silently using more prompts than ablation/patching.
+        sample_prompts = prompts[:args.n_prompts] if args.n_prompts else prompts
+        logger.info(
+            f"Prompt subsetting: {len(prompts)} total -> {len(sample_prompts)} selected "
+            f"(--n_prompts={args.n_prompts})"
+        )
+
         metadata = {
             "model_size": model_size,
             "transcoder_repo": tc_config["transcoders"][model_size]["repo_id"],
-            "n_prompts": args.n_prompts,
+            "n_prompts": len(sample_prompts),  # actual count, not CLI arg
+            "n_prompts_requested": args.n_prompts,
+            "n_prompts_available": len(prompts),
             "top_k": args.top_k,
             "prompts_file": args.prompts_file,
             "source_prompts_file": args.source_prompts_file,
@@ -1649,6 +1660,7 @@ def main():
 
         for exp_type in experiments_to_run:
             print(f"\n--- Running {exp_type} experiments ---")
+            logger.info(f"Using {len(sample_prompts)} prompts for {exp_type}")
 
             if exp_type == "feature_importance":
                 # Feature importance sweep (per layer)
@@ -1664,9 +1676,9 @@ def main():
                         print("  No attribution graph; using first 50 features (baseline/control)")
 
                     importance_df = experiment.run_feature_importance_sweep(
-                        prompts, 
-                        layer=layer, 
-                        n_prompts=args.n_prompts,
+                        sample_prompts,
+                        layer=layer,
+                        n_prompts=len(sample_prompts),
                         candidate_feature_indices=layer_candidates,
                         top_k_features=50,
                     )
@@ -1683,7 +1695,7 @@ def main():
             elif exp_type == "steering":
                 # Steering handles its own layer/prompt loops
                 steer_results = experiment.run_steering_experiment(
-                    prompts, layers, top_features_by_layer, behaviour,
+                    sample_prompts, layers, top_features_by_layer, behaviour,
                     coefficient=args.steering_coeff, top_k=args.top_k,
                     # Convert list of tuples to dict for lookup: layer -> {feat: sign}
                     signed_features={
@@ -1702,7 +1714,6 @@ def main():
             elif exp_type == "ablation":
                 # Feature ablation
                 all_results: List[InterventionResult] = []
-                sample_prompts = prompts[:args.n_prompts] if args.n_prompts else prompts
 
                 for i, prompt_data in enumerate(tqdm(sample_prompts, desc="Ablation")):
                     prompt = prompt_data["prompt"]
@@ -1785,9 +1796,9 @@ def main():
                 # Activation patching
                 results: List[InterventionResult] = []
 
-                # Create pairs
-                pairs = create_prompt_pairs(prompts, behaviour, source_prompts=source_prompts)
-                pairs = pairs[:args.n_prompts] if args.n_prompts else pairs
+                # Create pairs from the unified sample_prompts
+                pairs = create_prompt_pairs(sample_prompts, behaviour, source_prompts=source_prompts)
+                pairs = pairs[:len(sample_prompts)] if len(pairs) > len(sample_prompts) else pairs
                 print(f"  Created {len(pairs)} pairs for patching")
                 
                 if not pairs:
