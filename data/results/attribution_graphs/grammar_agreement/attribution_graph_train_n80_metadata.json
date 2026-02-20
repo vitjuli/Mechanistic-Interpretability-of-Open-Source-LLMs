@@ -4,19 +4,37 @@
   "model_size": "4b",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",
   "layers": [
+    10,
+    11,
+    12,
+    13,
+    14,
     15,
     16,
     17,
     18,
     19,
-    20
+    20,
+    21,
+    22,
+    23,
+    24,
+    25
   ],
   "n_prompts": 80,
-  "timestamp": "2026-02-10T12:53:06.224751",
-  "attribution_method": "correlation",
-  "feature_score": "abs_corr",
-  "edge_weight": "corr",
-  "missing_feature_activation": 0.0,
+  "n_prompts_used": 80,
+  "timestamp": "2026-02-20T10:58:58.756350",
+  "graph_type": "per_prompt_union",
+  "attribution_method": "linear_proxy",
+  "scoring": {
+    "per_prompt_score": "activation_times_beta",
+    "beta_model": "missing_is_zero",
+    "edge_weight": "mean_score_conditional",
+    "feature_rank": "mean_abs_score_conditional",
+    "k_per_prompt": 50,
+    "min_prompts": 8,
+    "note": "Nodes have mean_score_conditional (over top-k prompts) and mean_score_missing0 (frequency-penalized)"
+  },
   "activation_observation": "topk_truncated",
   "topk_per_token": 50
 }

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-10T11:58:00.684691",
+  "timestamp": "2026-02-20T10:16:24.680985",
   "model": "Qwen/Qwen3-4B-Instruct-2507",
   "split": "train",
   "behaviours": {
@@ -7,10 +7,10 @@
       "accuracy": 0.85,
       "accuracy_valid_only": 0.85,
       "accuracy_sign": 0.9875,
-      "mean_logprob_diff": 4.114211431145668,
-      "mean_logprob_diff_normalized": 4.114211431145668,
+      "mean_logprob_diff": 4.114211454987526,
+      "mean_logprob_diff_normalized": 4.114211454987526,
       "median_logprob_diff_normalized": 4.402674078941345,
-      "std_logprob_diff_normalized": 1.8547257921539466,
+      "std_logprob_diff_normalized": 1.8547257630007683,
       "mean_correct_token_len": 1.0,
       "mean_incorrect_token_len": 1.0,
       "length_mismatch_rate": 0.0,
