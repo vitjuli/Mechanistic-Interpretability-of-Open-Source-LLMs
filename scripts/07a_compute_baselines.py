@@ -214,7 +214,27 @@ def compute_baselines(args):
             continue
     
     # Save results
-    df = pd.DataFrame(results)
+    # --- SAFETY: force stable schema, avoid NaN column names ---
+    cols = [
+        "orig_idx", "prompt", "margin",
+        "correct_token", "incorrect_token",
+        "number", "label", "template", "subject",
+        "baseline_seed", "baseline_n_requested",
+    ]
+
+    clean = []
+    for r in results:
+        if not isinstance(r, dict):
+            continue
+        rr = {}
+        for k, v in r.items():
+            # Drop NaN keys (NaN != NaN)
+            if k != k:
+                continue
+            rr[str(k)] = v
+        clean.append(rr)
+
+    df = pd.DataFrame(clean, columns=cols)
 
     # Generate output filename
     output_file = output_dir / f"baselines_{args.behaviour}_{args.split}_n{len(results)}.csv"

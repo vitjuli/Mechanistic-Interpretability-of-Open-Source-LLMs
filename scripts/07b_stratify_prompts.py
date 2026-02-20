@@ -202,7 +202,7 @@ def select_per_class_extremes(df: pd.DataFrame, n_per_class: int, label: str, st
 
 def stratify_prompts(args):
     # Load baselines
-    df = pd.read_csv(args.baselines)
+    df = pd.read_csv(args.baselines, engine="python")
     logger.info(f"Loaded {len(df)} baselines")
 
     # Fix 5.1: normalise 'number' column before any filtering/balancing
