@@ -491,38 +491,58 @@ def build_supernodes_effect(
         n_clusters = min(50, max(2, int(np.sqrt(pivot.shape[0]))))
     n_clusters = min(n_clusters, pivot.shape[0])
 
-    # Normalise rows
-    norms = np.linalg.norm(pivot.values, axis=1, keepdims=True)
-    norms[norms < 1e-12] = 1.0
-    X = pivot.values / norms
+    # Normalise rows — drop zero-norm features (no measurable effect)
+    # to avoid non-finite distances in Ward linkage.
+    raw = pivot.values
+    norms = np.linalg.norm(raw, axis=1)
+    active_mask = norms > 1e-12
+    n_inactive = int((~active_mask).sum())
+    if n_inactive > 0:
+        logger.info(f"  {n_inactive} features with zero effect vector — assigned to cluster -1")
+
+    active_idx = np.where(active_mask)[0]
+    if len(active_idx) < 3:
+        logger.warning("Too few active features for clustering (<3 after removing zero-effect).")
+        return None, None
+
+    X_active = raw[active_idx] / norms[active_idx, np.newaxis]
+
+    # Replace any remaining non-finite values (safety net)
+    X_active = np.nan_to_num(X_active, nan=0.0, posinf=0.0, neginf=0.0)
+
+    n_clusters = min(n_clusters, len(active_idx))
 
     # Try hierarchical clustering
-    labels = None
+    active_labels = None
     clustering_method = None
 
     try:
         from sklearn.cluster import AgglomerativeClustering
         model = AgglomerativeClustering(n_clusters=n_clusters)
-        labels = model.fit_predict(X)
+        active_labels = model.fit_predict(X_active)
         clustering_method = "agglomerative"
     except ImportError:
         pass
 
-    if labels is None:
+    if active_labels is None:
         try:
             from scipy.cluster.hierarchy import fcluster, linkage
-            Z = linkage(X, method="ward")
-            labels = fcluster(Z, t=n_clusters, criterion="maxclust") - 1
+            Z = linkage(X_active, method="ward")
+            active_labels = fcluster(Z, t=n_clusters, criterion="maxclust") - 1
             clustering_method = "scipy_ward"
         except ImportError:
             pass
 
-    if labels is None:
+    if active_labels is None:
         logger.warning(
             "Neither sklearn nor scipy available — skipping effect clustering. "
             "Install scikit-learn or scipy for S2 supernodes."
         )
         return None, None
+
+    # Reconstruct full label array: active features get cluster id, inactive get -1
+    labels = np.full(pivot.shape[0], -1, dtype=int)
+    labels[active_idx] = active_labels
 
     feat_keys = list(pivot.index)
 
@@ -537,9 +557,9 @@ def build_supernodes_effect(
     # Summary
     rows = []
     for cid, members in supernodes.items():
-        # Representative = member with largest norm in original space
+        # Representative = member with largest norm in original (unnormalised) space
         member_idx = [feat_keys.index(m) for m in members]
-        member_norms = norms[member_idx].flatten()
+        member_norms = norms[member_idx]
         best = members[int(np.argmax(member_norms))]
         rows.append({
             "cluster_id": int(cid),
