@@ -999,108 +999,129 @@ def create_prompt_pairs(
     source_prompts: Optional[List[Dict]] = None,
 ) -> List[Tuple[Dict, Dict]]:
     """
-    Create pairs of prompts for patching experiments.
-    
-    If source_prompts is provided (High Margin):
-      Pair Target (from prompts, Low Margin) with Source (from source_prompts, High Margin).
-      Target(Singular) <- Source(Plural)
-      Target(Plural) <- Source(Singular)
-      
-    If only prompts is provided (Single List):
-      Sort by margin and pair Low <-> High from the same list.
+    Create (source, target) pairs for patching experiments.
+
+    EVERY target prompt gets exactly one pair.  When class sizes are
+    unbalanced, sources from the opposite class are cycled (mod-index)
+    so no targets are silently dropped.
+
+    If source_prompts is provided (Mode 1):
+      Pair Target (from prompts) with Source (from source_prompts) of
+      the opposite grammatical number.
+
+    If only prompts is provided (Mode 2 / single-list):
+      Self-pair: each singular target ← a plural source from the same
+      list, and vice-versa, cycling when one class is shorter.
+
+    Returns:
+        List of (source_dict, target_dict) tuples — one per target.
     """
-    pairs = []
-    
+    pairs: List[Tuple[Dict, Dict]] = []
+
     # Helper to sort by margin (ascending: low to high)
     def sort_by_margin(p_list):
         if p_list and any('margin' in p for p in p_list):
             return sorted(p_list, key=lambda x: float(x.get('margin', 0.0)))
         return p_list
 
+    def _pair_targets_with_sources(
+        targets: List[Dict],
+        sources: List[Dict],
+        label: str,
+    ) -> List[Tuple[Dict, Dict]]:
+        """Pair every target with a source, cycling sources if fewer."""
+        if not targets:
+            return []
+        if not sources:
+            logger.warning(f"  {label}: 0 sources — skipping {len(targets)} targets")
+            return []
+
+        # Sort sources by margin descending (best first) so the first
+        # targets get the strongest sources.
+        sources = list(reversed(sort_by_margin(sources)))  # high → low
+
+        out: List[Tuple[Dict, Dict]] = []
+        for i, t in enumerate(targets):
+            s = sources[i % len(sources)]
+            out.append((s, t))
+        if len(targets) > len(sources):
+            logger.info(
+                f"  {label}: {len(targets)} targets > {len(sources)} sources "
+                f"— cycled sources (mod-index)"
+            )
+        return out
+
     if behaviour == "grammar_agreement":
-        # Split targets (prompts)
+        # Split targets by grammatical number
         t_sing = [p for p in prompts if p.get("number") == "singular"]
         t_plur = [p for p in prompts if p.get("number") == "plural"]
-        
+
+        logger.info(
+            f"Pairing input: {len(prompts)} targets "
+            f"(sing={len(t_sing)}, plur={len(t_plur)})"
+        )
+
         # Mode 1: Separate Source/Target lists
         if source_prompts is not None:
             s_sing = [p for p in source_prompts if p.get("number") == "singular"]
             s_plur = [p for p in source_prompts if p.get("number") == "plural"]
-            
-            # Check availability with strict error if classes are missing
-            if not (t_sing and t_plur and s_sing and s_plur):
+
+            logger.info(
+                f"  Sources: {len(source_prompts)} total "
+                f"(sing={len(s_sing)}, plur={len(s_plur)})"
+            )
+
+            if not (t_sing or t_plur):
                 raise ValueError(
-                    f"Cannot build grammar pairs: "
-                    f"targets(sing={len(t_sing)}, plur={len(t_plur)}), "
-                    f"sources(sing={len(s_sing)}, plur={len(s_plur)}). "
-                    f"Fix 07b stratification ranges."
+                    f"No targets with 'number' field. Keys: "
+                    f"{list(prompts[0].keys()) if prompts else '(empty)'}"
+                )
+            if not (s_sing or s_plur):
+                raise ValueError(
+                    f"No sources with 'number' field. Keys: "
+                    f"{list(source_prompts[0].keys()) if source_prompts else '(empty)'}"
                 )
 
-            # Pair Low Margin Singular Target <- High Margin Plural Source
-            # Assume sets are already filtered by margin in 07b, but sorting helps determinism
-            t_sing = sort_by_margin(t_sing) # Low -> High
-            s_plur = sort_by_margin(s_plur) # Low
-            # We want BEST sources (Highest margin) for BEST targets (Lowest margin)
-            # t_sing: [0.1, 0.2 ... 0.5]
-            # s_plur: [2.5, 2.6 ... 3.0]
-            # zip(t_sing, reversed(s_plur)) -> (0.1, 3.0), (0.2, 2.9)...
-            for t, s in zip(t_sing, reversed(s_plur)):
-                pairs.append((s, t)) # (Source, Target)
-            
-            if not t_plur or not s_sing:
-                logger.warning(f"Missing Plural Targets ({len(t_plur)}) or Singular Sources ({len(s_sing)})")
-            else:
-                # Pair Low Margin Plural Target <- High Margin Singular Source
-                t_plur = sort_by_margin(t_plur)
-                s_sing = sort_by_margin(s_sing)
-                
-                for t, s in zip(t_plur, reversed(s_sing)):
-                    pairs.append((s, t))
+            # Singular targets ← Plural sources
+            t_sing = sort_by_margin(t_sing)
+            pairs.extend(_pair_targets_with_sources(t_sing, s_plur, "SingTarget<-PlurSource"))
 
-            # Validate pair counts
-            if source_prompts:
-                n1 = min(len(t_sing), len(s_plur))
-                n2 = min(len(t_plur), len(s_sing))
-                logger.info(f"Pairing plan: Sing_Target<-Plur_Source: {n1}, Plur_Target<-Sing_Source: {n2}")
-                
-                if n1 + n2 < 2:
-                     raise ValueError("No pairs could be formed (after strict class check). Check your quotas.")
-            
+            # Plural targets ← Singular sources
+            t_plur = sort_by_margin(t_plur)
+            pairs.extend(_pair_targets_with_sources(t_plur, s_sing, "PlurTarget<-SingSource"))
+
+            logger.info(f"Pairing result: {len(pairs)} pairs (Mode 1: separate source/target)")
             return pairs
 
-        # Mode 2: Single List (Fallback)
+        # Mode 2: Single List (self-pair across classes)
         if len(t_sing) == 0 or len(t_plur) == 0:
             logger.warning(
-                f"Not enough classes for grammar pairing: "
+                f"Only one grammatical class present: "
                 f"singular={len(t_sing)}, plural={len(t_plur)}. "
-                f"Falling back to generic consecutive pairing."
+                f"Falling back to consecutive pairing."
             )
-            pairs = []
             for i in range(0, len(prompts) - 1, 2):
-                pairs.append((prompts[i], prompts[i+1]))
+                pairs.append((prompts[i], prompts[i + 1]))
             return pairs
-        
-        # Sort both lists by margin
+
         t_sing = sort_by_margin(t_sing)
         t_plur = sort_by_margin(t_plur)
-        
-        # Pair Low Singular <- High Plural
-        # t_sing is [Low...High], t_plur is [Low...High]
-        # reversed(t_plur) is [High...Low]
-        # zip(t_sing, reversed(t_plur)) -> (Low Sing, High Plur)
-        pairs.extend(zip(reversed(t_plur), t_sing)) # (Source=HighPlur, Target=LowSing)
-        
-        # Pair Low Plural <- High Singular
-        pairs.extend(zip(reversed(t_sing), t_plur)) # (Source=HighSing, Target=LowPlur)
 
+        # Each singular target ← a plural source (cycling if fewer plurals)
+        pairs.extend(_pair_targets_with_sources(t_sing, t_plur, "SingTarget<-PlurSource"))
+
+        # Each plural target ← a singular source (cycling if fewer singulars)
+        pairs.extend(_pair_targets_with_sources(t_plur, t_sing, "PlurTarget<-SingSource"))
+
+        logger.info(f"Pairing result: {len(pairs)} pairs (Mode 2: self-pair)")
         return pairs
-        
+
     elif behaviour == "sentiment_continuation":
         positive = [p for p in prompts if p.get("sentiment") == "positive"]
         negative = [p for p in prompts if p.get("sentiment") == "negative"]
-        for pos, neg in zip(positive[:len(negative)], negative):
-            pairs.append((pos, neg))
-            pairs.append((neg, pos))
+        # Every positive target ← negative source, and vice-versa
+        pairs.extend(_pair_targets_with_sources(positive, negative, "Pos<-Neg"))
+        pairs.extend(_pair_targets_with_sources(negative, positive, "Neg<-Pos"))
 
     else:
         # Generic pairing: consecutive prompts
@@ -1798,12 +1819,17 @@ def main():
 
                 # Create pairs from the unified sample_prompts
                 pairs = create_prompt_pairs(sample_prompts, behaviour, source_prompts=source_prompts)
-                pairs = pairs[:len(sample_prompts)] if len(pairs) > len(sample_prompts) else pairs
                 print(f"  Created {len(pairs)} pairs for patching")
-                
+
+                expected = len(sample_prompts)
+                if len(pairs) < expected:
+                    logger.warning(
+                        f"Patching produced {len(pairs)} pairs but expected {expected} "
+                        f"(one per target). {expected - len(pairs)} targets have no pair."
+                    )
+
                 if not pairs:
                     logger.warning("No pairs created! Check your prompts/margins.")
-                    # Create empty results to ensure file existence
                     save_results(results, output_path / behaviour, behaviour, "patching", metadata)
                     continue
 
