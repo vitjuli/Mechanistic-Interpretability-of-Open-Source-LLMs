@@ -1,0 +1,227 @@
+{
+  "git_commit": "b7b31275dccd583f4c06f47384f2ed184737a567",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:45:00",
+      "path": "data/results/interventions/grammar_agreement/intervention_ablation_grammar_agreement.csv",
+      "size_bytes": 59858
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:45:01",
+      "path": "data/results/interventions/grammar_agreement/intervention_ablation_grammar_agreement_summary.json",
+      "size_bytes": 861
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:52:22",
+      "path": "data/results/interventions/grammar_agreement/intervention_patching_grammar_agreement.csv",
+      "size_bytes": 142752
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:52:22",
+      "path": "data/results/interventions/grammar_agreement/intervention_patching_grammar_agreement_summary.json",
+      "size_bytes": 857
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:59:34",
+      "path": "data/results/interventions/grammar_agreement/intervention_steering_grammar_agreement.csv",
+      "size_bytes": 54126
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:59:34",
+      "path": "data/results/interventions/grammar_agreement/intervention_steering_grammar_agreement_summary.json",
+      "size_bytes": 887
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-11T15:11:32",
+      "path": "data/results/attribution_graphs/grammar_agreement/attribution_graph_train_n80.graphml",
+      "size_bytes": 45059
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:52:32",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_10.csv",
+      "size_bytes": 342
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:52:41",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_11.csv",
+      "size_bytes": 261
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:52:50",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_12.csv",
+      "size_bytes": 331
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:00",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_13.csv",
+      "size_bytes": 333
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:09",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_14.csv",
+      "size_bytes": 322
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:18",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_15.csv",
+      "size_bytes": 633
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:27",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_16.csv",
+      "size_bytes": 187
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:37",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_17.csv",
+      "size_bytes": 408
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:46",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_18.csv",
+      "size_bytes": 262
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:53:55",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_19.csv",
+      "size_bytes": 557
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:04",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_20.csv",
+      "size_bytes": 553
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:14",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_21.csv",
+      "size_bytes": 344
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:23",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_22.csv",
+      "size_bytes": 634
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:32",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_23.csv",
+      "size_bytes": 335
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:41",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_24.csv",
+      "size_bytes": 484
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T21:54:51",
+      "path": "data/results/interventions/grammar_agreement/importance/feature_importance_layer_25.csv",
+      "size_bytes": 333
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:52",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/interventions.csv",
+      "size_bytes": 253909
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:52",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/common_prompt_idx.json",
+      "size_bytes": 334
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:52",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/audit.json",
+      "size_bytes": 94481
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:53",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/interventions_layer_agg.csv",
+      "size_bytes": 5911
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:53",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/interventions_prompt_agg.csv",
+      "size_bytes": 7455
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:53",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/interventions_feature_agg.csv",
+      "size_bytes": 19515
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:53",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/feature_importance.csv",
+      "size_bytes": 4491
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:58",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/supernodes.json",
+      "size_bytes": 1177
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:47:58",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/supernodes_summary.csv",
+      "size_bytes": 154
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:48:14",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/supernodes_effect.json",
+      "size_bytes": 1215
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:48:14",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/supernodes_effect_summary.csv",
+      "size_bytes": 401
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-22T22:48:14",
+      "path": "data/ui_offline/20260222-224752_grammar_agreement_train_n80/graph.json",
+      "size_bytes": 40306
+    }
+  ],
+  "parameters": {
+    "behaviour": "grammar_agreement",
+    "community_method": "components",
+    "effect_clusters": 0,
+    "graph_n_prompts": 80,
+    "run_id": "20260222-224752_grammar_agreement_train_n80",
+    "split": "train",
+    "timestamp": "2026-02-22T22:47:52.257109"
+  },
+  "timestamp": "2026-02-22T22:48:14.188096"
+}
