@@ -487,7 +487,7 @@ def build_supernodes_effect(
         return None, None
 
     # Determine n_clusters
-    if n_clusters is None:
+    if not n_clusters:  # None or 0 → auto
         n_clusters = min(50, max(2, int(np.sqrt(pivot.shape[0]))))
     n_clusters = min(n_clusters, pivot.shape[0])
 
