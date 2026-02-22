@@ -1,20 +1,20 @@
-{"prompt": "The cat", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 17, "margin": 4.6875, "subject": "cat"}
-{"prompt": "The dog", "correct_answer": " knows", "incorrect_answer": " know", "number": "singular", "orig_idx": 26, "margin": 5.21875, "subject": "dog"}
-{"prompt": "The flower", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 5, "margin": 5.25, "subject": "flower"}
-{"prompt": "The teacher", "correct_answer": " seems", "incorrect_answer": " seem", "number": "singular", "orig_idx": 72, "margin": 5.5, "subject": "teacher"}
-{"prompt": "The engineer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 7, "margin": 6.1875, "subject": "engineer"}
-{"prompt": "The engineer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 55, "margin": 6.1875, "subject": "engineer"}
-{"prompt": "The writer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 20, "margin": 6.8125, "subject": "writer"}
-{"prompt": "The computer", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 24, "margin": 6.875, "subject": "computer"}
-{"prompt": "The book", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 71, "margin": 7.1875, "subject": "book"}
-{"prompt": "The artist", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 31, "margin": 8.375, "subject": "artist"}
-{"prompt": "The flowers", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 22, "margin": 5.25, "subject": "flowers"}
-{"prompt": "The teachers", "correct_answer": " eat", "incorrect_answer": " eats", "number": "plural", "orig_idx": 33, "margin": 5.25, "subject": "teachers"}
-{"prompt": "The teachers", "correct_answer": " play", "incorrect_answer": " plays", "number": "plural", "orig_idx": 50, "margin": 5.3125, "subject": "teachers"}
-{"prompt": "The musicians", "correct_answer": " were", "incorrect_answer": " was", "number": "plural", "orig_idx": 79, "margin": 5.625, "subject": "musicians"}
-{"prompt": "The engineers", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 76, "margin": 5.9375, "subject": "engineers"}
-{"prompt": "The students", "correct_answer": " write", "incorrect_answer": " writes", "number": "plural", "orig_idx": 78, "margin": 6.15625, "subject": "students"}
-{"prompt": "The phones", "correct_answer": " are", "incorrect_answer": " is", "number": "plural", "orig_idx": 42, "margin": 7.0625, "subject": "phones"}
-{"prompt": "The chairs", "correct_answer": " are", "incorrect_answer": " is", "number": "plural", "orig_idx": 36, "margin": 7.25, "subject": "chairs"}
-{"prompt": "The students", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 23, "margin": 7.65625, "subject": "students"}
-{"prompt": "The students", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 49, "margin": 7.65625, "subject": "students"}
+{"prompt": "The cat", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 17, "margin": 4.71875, "subject": "cat", "template": NaN}
+{"prompt": "The dog", "correct_answer": " knows", "incorrect_answer": " know", "number": "singular", "orig_idx": 26, "margin": 5.15625, "subject": "dog", "template": NaN}
+{"prompt": "The flower", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 5, "margin": 5.3125, "subject": "flower", "template": NaN}
+{"prompt": "The teacher", "correct_answer": " seems", "incorrect_answer": " seem", "number": "singular", "orig_idx": 72, "margin": 5.375, "subject": "teacher", "template": NaN}
+{"prompt": "The engineer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 7, "margin": 6.125, "subject": "engineer", "template": NaN}
+{"prompt": "The engineer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 55, "margin": 6.125, "subject": "engineer", "template": NaN}
+{"prompt": "The writer", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 20, "margin": 6.8125, "subject": "writer", "template": NaN}
+{"prompt": "The computer", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 24, "margin": 6.9375, "subject": "computer", "template": NaN}
+{"prompt": "The book", "correct_answer": " was", "incorrect_answer": " were", "number": "singular", "orig_idx": 71, "margin": 7.25, "subject": "book", "template": NaN}
+{"prompt": "The artist", "correct_answer": " is", "incorrect_answer": " are", "number": "singular", "orig_idx": 31, "margin": 8.375, "subject": "artist", "template": NaN}
+{"prompt": "The teachers", "correct_answer": " eat", "incorrect_answer": " eats", "number": "plural", "orig_idx": 33, "margin": 5.125, "subject": "teachers", "template": NaN}
+{"prompt": "The flowers", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 22, "margin": 5.3125, "subject": "flowers", "template": NaN}
+{"prompt": "The teachers", "correct_answer": " play", "incorrect_answer": " plays", "number": "plural", "orig_idx": 50, "margin": 5.3125, "subject": "teachers", "template": NaN}
+{"prompt": "The musicians", "correct_answer": " were", "incorrect_answer": " was", "number": "plural", "orig_idx": 79, "margin": 5.65625, "subject": "musicians", "template": NaN}
+{"prompt": "The engineers", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 76, "margin": 5.9375, "subject": "engineers", "template": NaN}
+{"prompt": "The students", "correct_answer": " write", "incorrect_answer": " writes", "number": "plural", "orig_idx": 78, "margin": 6.125, "subject": "students", "template": NaN}
+{"prompt": "The phones", "correct_answer": " are", "incorrect_answer": " is", "number": "plural", "orig_idx": 42, "margin": 7.0625, "subject": "phones", "template": NaN}
+{"prompt": "The chairs", "correct_answer": " are", "incorrect_answer": " is", "number": "plural", "orig_idx": 36, "margin": 7.125, "subject": "chairs", "template": NaN}
+{"prompt": "The students", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 23, "margin": 7.625, "subject": "students", "template": NaN}
+{"prompt": "The students", "correct_answer": " read", "incorrect_answer": " reads", "number": "plural", "orig_idx": 49, "margin": 7.625, "subject": "students", "template": NaN}

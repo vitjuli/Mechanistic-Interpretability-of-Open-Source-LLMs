@@ -19,7 +19,7 @@
     24,
     25
   ],
-  "timestamp": "2026-02-20T10:36:07.758147",
+  "timestamp": "2026-02-22T14:36:53.782164",
   "model_size": "4b",
   "model_name": "Qwen/Qwen3-4B",
   "transcoder_repo": "mwhanna/qwen3-4b-transcoders",

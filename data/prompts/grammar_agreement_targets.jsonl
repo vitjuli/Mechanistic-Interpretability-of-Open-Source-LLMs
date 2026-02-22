@@ -1,20 +1,20 @@
-{"prompt": "The phone", "correct_answer": " stands", "incorrect_answer": " stand", "number": "singular", "orig_idx": 73, "margin": -0.5, "subject": "phone"}
-{"prompt": "The teacher", "correct_answer": " reads", "incorrect_answer": " read", "number": "singular", "orig_idx": 35, "margin": -0.4375, "subject": "teacher"}
-{"prompt": "The flower", "correct_answer": " works", "incorrect_answer": " work", "number": "singular", "orig_idx": 67, "margin": -0.375, "subject": "flower"}
-{"prompt": "The scientist", "correct_answer": " reads", "incorrect_answer": " read", "number": "singular", "orig_idx": 43, "margin": -0.125, "subject": "scientist"}
-{"prompt": "The scientist", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 6, "margin": 0.25, "subject": "scientist"}
-{"prompt": "The dog", "correct_answer": " sits", "incorrect_answer": " sit", "number": "singular", "orig_idx": 69, "margin": 0.5, "subject": "dog"}
-{"prompt": "The flower", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 77, "margin": 0.625, "subject": "flower"}
-{"prompt": "The chair", "correct_answer": " walks", "incorrect_answer": " walk", "number": "singular", "orig_idx": 66, "margin": 1.375, "subject": "chair"}
-{"prompt": "The chair", "correct_answer": " writes", "incorrect_answer": " write", "number": "singular", "orig_idx": 25, "margin": 1.4375, "subject": "chair"}
-{"prompt": "The computer", "correct_answer": " stands", "incorrect_answer": " stand", "number": "singular", "orig_idx": 75, "margin": 1.75, "subject": "computer"}
-{"prompt": "The books", "correct_answer": " know", "incorrect_answer": " knows", "number": "plural", "orig_idx": 11, "margin": 2.53125, "subject": "books"}
-{"prompt": "The flowers", "correct_answer": " think", "incorrect_answer": " thinks", "number": "plural", "orig_idx": 1, "margin": 2.734375, "subject": "flowers"}
-{"prompt": "The flowers", "correct_answer": " think", "incorrect_answer": " thinks", "number": "plural", "orig_idx": 54, "margin": 2.734375, "subject": "flowers"}
-{"prompt": "The artists", "correct_answer": " play", "incorrect_answer": " plays", "number": "plural", "orig_idx": 56, "margin": 2.78125, "subject": "artists"}
-{"prompt": "The dogs", "correct_answer": " stand", "incorrect_answer": " stands", "number": "plural", "orig_idx": 74, "margin": 2.78125, "subject": "dogs"}
-{"prompt": "The dogs", "correct_answer": " sleep", "incorrect_answer": " sleeps", "number": "plural", "orig_idx": 0, "margin": 2.96875, "subject": "dogs"}
-{"prompt": "The cars", "correct_answer": " seem", "incorrect_answer": " seems", "number": "plural", "orig_idx": 13, "margin": 3.0, "subject": "cars"}
-{"prompt": "The cars", "correct_answer": " sit", "incorrect_answer": " sits", "number": "plural", "orig_idx": 62, "margin": 3.0, "subject": "cars"}
-{"prompt": "The lamps", "correct_answer": " know", "incorrect_answer": " knows", "number": "plural", "orig_idx": 63, "margin": 3.09375, "subject": "lamps"}
-{"prompt": "The engineers", "correct_answer": " sleep", "incorrect_answer": " sleeps", "number": "plural", "orig_idx": 3, "margin": 3.15625, "subject": "engineers"}
+{"prompt": "The phone", "correct_answer": " stands", "incorrect_answer": " stand", "number": "singular", "orig_idx": 73, "margin": -0.5, "subject": "phone", "template": NaN}
+{"prompt": "The teacher", "correct_answer": " reads", "incorrect_answer": " read", "number": "singular", "orig_idx": 35, "margin": -0.375, "subject": "teacher", "template": NaN}
+{"prompt": "The flower", "correct_answer": " works", "incorrect_answer": " work", "number": "singular", "orig_idx": 67, "margin": -0.375, "subject": "flower", "template": NaN}
+{"prompt": "The scientist", "correct_answer": " reads", "incorrect_answer": " read", "number": "singular", "orig_idx": 43, "margin": -0.125, "subject": "scientist", "template": NaN}
+{"prompt": "The scientist", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 6, "margin": 0.25, "subject": "scientist", "template": NaN}
+{"prompt": "The dog", "correct_answer": " sits", "incorrect_answer": " sit", "number": "singular", "orig_idx": 69, "margin": 0.5, "subject": "dog", "template": NaN}
+{"prompt": "The flower", "correct_answer": " sleeps", "incorrect_answer": " sleep", "number": "singular", "orig_idx": 77, "margin": 0.625, "subject": "flower", "template": NaN}
+{"prompt": "The chair", "correct_answer": " walks", "incorrect_answer": " walk", "number": "singular", "orig_idx": 66, "margin": 1.4375, "subject": "chair", "template": NaN}
+{"prompt": "The chair", "correct_answer": " writes", "incorrect_answer": " write", "number": "singular", "orig_idx": 25, "margin": 1.5, "subject": "chair", "template": NaN}
+{"prompt": "The computer", "correct_answer": " stands", "incorrect_answer": " stand", "number": "singular", "orig_idx": 75, "margin": 1.75, "subject": "computer", "template": NaN}
+{"prompt": "The books", "correct_answer": " know", "incorrect_answer": " knows", "number": "plural", "orig_idx": 11, "margin": 2.5625, "subject": "books", "template": NaN}
+{"prompt": "The flowers", "correct_answer": " think", "incorrect_answer": " thinks", "number": "plural", "orig_idx": 1, "margin": 2.75, "subject": "flowers", "template": NaN}
+{"prompt": "The flowers", "correct_answer": " think", "incorrect_answer": " thinks", "number": "plural", "orig_idx": 54, "margin": 2.75, "subject": "flowers", "template": NaN}
+{"prompt": "The artists", "correct_answer": " play", "incorrect_answer": " plays", "number": "plural", "orig_idx": 56, "margin": 2.75, "subject": "artists", "template": NaN}
+{"prompt": "The dogs", "correct_answer": " stand", "incorrect_answer": " stands", "number": "plural", "orig_idx": 74, "margin": 2.8125, "subject": "dogs", "template": NaN}
+{"prompt": "The dogs", "correct_answer": " sleep", "incorrect_answer": " sleeps", "number": "plural", "orig_idx": 0, "margin": 2.9375, "subject": "dogs", "template": NaN}
+{"prompt": "The cars", "correct_answer": " seem", "incorrect_answer": " seems", "number": "plural", "orig_idx": 13, "margin": 2.9375, "subject": "cars", "template": NaN}
+{"prompt": "The cars", "correct_answer": " sit", "incorrect_answer": " sits", "number": "plural", "orig_idx": 62, "margin": 3.0, "subject": "cars", "template": NaN}
+{"prompt": "The lamps", "correct_answer": " know", "incorrect_answer": " knows", "number": "plural", "orig_idx": 63, "margin": 3.125, "subject": "lamps", "template": NaN}
+{"prompt": "The engineers", "correct_answer": " sleep", "incorrect_answer": " sleeps", "number": "plural", "orig_idx": 3, "margin": 3.1875, "subject": "engineers", "template": NaN}

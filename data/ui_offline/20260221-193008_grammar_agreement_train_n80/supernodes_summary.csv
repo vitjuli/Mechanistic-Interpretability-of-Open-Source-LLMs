@@ -1,0 +1,2 @@
+community_id,n_nodes,top_nodes_by_degree,method
+0,63,"['input', 'output_correct', 'output_incorrect', 'L15_F124340', 'L15_F135551']",connected_components
