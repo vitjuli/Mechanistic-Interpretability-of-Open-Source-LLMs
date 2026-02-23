@@ -97,7 +97,7 @@ def load_prompts(
             prompts.append(json.loads(line))
     return prompts
 
-
+# FUNC TO HOOK INTO MLP INPUTS
 def capture_mlp_inputs(
     model: ModelWrapper,
     prompts: List[Dict],
@@ -156,6 +156,7 @@ def capture_mlp_inputs(
             # For grammar_agreement with token_positions="decision":
             # Captures activations at last token of prompt (e.g., " dogs")
             # which are used to compute logits for next token (" sleep" vs " sleeps")
+            # For last_{n} with n > 1, captures activations at last n tokens
             batch_result = model.capture_mlp_inputs(
                 batch_texts,
                 layer_range=(group_start, group_end),
@@ -166,16 +167,17 @@ def capture_mlp_inputs(
             if batch_result_for_posmap is None:
                 batch_result_for_posmap = batch_result
 
-            # Extract per-layer activations with CORRECT key
+            # Extract per-layer activations with correct key
             for layer_idx in group:
                 if layer_idx not in layer_indices:
                     continue  # Skip if not in requested layers
                     
-                layer_key = f"layer_{layer_idx}_mlp_input"  # Correct key for MLP inputs
+                # MLP inputs are stored in activations with correct key
+                layer_key = f"layer_{layer_idx}_mlp_input"  
                 if layer_key in batch_result["activations"]:
-                    acts = batch_result["activations"][layer_key]
-                    acts_t = torch.from_numpy(acts)
-                    assert acts_t.ndim == 2, f"{layer_key}: expected 2D (n_samples, d_model), got {acts_t.shape}"
+                    acts = batch_result["activations"][layer_key] # (n_samples, d_model)
+                    acts_t = torch.from_numpy(acts) # (n_samples, d_model)
+                    assert acts_t.ndim == 2, f"{layer_key}: expected 2D (n_samples, d_model), got {acts_t.shape}" # sanity check
                     layer_activations[layer_idx].append(acts_t)
                 else:
                     logger.warning(f"Layer {layer_idx} not found in batch result. Available keys: {list(batch_result['activations'].keys())}")
@@ -530,9 +532,9 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator"],
         default="grammar_agreement",
-        help="Which behaviour to process (currently only grammar_agreement)",
+        help="Which behaviour to process",
     )
     parser.add_argument(
         "--split",

@@ -321,6 +321,8 @@ def create_visualizations(
         category_cols.append(("sentiment", "Sentiment Type"))
     if "error_type" in df.columns:  # Arithmetic
         category_cols.append(("error_type", "Error Type"))
+    if "field_type" in df.columns:  # Physics scalar/vector
+        category_cols.append(("field_type", "Scalar vs Vector"))
 
     if category_cols:
         fig, axes = plt.subplots(1, len(category_cols), figsize=(6 * len(category_cols), 5))
@@ -555,9 +557,9 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator"],
         default="grammar_agreement",
-        help="Which behaviour to evaluate (currently only grammar_agreement)",
+        help="Which behaviour to evaluate",
     )
     parser.add_argument(
         "--split",

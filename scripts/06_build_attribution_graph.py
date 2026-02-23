@@ -905,9 +905,9 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator"],
         default="grammar_agreement",
-        help="Which behaviour to analyze (currently only grammar_agreement)",
+        help="Which behaviour to analyze",
     )
     parser.add_argument(
         "--split",

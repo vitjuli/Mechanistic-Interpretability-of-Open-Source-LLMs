@@ -1116,6 +1116,50 @@ def create_prompt_pairs(
         logger.info(f"Pairing result: {len(pairs)} pairs (Mode 2: self-pair)")
         return pairs
 
+    elif behaviour == "physics_scalar_vector_operator":
+        # Pair scalar targets with vector sources and vice-versa
+        # Swapping scalar↔vector should flip/affect the output
+        t_scalar = [p for p in prompts if p.get("field_type") == "scalar"]
+        t_vector = [p for p in prompts if p.get("field_type") == "vector"]
+
+        logger.info(
+            f"Pairing input: {len(prompts)} targets "
+            f"(scalar={len(t_scalar)}, vector={len(t_vector)})"
+        )
+
+        if source_prompts is not None:
+            s_scalar = [p for p in source_prompts if p.get("field_type") == "scalar"]
+            s_vector = [p for p in source_prompts if p.get("field_type") == "vector"]
+            logger.info(
+                f"  Sources: {len(source_prompts)} total "
+                f"(scalar={len(s_scalar)}, vector={len(s_vector)})"
+            )
+            # Scalar targets ← Vector sources
+            t_scalar = sort_by_margin(t_scalar)
+            pairs.extend(_pair_targets_with_sources(t_scalar, s_vector, "ScalarTarget<-VectorSource"))
+            # Vector targets ← Scalar sources
+            t_vector = sort_by_margin(t_vector)
+            pairs.extend(_pair_targets_with_sources(t_vector, s_scalar, "VectorTarget<-ScalarSource"))
+            logger.info(f"Pairing result: {len(pairs)} pairs (Mode 1: separate source/target)")
+            return pairs
+
+        # Mode 2: Self-pair across classes
+        if len(t_scalar) == 0 or len(t_vector) == 0:
+            logger.warning(
+                f"Only one class present: scalar={len(t_scalar)}, vector={len(t_vector)}. "
+                f"Falling back to consecutive pairing."
+            )
+            for i in range(0, len(prompts) - 1, 2):
+                pairs.append((prompts[i], prompts[i + 1]))
+            return pairs
+
+        t_scalar = sort_by_margin(t_scalar)
+        t_vector = sort_by_margin(t_vector)
+        pairs.extend(_pair_targets_with_sources(t_scalar, t_vector, "ScalarTarget<-VectorSource"))
+        pairs.extend(_pair_targets_with_sources(t_vector, t_scalar, "VectorTarget<-ScalarSource"))
+        logger.info(f"Pairing result: {len(pairs)} pairs (Mode 2: self-pair)")
+        return pairs
+
     elif behaviour == "sentiment_continuation":
         positive = [p for p in prompts if p.get("sentiment") == "positive"]
         negative = [p for p in prompts if p.get("sentiment") == "negative"]
@@ -1345,9 +1389,9 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator"],
         default="grammar_agreement",
-        help="Which behaviour to analyze (currently only grammar_agreement)",
+        help="Which behaviour to analyze",
     )
     parser.add_argument(
         "--split",

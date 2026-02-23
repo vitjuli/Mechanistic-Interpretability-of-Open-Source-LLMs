@@ -16,14 +16,21 @@ model:
   max_length: 512
   trust_remote_code: true
 
-# Single behaviour for pipeline testing
+# Behaviours
 behaviours:
   grammar_agreement:
     train_size: 80
-    test_size: 20
+    test_size: 100
     min_logit_diff: 2.0
     success_threshold: 0.80
     description: "Subject-verb number agreement (singular/plural)"
+
+  physics_scalar_vector_operator:
+    train_size: 80
+    test_size: 20
+    min_logit_diff: 1.5
+    success_threshold: 0.75
+    description: "Classify operators/quantities as scalar vs vector (Type 3: Abstraction)"
 
 # Activation capture
 activations:
