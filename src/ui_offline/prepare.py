@@ -355,34 +355,106 @@ def build_common_index(df: pd.DataFrame, audit: Dict) -> Tuple[List[int], List[i
 
 
 # ---------------------------------------------------------------------------
+# Graph loading — prefer JSON, fall back to GraphML
+# ---------------------------------------------------------------------------
+
+def load_attribution_graph(graphs_dir: Path, split: str, graph_n_prompts: int):
+    """
+    Load the attribution graph, preferring the JSON format over GraphML.
+
+    Returns:
+        (networkx.DiGraph, source_path) or (None, None) on failure.
+    """
+    try:
+        import networkx as nx
+    except ImportError:
+        logger.error("networkx not installed — cannot load graph.")
+        return None, None
+
+    json_path = graphs_dir / f"attribution_graph_{split}_n{graph_n_prompts}.json"
+    graphml_path = graphs_dir / f"attribution_graph_{split}_n{graph_n_prompts}.graphml"
+
+    if json_path.exists():
+        logger.info(f"Loading graph from JSON (preferred): {json_path}")
+        G = _load_graph_from_json(json_path, nx)
+        if G is not None:
+            return G, json_path
+
+    if graphml_path.exists():
+        logger.info(f"Loading graph from GraphML (fallback): {graphml_path}")
+        G = nx.read_graphml(graphml_path)
+        logger.info(f"  GraphML: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+        return G, graphml_path
+
+    logger.warning(f"No graph file found (tried {json_path.name}, {graphml_path.name})")
+    return None, None
+
+
+def _load_graph_from_json(json_path: Path, nx):
+    """Read the attribution_graph JSON and return a networkx DiGraph."""
+    import json as _json
+
+    with open(json_path) as f:
+        data = _json.load(f)
+
+    G = nx.DiGraph()
+
+    for node in data.get("nodes", []):
+        node_id = node["id"]
+        attrs = {k: v for k, v in node.items() if k != "id"}
+        # Ensure layer/feature_idx are ints for feature nodes
+        if attrs.get("type") == "feature":
+            if "layer" in attrs:
+                attrs["layer"] = int(attrs["layer"])
+            if "feature_idx" in attrs:
+                attrs["feature_idx"] = int(attrs["feature_idx"])
+        G.add_node(node_id, **attrs)
+
+    edge_key = "edges" if "edges" in data else "links"
+    for edge in data.get(edge_key, []):
+        src = edge.get("source")
+        tgt = edge.get("target")
+        weight = edge.get("weight", 1.0)
+        G.add_edge(src, tgt, weight=weight)
+
+    logger.info(f"  JSON graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+    return G
+
+
+# ---------------------------------------------------------------------------
 # C. Supernodes
 # ---------------------------------------------------------------------------
 
 def build_supernodes_graph(
-    graphml_path: Path,
+    G,
     method: str = "louvain",
 ) -> Tuple[Optional[Dict], Optional[pd.DataFrame]]:
     """
     S1: Community detection on the attribution graph.
 
+    Args:
+        G: a networkx Graph (loaded via load_attribution_graph).
+
     Returns:
         (supernodes_dict, supernodes_summary_df) or (None, None) on failure.
     """
+    if G is None:
+        logger.warning("No graph provided — skipping graph supernodes.")
+        return None, None
+
     try:
         import networkx as nx
     except ImportError:
         logger.error("networkx not installed — skipping graph supernodes.")
         return None, None
 
-    if not graphml_path.exists():
-        logger.warning(f"GraphML not found: {graphml_path}")
-        return None, None
-
-    G = nx.read_graphml(graphml_path)
     logger.info(f"Graph loaded: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
-    # Convert to undirected for community detection
+    # Convert to undirected for community detection, using absolute weights
+    # (attribution scores can be negative, which breaks Louvain)
     G_und = G.to_undirected()
+    for u, v, d in G_und.edges(data=True):
+        d['weight'] = abs(d.get('weight', 1.0))
 
     partition = None
     actual_method = method
@@ -390,7 +462,7 @@ def build_supernodes_graph(
     if method == "louvain":
         try:
             import community as community_louvain
-            partition = community_louvain.best_partition(G_und)
+            partition = community_louvain.best_partition(G_und, weight='weight')
             actual_method = "louvain"
         except ImportError:
             logger.warning(
@@ -578,19 +650,21 @@ def build_supernodes_effect(
 # D. Graph JSON for UI
 # ---------------------------------------------------------------------------
 
-def build_graph_json(graphml_path: Path) -> Optional[Dict]:
-    """Convert graphml to node-link JSON (networkx.node_link_data)."""
+def build_graph_json(G) -> Optional[Dict]:
+    """Convert a networkx Graph to node-link JSON for the UI.
+
+    Args:
+        G: a networkx Graph (loaded via load_attribution_graph).
+    """
+    if G is None:
+        logger.warning("No graph provided — skipping graph JSON export.")
+        return None
+
     try:
         import networkx as nx
     except ImportError:
         logger.error("networkx not installed — skipping graph JSON export.")
         return None
-
-    if not graphml_path.exists():
-        logger.warning(f"GraphML not found: {graphml_path}")
-        return None
-
-    G = nx.read_graphml(graphml_path)
 
     # Enrich nodes with parsed layer info from id (e.g. "L15_F12345")
     for node_id, attrs in G.nodes(data=True):
@@ -685,11 +759,16 @@ def prepare_all(
 
     interventions_dir = results_dir / "interventions" / behaviour
     graphs_dir = results_dir / "attribution_graphs" / behaviour
-    graphml_path = graphs_dir / f"attribution_graph_{split}_n{graph_n_prompts}.graphml"
 
     logger.info(f"Output directory: {run_dir}")
     logger.info(f"Interventions dir: {interventions_dir}")
-    logger.info(f"Graph: {graphml_path}")
+
+    # ===== Load attribution graph (prefer JSON, fallback GraphML) =====
+    G_attr, graph_source_path = load_attribution_graph(graphs_dir, split, graph_n_prompts)
+    if graph_source_path:
+        logger.info(f"Graph source: {graph_source_path}")
+    else:
+        logger.warning("No attribution graph found — graph-dependent outputs will be skipped.")
 
     # Track input/output files for manifest
     input_files: List[Path] = []
@@ -701,7 +780,8 @@ def prepare_all(
         input_files.append(p)
         p_sum = interventions_dir / f"intervention_{exp}_{behaviour}_summary.json"
         input_files.append(p_sum)
-    input_files.append(graphml_path)
+    if graph_source_path:
+        input_files.append(graph_source_path)
     importance_dir = interventions_dir / "importance"
     if importance_dir.exists():
         input_files.extend(sorted(importance_dir.glob("*.csv")))
@@ -771,7 +851,7 @@ def prepare_all(
     logger.info("C. Building supernodes...")
 
     # S1: Graph community
-    sn_graph, sn_graph_summary = build_supernodes_graph(graphml_path, method=community_method)
+    sn_graph, sn_graph_summary = build_supernodes_graph(G_attr, method=community_method)
     if sn_graph is not None:
         sn_path = run_dir / "supernodes.json"
         with open(sn_path, "w") as f:
@@ -794,7 +874,7 @@ def prepare_all(
     logger.info("=" * 60)
     logger.info("D. Exporting graph JSON...")
 
-    graph_json = build_graph_json(graphml_path)
+    graph_json = build_graph_json(G_attr)
     if graph_json is not None:
         graph_json_path = run_dir / "graph.json"
         with open(graph_json_path, "w") as f:
