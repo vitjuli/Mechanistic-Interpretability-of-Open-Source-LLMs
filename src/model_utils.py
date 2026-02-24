@@ -119,9 +119,10 @@ class ModelWrapper:
     def _move_inputs(self, inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Move inputs to appropriate device, handling device_map='auto' safely."""
         if self.use_device_map:
-            # CRITICAL: Leave inputs on CPU when using device_map
-            # HuggingFace Accelerate handles device placement for sharded models
-            return inputs
+            # With device_map="auto", Accelerate places model layers on device(s)
+            # but does NOT move input tensors — we must send them to the embedding device
+            embed_device = next(self.model.model.embed_tokens.parameters()).device
+            return {k: v.to(embed_device) for k, v in inputs.items()}
         return {k: v.to(self.device) for k, v in inputs.items()}
 
     def _add_special_tokens(self, token_ids: List[int]) -> List[int]:
