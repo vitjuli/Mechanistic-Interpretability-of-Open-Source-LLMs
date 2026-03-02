@@ -4,10 +4,12 @@ Generate synthetic prompts for behaviours.
 Supported behaviours:
   - grammar_agreement: Subject-verb number agreement (singular/plural)
   - physics_scalar_vector_operator: Classify operators/quantities as scalar vs vector
+  - antonym_operation: Predict the antonym of an adjective (multilingual)
 
 Usage:
     python scripts/01_generate_prompts.py
     python scripts/01_generate_prompts.py --behaviour physics_scalar_vector_operator
+    python scripts/01_generate_prompts.py --behaviour antonym_operation
 """
 
 import json
@@ -409,9 +411,147 @@ def save_prompts(
     print(f"Saved {len(prompts)} {split} prompts to {output_file}")
 
 
+# ---------------------------------------------------------------------------
+# Antonym operation: tokenization-verified (word, antonym) pairs per language.
+# These passed the b_tokenize_audit_antonyms.py audit against Qwen3-4B-Instruct-2507.
+# Each word and its antonym tokenise to exactly ONE BPE token (with leading space).
+# EN: 25/25 candidates valid.  FR: 8/20 candidates valid.
+# Cross-language pairs (same concept valid in both EN+FR): 8 pairs.
+# ---------------------------------------------------------------------------
+_ANTONYM_PAIRS = {
+    "en": [
+        ("small",  "large"),   ("hot",    "cold"),    ("fast",   "slow"),
+        ("dark",   "light"),   ("hard",   "soft"),    ("rich",   "poor"),
+        ("new",    "old"),     ("good",   "bad"),     ("strong", "weak"),
+        ("happy",  "sad"),     ("open",   "closed"),  ("empty",  "full"),
+        ("early",  "late"),    ("high",   "low"),     ("long",   "short"),
+        ("wide",   "narrow"),  ("clean",  "dirty"),   ("loud",   "quiet"),
+        ("cheap",  "expensive"), ("easy", "hard"),    ("bright", "dark"),
+        ("deep",   "shallow"), ("heavy",  "light"),   ("sharp",  "dull"),
+        ("thick",  "thin"),
+    ],
+    "fr": [
+        ("petit",   "grand"),    ("vite",    "lent"),
+        ("nouveau", "vieux"),    ("vide",    "plein"),
+        ("haut",    "bas"),      ("long",    "court"),
+        ("propre",  "sale"),     ("facile",  "difficile"),
+    ],
+}
+
+# Concepts valid in BOTH en and fr (aligned by index in the en candidate list).
+# Source of truth: b_tokenize_audit_antonyms.py run on 2026-03-01.
+_ANTONYM_CROSS_LANG: List[Tuple[str, str, str, str]] = [
+    # (en_word, en_ant, fr_word, fr_ant)
+    ("small",  "large",  "petit",   "grand"),
+    ("fast",   "slow",   "vite",    "lent"),
+    ("new",    "old",    "nouveau", "vieux"),
+    ("empty",  "full",   "vide",    "plein"),
+    ("high",   "low",    "haut",    "bas"),
+    ("long",   "short",  "long",    "court"),
+    ("clean",  "dirty",  "propre",  "sale"),
+    ("easy",   "hard",   "facile",  "difficile"),
+]
+
+_ANTONYM_TEMPLATES = {
+    # All templates end with a complete word (no trailing space/quote).
+    # Model predicts ' {antonym}' with leading space — matches physics/grammar convention.
+    # 4 variants per language; forward-only direction (word → antonym) eliminates
+    # duplicate prompt texts that arise from bidirectional generation.
+    "en": [
+        'The opposite of "{word}" is',     # T1
+        'The antonym of "{word}" is',      # T2
+        '"{word}" is the opposite of',     # T3
+        '"{word}" is the antonym of',      # T4
+    ],
+    "fr": [
+        'Le contraire de "{word}" est',                 # T1
+        "L'antonyme de \"{word}\" est",                 # T2
+        '"{word}" est le contraire de',                 # T3
+        '"{word}" est l\'antonyme de',                  # T4
+    ],
+}
+
+
+def generate_antonym_operation_prompts(
+    n_train: int = 20,
+    n_test: int = 5,
+    seed: int = 42,
+    languages: List[str] = None,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate antonym-prediction prompts from tokenization-audited pairs.
+
+    Each prompt dict contains:
+      prompt          : text up to (not including) the predicted token
+      correct_answer  : the antonym (stripped, no leading space)
+      incorrect_answer: the original word (identity, no leading space)
+      word            : source word
+      antonym         : ground-truth antonym
+      language        : ISO language code
+      concept_index   : index into the language's pair list (for cross-lang alignment)
+      cross_lang_valid: True iff this concept has a valid translation in both en+fr
+
+    The generator creates BOTH directions for each pair:
+      word -> antonym  (forward)
+      antonym -> word  (reverse)
+    This doubles the dataset and makes ablation bidirectionally meaningful.
+
+    Returns:
+        (train_prompts, test_prompts)
+    """
+    if languages is None:
+        languages = ["en"]
+
+    rng = random.Random(seed)
+    all_prompts: List[Dict] = []
+
+    cross_lang_en_words = {row[0] for row in _ANTONYM_CROSS_LANG}
+    cross_lang_fr_words = {row[2] for row in _ANTONYM_CROSS_LANG}
+
+    for lang in languages:
+        pairs  = _ANTONYM_PAIRS.get(lang, [])
+        tmpls  = _ANTONYM_TEMPLATES[lang]  # list of 4 template strings
+
+        for concept_idx, (word, antonym) in enumerate(pairs):
+            if lang == "en":
+                xvalid = word in cross_lang_en_words
+            elif lang == "fr":
+                xvalid = word in cross_lang_fr_words
+            else:
+                xvalid = False
+
+            base = dict(
+                language=lang,
+                concept_index=concept_idx,
+                cross_lang_valid=xvalid,
+                direction="forward",   # forward-only; avoids duplicate prompt texts
+            )
+
+            # One prompt per template variant (word → antonym, forward only).
+            # Using bidirectional generation would create duplicate prompt texts
+            # for the 3 words that appear as both word and antonym across pairs
+            # ('dark', 'hard', 'light'), producing conflicting correct_answer labels.
+            for tmpl_idx, tmpl in enumerate(tmpls):
+                all_prompts.append({
+                    **base,
+                    "prompt":           tmpl.format(word=word),
+                    "correct_answer":   f" {antonym}",  # leading space — standard BPE convention
+                    "incorrect_answer": f" {word}",
+                    "word":             word,
+                    "antonym":          antonym,
+                    "template_idx":     tmpl_idx,
+                })
+
+    rng.shuffle(all_prompts)
+    train_prompts = all_prompts[:n_train]
+    test_prompts  = all_prompts[n_train : n_train + n_test]
+    return train_prompts, test_prompts
+
+
 GENERATORS = {
     "grammar_agreement": generate_grammar_agreement_prompts,
     "physics_scalar_vector_operator": generate_physics_scalar_vector_operator_prompts,
+    "antonym_operation": generate_antonym_operation_prompts,
 }
 
 

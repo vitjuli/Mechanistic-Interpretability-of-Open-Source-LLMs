@@ -32,6 +32,16 @@ behaviours:
     success_threshold: 0.75
     description: "Classify operators/quantities as scalar vs vector (Type 3: Abstraction)"
 
+  antonym_operation:
+    train_size: 80
+    test_size: 20
+    min_logit_diff: 1.0
+    success_threshold: 0.75
+    description: "Predict the single-token antonym of an adjective (EN v0; Type 2: Candidate Set)"
+    # 4 template variants × 25 EN pairs (forward-only) = 100 prompts (80 train, 20 test).
+    # Correct/incorrect answers use leading space: ' large' / ' small'.
+    # Tokenization audit 2026-03-01: all 25 EN pairs single-token with leading space.
+
 # Activation capture
 activations:
   layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)

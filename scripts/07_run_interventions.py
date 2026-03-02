@@ -115,6 +115,13 @@ class InterventionResult:
     relative_effect: float  # abs_effect_size / abs(baseline)
     sign_flipped: bool  # Whether intervention flipped the model's prediction
     metadata: Dict = field(default_factory=dict)  # Extensible storage, avoids shared state
+    # Graph-driven vs control labeling — set by main() after each experiment call.
+    # feature_source: "graph" = features came from attribution graph,
+    #                 "control" = fallback first-K features (--control_fallback mode only).
+    # layer_has_graph_features: False when the graph had NO features for this layer.
+    feature_source: str = "graph"
+    skipped_reason: Optional[str] = None  # reserved for future sentinel rows
+    layer_has_graph_features: bool = True
 
 
 def load_config(config_path: str = "configs/experiment_config.yaml") -> Dict:
@@ -1167,6 +1174,83 @@ def create_prompt_pairs(
         pairs.extend(_pair_targets_with_sources(positive, negative, "Pos<-Neg"))
         pairs.extend(_pair_targets_with_sources(negative, positive, "Neg<-Pos"))
 
+    elif behaviour == "antonym_operation":
+        # Pairing logic for antonym_operation (two modes):
+        #
+        # Mode A — same-language direction swap (default):
+        #   Pair forward prompts (word→antonym) with reverse prompts (antonym→word)
+        #   from the SAME concept.  Patching forward activations into a reverse target
+        #   tests whether the "antonym direction" feature is the operative signal.
+        #
+        # Mode B — cross-language (requires source_prompts from a different language):
+        #   Pair EN source activations onto FR targets at the same concept_index.
+        #   Tests whether the antonym circuit is language-universal.
+        #
+        forward  = [p for p in prompts if p.get("direction") == "forward"]
+        reverse  = [p for p in prompts if p.get("direction") == "reverse"]
+
+        logger.info(
+            f"Pairing input: {len(prompts)} targets "
+            f"(forward={len(forward)}, reverse={len(reverse)})"
+        )
+
+        if source_prompts is not None:
+            # Mode B: cross-language patching.
+            # Align by concept_index: each target gets a source with the same index.
+            src_by_idx: Dict[int, List[Dict]] = {}
+            for p in source_prompts:
+                src_by_idx.setdefault(p.get("concept_index", -1), []).append(p)
+
+            matched = 0
+            unmatched = 0
+            for t in prompts:
+                idx = t.get("concept_index", -1)
+                srcs = src_by_idx.get(idx, [])
+                if srcs:
+                    pairs.append((srcs[0], t))  # first source for this concept
+                    matched += 1
+                else:
+                    unmatched += 1
+            if unmatched:
+                logger.warning(
+                    f"antonym_operation cross-lang: {unmatched}/{len(prompts)} targets "
+                    f"had no matching concept_index in source_prompts"
+                )
+            logger.info(f"Pairing result: {matched} pairs (Mode B: cross-language)")
+        else:
+            # Mode A: same-language direction swap.
+            # Build concept_index map so forward and reverse of the SAME pair are matched.
+            fwd_by_idx: Dict[int, List[Dict]] = {}
+            rev_by_idx: Dict[int, List[Dict]] = {}
+            for p in prompts:
+                idx = p.get("concept_index", -1)
+                if p.get("direction") == "forward":
+                    fwd_by_idx.setdefault(idx, []).append(p)
+                else:
+                    rev_by_idx.setdefault(idx, []).append(p)
+
+            # Forward target ← Reverse source (same concept)
+            for t in sort_by_margin(forward):
+                idx = t.get("concept_index", -1)
+                srcs = rev_by_idx.get(idx, [])
+                if srcs:
+                    pairs.append((srcs[0], t))
+                else:
+                    # Fallback: any reverse prompt
+                    if reverse:
+                        pairs.append((reverse[0], t))
+            # Reverse target ← Forward source (same concept)
+            for t in sort_by_margin(reverse):
+                idx = t.get("concept_index", -1)
+                srcs = fwd_by_idx.get(idx, [])
+                if srcs:
+                    pairs.append((srcs[0], t))
+                else:
+                    if forward:
+                        pairs.append((forward[0], t))
+
+            logger.info(f"Pairing result: {len(pairs)} pairs (Mode A: direction swap)")
+
     else:
         # Generic pairing: consecutive prompts
         for i in range(0, len(prompts) - 1, 2):
@@ -1299,6 +1383,46 @@ def export_token_feature_examples(
     return out_file
 
 
+def save_layer_coverage(
+    output_path: Path,
+    behaviour: str,
+    experiment_type: str,
+    layers: List[int],
+    layer_src_map: Dict[int, str],
+    top_features_by_layer: Dict[int, List[int]],
+    n_features_used_map: Optional[Dict[int, int]] = None,
+):
+    """
+    Write a layer_coverage CSV summarising which layers were graph-driven,
+    control, or skipped.  This is written in both strict and control mode
+    so downstream consumers can always see per-layer coverage.
+
+    Columns:
+        layer, feature_source, layer_has_graph_features,
+        skipped, skipped_reason, n_graph_features, n_features_used
+    """
+    output_path.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for layer in sorted(layers):
+        src = layer_src_map.get(layer, "graph")
+        n_graph = len(top_features_by_layer.get(layer, []))
+        n_used = (n_features_used_map or {}).get(layer, None)
+        rows.append({
+            "layer": layer,
+            "feature_source": src,
+            "layer_has_graph_features": n_graph > 0,
+            "skipped": src == "skipped",
+            "skipped_reason": "no_graph_features" if src == "skipped" else None,
+            "n_graph_features": n_graph,
+            "n_features_used": n_used if n_used is not None else (0 if src == "skipped" else n_graph),
+        })
+    df = pd.DataFrame(rows)
+    out_file = output_path / f"layer_coverage_{experiment_type}_{behaviour}.csv"
+    df.to_csv(out_file, index=False)
+    logger.info(f"Saved layer coverage to {out_file}")
+    return out_file
+
+
 def save_results(
     results: List[InterventionResult],
     output_path: Path,
@@ -1389,7 +1513,7 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "physics_scalar_vector_operator"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation"],
         default="grammar_agreement",
         help="Which behaviour to analyze",
     )
@@ -1479,7 +1603,29 @@ def main():
              "By default this raises an error because hooks may fire on the wrong device. "
              "Use only if you know what you are doing.",
     )
+    parser.add_argument(
+        "--control_fallback",
+        action="store_true",
+        default=False,
+        help=(
+            "CONTROL EXPERIMENT MODE: when a layer has no graph-attributed features, "
+            "fall back to the first-K features instead of skipping the layer. "
+            "Output CSVs will contain rows with feature_source='control', mixed with "
+            "graph-driven rows (feature_source='graph'). "
+            "Default: disabled (strict mode — layers with no graph features are skipped "
+            "and the script exits with an error if zero interventions are produced)."
+        ),
+    )
     args = parser.parse_args()
+
+    # ===== STRICT vs CONTROL MODE =====
+    if args.control_fallback:
+        logger.warning("=" * 70)
+        logger.warning("CONTROL FALLBACK ENABLED — results not purely graph-driven.")
+        logger.warning("Layers with no graph-attributed features will use first-K features.")
+        logger.warning("Output CSVs will contain rows with feature_source='control'.")
+        logger.warning("DO NOT publish control rows as graph-driven results without filtering!")
+        logger.warning("=" * 70)
 
     # Load configs
     config = load_config(args.config)
@@ -1670,7 +1816,18 @@ def main():
                     signed = 0.0
                 top_features_by_layer_signed.setdefault(L, []).append((fidx, float(signed)))
         else:
-            print("No attribution graph found, will use random/first features")
+            if not args.control_fallback:
+                logger.error(
+                    "No attribution graph found and --control_fallback is not set. "
+                    "In strict mode all layers will be skipped, producing zero interventions. "
+                    "Either run script 06 first to build the attribution graph, "
+                    "or pass --control_fallback to run a control-only experiment."
+                )
+                sys.exit(1)
+            logger.warning(
+                "No attribution graph found; CONTROL FALLBACK enabled — "
+                "all layers will use first-K features (control, not graph-driven)."
+            )
 
         # ====== UNIFIED PROMPT SUBSETTING ======
         # Slice ONCE, use everywhere. Prevents steering/feature_importance
@@ -1690,6 +1847,7 @@ def main():
             "top_k": args.top_k,
             "prompts_file": args.prompts_file,
             "source_prompts_file": args.source_prompts_file,
+            "control_fallback": args.control_fallback,  # record mode for reproducibility
         }
 
         # Export token-feature examples if requested (before running experiments)
@@ -1735,10 +1893,23 @@ def main():
                     # Use graph candidates if available
                     layer_candidates = top_features_by_layer.get(layer, None)
                     
+                    _fi_layer_has_graph = bool(layer_candidates)
+                    _fi_feature_src = "graph"
                     if layer_candidates:
                         print(f"  Using {len(layer_candidates)} candidate features from attribution graph")
                     else:
-                        print("  No attribution graph; using first 50 features (baseline/control)")
+                        if not args.control_fallback:
+                            logger.warning(
+                                f"Layer {layer}: no graph-attributed features; "
+                                f"SKIPPING feature_importance (strict mode). "
+                                f"Use --control_fallback to run a control baseline instead."
+                            )
+                            continue
+                        logger.warning(
+                            f"Layer {layer}: no graph features; "
+                            f"CONTROL FALLBACK: using first 50 features for feature_importance."
+                        )
+                        _fi_feature_src = "control"
 
                     importance_df = experiment.run_feature_importance_sweep(
                         sample_prompts,
@@ -1748,37 +1919,86 @@ def main():
                         top_k_features=50,
                     )
 
+                    # Tag rows with graph-vs-control label for downstream filtering
+                    if not importance_df.empty:
+                        importance_df["feature_source"] = _fi_feature_src
+                        importance_df["layer_has_graph_features"] = _fi_layer_has_graph
+
                     # Save importance results (create directory first!)
                     imp_out_path = output_path / behaviour / "importance"
                     imp_out_path.mkdir(parents=True, exist_ok=True)
                     importance_df.to_csv(
-                        imp_out_path / f"feature_importance_layer_{layer}.csv", 
+                        imp_out_path / f"feature_importance_layer_{layer}.csv",
                         index=False
                     )
                     print(f"  Saved importance results to {imp_out_path}")
 
             elif exp_type == "steering":
-                # Steering handles its own layer/prompt loops
+                # Build effective features dict (graph or control) and track source per layer.
+                # run_steering_experiment uses whatever is in the passed dict — it already
+                # skips layers with empty lists, so we control fallback here in main().
+                _steer_features: Dict[int, List[int]] = {}
+                _steer_src_by_layer: Dict[int, str] = {}
+                for _sl in layers:
+                    _gf = top_features_by_layer.get(_sl, [])
+                    if _gf:
+                        _steer_features[_sl] = _gf
+                        _steer_src_by_layer[_sl] = "graph"
+                    elif args.control_fallback:
+                        _d = experiment.transcoder_set[_sl].d_transcoder
+                        _steer_features[_sl] = list(range(min(args.top_k, _d)))
+                        _steer_src_by_layer[_sl] = "control"
+                        logger.warning(
+                            f"Layer {_sl}: no graph-attributed features; "
+                            f"CONTROL FALLBACK: steering with first {args.top_k} features."
+                        )
+                    else:
+                        logger.warning(
+                            f"Layer {_sl}: no graph-attributed features; "
+                            f"SKIPPING layer {_sl} for steering (strict mode). "
+                            f"Use --control_fallback to enable control fallback."
+                        )
+                        _steer_src_by_layer[_sl] = "skipped"
+
                 steer_results = experiment.run_steering_experiment(
-                    sample_prompts, layers, top_features_by_layer, behaviour,
+                    sample_prompts, layers, _steer_features, behaviour,
                     coefficient=args.steering_coeff, top_k=args.top_k,
                     # Convert list of tuples to dict for lookup: layer -> {feat: sign}
                     signed_features={
-                        L: {f: s for f, s in feats} 
+                        L: {f: s for f, s in feats}
                         for L, feats in top_features_by_layer_signed.items()
                     }
                 )
+
+                # Tag each result with graph-vs-control label
+                for _sr in steer_results:
+                    _sr.feature_source = _steer_src_by_layer.get(_sr.layer, "graph")
+                    _sr.layer_has_graph_features = bool(top_features_by_layer.get(_sr.layer, []))
+
                 save_results(
-                    steer_results, 
-                    output_path / behaviour, 
-                    behaviour, 
-                    "steering", 
+                    steer_results,
+                    output_path / behaviour,
+                    behaviour,
+                    "steering",
                     {**metadata, "steering_coeff": args.steering_coeff}
                 )
+                save_layer_coverage(
+                    output_path / behaviour, behaviour, "steering",
+                    layers, _steer_src_by_layer, top_features_by_layer,
+                )
+                if not steer_results and not args.control_fallback:
+                    logger.error(
+                        f"Steering produced zero results for behaviour '{behaviour}'. "
+                        f"All layers were skipped: no graph-attributed features found (strict mode). "
+                        f"Ensure script 06 has been run and the graph file exists, "
+                        f"or pass --control_fallback for a control experiment."
+                    )
+                    sys.exit(1)
 
             elif exp_type == "ablation":
                 # Feature ablation
                 all_results: List[InterventionResult] = []
+                _abl_skipped_layers: set = set()  # layers skipped due to no graph features
 
                 for i, prompt_data in enumerate(tqdm(sample_prompts, desc="Ablation")):
                     prompt = prompt_data["prompt"]
@@ -1789,6 +2009,10 @@ def main():
                         continue
 
                     for layer in layers:
+                        # Track whether this layer has ANY graph-attributed features
+                        _abl_layer_has_graph = bool(top_features_by_layer.get(layer, []))
+                        _abl_feature_src = "graph"
+
                         # Select features by sign of mean_score_conditional
                         cands = top_features_by_layer_signed.get(layer, [])
                         if cands:
@@ -1815,11 +2039,21 @@ def main():
                         layer_features = [fi for fi in layer_features if 0 <= fi < d]
 
                         if not layer_features:
-                            logger.warning(
-                                f"No valid features for layer {layer} after graph selection; "
-                                f"using first {args.top_k} ONLY as last resort."
-                            )
-                            layer_features = list(range(min(args.top_k, d)))
+                            if args.control_fallback:
+                                logger.warning(
+                                    f"Layer {layer}: no valid graph-attributed features; "
+                                    f"CONTROL FALLBACK: using first {args.top_k} features."
+                                )
+                                layer_features = list(range(min(args.top_k, d)))
+                                _abl_feature_src = "control"
+                            else:
+                                logger.warning(
+                                    f"Layer {layer}: no valid graph-attributed features; "
+                                    f"SKIPPING layer {layer} for ablation (strict mode). "
+                                    f"Use --control_fallback to enable control fallback."
+                                )
+                                _abl_skipped_layers.add(layer)
+                                continue
 
                         # Fix 7: Activation-aware selection — prefer features active on THIS prompt
                         try:
@@ -1850,16 +2084,42 @@ def main():
                                 feature_indices=layer_features,
                                 mode="zero",
                             )
+                            # Tag with graph-vs-control label
+                            result.feature_source = _abl_feature_src
+                            result.layer_has_graph_features = _abl_layer_has_graph
                             all_results.append(result)
                         except ValueError as e:
                             logger.warning(f"Skipping prompt {i} layer {layer}: {e}")
                             continue
 
                 save_results(all_results, output_path / behaviour, behaviour, "ablation", metadata)
+                # Build layer-source map from results + skipped set, then write coverage file
+                _abl_src_map: Dict[int, str] = {}
+                for _lc in layers:
+                    if _lc in _abl_skipped_layers:
+                        _abl_src_map[_lc] = "skipped"
+                    else:
+                        _abl_src_map[_lc] = next(
+                            (r.feature_source for r in all_results if r.layer == _lc),
+                            "skipped",
+                        )
+                save_layer_coverage(
+                    output_path / behaviour, behaviour, "ablation",
+                    layers, _abl_src_map, top_features_by_layer,
+                )
+                if not all_results and not args.control_fallback:
+                    logger.error(
+                        f"Ablation produced zero results for behaviour '{behaviour}'. "
+                        f"All layers were skipped: no graph-attributed features found (strict mode). "
+                        f"Ensure script 06 has been run and the graph file exists, "
+                        f"or pass --control_fallback for a control experiment."
+                    )
+                    sys.exit(1)
 
             elif exp_type == "patching":
                 # Activation patching
                 results: List[InterventionResult] = []
+                _patch_skipped_layers: set = set()  # layers skipped due to no graph features
 
                 # Create pairs from the unified sample_prompts
                 pairs = create_prompt_pairs(sample_prompts, behaviour, source_prompts=source_prompts)
@@ -1895,13 +2155,30 @@ def main():
                         continue
 
                     for layer in layers:
+                        # Track whether this layer has ANY graph-attributed features
+                        _patch_layer_has_graph = bool(top_features_by_layer.get(layer, []))
+                        _patch_feature_src = "graph"
+
                         # Candidate features from graph (pair-specific selection happens inside run_patching_experiment)
                         cands = top_features_by_layer.get(layer, [])
                         d = experiment.transcoder_set[layer].d_transcoder
                         cands = [fi for fi in cands if 0 <= fi < d]
                         if not cands:
-                            logger.warning(f"No valid features for layer {layer}, using first {args.top_k}")
-                            cands = list(range(min(args.top_k, d)))
+                            if args.control_fallback:
+                                logger.warning(
+                                    f"Layer {layer}: no valid graph-attributed features; "
+                                    f"CONTROL FALLBACK: using first {args.top_k} features."
+                                )
+                                cands = list(range(min(args.top_k, d)))
+                                _patch_feature_src = "control"
+                            else:
+                                logger.warning(
+                                    f"Layer {layer}: no valid graph-attributed features; "
+                                    f"SKIPPING layer {layer} for patching (strict mode). "
+                                    f"Use --control_fallback to enable control fallback."
+                                )
+                                _patch_skipped_layers.add(layer)
+                                continue
 
                         try:
                             result = experiment.run_patching_experiment(
@@ -1926,6 +2203,9 @@ def main():
                                 "target_orig_idx": target.get("orig_idx", -1),
                             })
 
+                            # Tag with graph-vs-control label
+                            result.feature_source = _patch_feature_src
+                            result.layer_has_graph_features = _patch_layer_has_graph
                             results.append(result)
 
                         except (ValueError, KeyError) as e:
@@ -1933,7 +2213,29 @@ def main():
                             continue
 
                 save_results(results, output_path / behaviour, behaviour, "patching", metadata)
-                
+                # Build layer-source map from results + skipped set, then write coverage file
+                _patch_src_map: Dict[int, str] = {}
+                for _lc in layers:
+                    if _lc in _patch_skipped_layers:
+                        _patch_src_map[_lc] = "skipped"
+                    else:
+                        _patch_src_map[_lc] = next(
+                            (r.feature_source for r in results if r.layer == _lc),
+                            "skipped",
+                        )
+                save_layer_coverage(
+                    output_path / behaviour, behaviour, "patching",
+                    layers, _patch_src_map, top_features_by_layer,
+                )
+                if not results and not args.control_fallback:
+                    logger.error(
+                        f"Patching produced zero results for behaviour '{behaviour}'. "
+                        f"All layers were skipped: no graph-attributed features found (strict mode). "
+                        f"Ensure script 06 has been run and the graph file exists, "
+                        f"or pass --control_fallback for a control experiment."
+                    )
+                    sys.exit(1)
+
     print("\n" + "=" * 70)
     print("INTERVENTION EXPERIMENTS COMPLETE")
     print("=" * 70)

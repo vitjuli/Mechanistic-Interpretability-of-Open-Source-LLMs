@@ -11,6 +11,7 @@ import ast
 import json
 import logging
 import os
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -290,6 +291,14 @@ def _agg_group(grp: pd.DataFrame) -> Dict:
     if "sign_flipped" in grp.columns:
         out["sign_flip_rate"] = float(grp["sign_flipped"].mean())
         out["n_sign_flips"] = int(grp["sign_flipped"].sum())
+    # Preserve graph-vs-control labels so UI can filter on them.
+    if "feature_source" in grp.columns:
+        out["has_control_rows"] = bool((grp["feature_source"] == "control").any())
+        out["all_graph"] = bool((grp["feature_source"] == "graph").all())
+        # Modal value for quick display
+        out["feature_source_mode"] = grp["feature_source"].mode().iloc[0] if len(grp) > 0 else "graph"
+    if "layer_has_graph_features" in grp.columns:
+        out["layer_has_graph_features"] = bool(grp["layer_has_graph_features"].all())
     return out
 
 
@@ -734,6 +743,55 @@ def load_feature_importance(importance_dir: Path) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Raw-source preservation
+# ---------------------------------------------------------------------------
+
+def copy_raw_sources(results_dir: Path, behaviour: str, run_dir: Path) -> List[Path]:
+    """
+    Copy original pipeline outputs into run_dir/raw_sources/ before they can be
+    deleted by the caller.  Targets:
+      - results_dir/attribution_graphs/<behaviour>/attribution_graph_*.json
+      - results_dir/interventions/<behaviour>/intervention_*.csv
+      - results_dir/interventions/<behaviour>/intervention_*_summary.json
+
+    Returns the list of destination paths actually copied.
+    Logs WARNING and returns [] if none found (normal when sources were cleaned up
+    after a previous UI export).  Never raises.
+    """
+    candidates: List[Path] = []
+
+    graphs_dir = results_dir / "attribution_graphs" / behaviour
+    if graphs_dir.exists():
+        candidates.extend(sorted(graphs_dir.glob("attribution_graph_*.json")))
+
+    interventions_dir = results_dir / "interventions" / behaviour
+    if interventions_dir.exists():
+        candidates.extend(sorted(interventions_dir.glob("intervention_*.csv")))
+        candidates.extend(sorted(interventions_dir.glob("intervention_*_summary.json")))
+
+    if not candidates:
+        logger.warning(
+            f"raw_sources: no source artifacts found for '{behaviour}' under {results_dir}. "
+            "Sources may have been cleaned up after a previous UI export. "
+            "Skipping raw_sources/ copy."
+        )
+        return []
+
+    raw_dir = run_dir / "raw_sources"
+    raw_dir.mkdir(exist_ok=True)
+
+    copied: List[Path] = []
+    for src in candidates:
+        dst = raw_dir / src.name
+        shutil.copy2(src, dst)
+        copied.append(dst)
+        logger.info(f"  raw_sources: {src.name} ({src.stat().st_size:,} bytes)")
+
+    logger.info(f"  raw_sources: {len(copied)} file(s) copied to {raw_dir}")
+    return copied
+
+
+# ---------------------------------------------------------------------------
 # Master orchestrator
 # ---------------------------------------------------------------------------
 
@@ -762,6 +820,11 @@ def prepare_all(
 
     logger.info(f"Output directory: {run_dir}")
     logger.info(f"Interventions dir: {interventions_dir}")
+
+    # ===== Copy raw source artifacts before anything can delete them =====
+    logger.info("=" * 60)
+    logger.info("0. Preserving raw source artifacts...")
+    raw_source_files = copy_raw_sources(results_dir, behaviour, run_dir)
 
     # ===== Load attribution graph (prefer JSON, fallback GraphML) =====
     G_attr, graph_source_path = load_attribution_graph(graphs_dir, split, graph_n_prompts)
@@ -846,6 +909,23 @@ def prepare_all(
         _save_df(fi_df, run_dir / "feature_importance", output_files)
         logger.info(f"  Feature importance: {len(fi_df)} rows")
 
+    # Layer coverage files — written by script 07 for each experiment type.
+    # Copy them all into the run dir so the UI can inspect which layers were
+    # graph-driven, control, or skipped.
+    _coverage_files = sorted(interventions_dir.glob("layer_coverage_*.csv"))
+    if _coverage_files:
+        coverage_frames = []
+        for _cf in _coverage_files:
+            _cdf = pd.read_csv(_cf)
+            # derive experiment_type from filename: layer_coverage_<exp>_<behaviour>.csv
+            _exp = _cf.stem.replace(f"layer_coverage_", "").replace(f"_{behaviour}", "")
+            _cdf["experiment_type"] = _exp
+            coverage_frames.append(_cdf)
+            input_files.append(_cf)
+        coverage_all = pd.concat(coverage_frames, ignore_index=True)
+        _save_df(coverage_all, run_dir / "layer_coverage", output_files)
+        logger.info(f"  Layer coverage: {len(coverage_all)} rows across {len(_coverage_files)} files")
+
     # ===== C. Supernodes =====
     logger.info("=" * 60)
     logger.info("C. Building supernodes...")
@@ -900,6 +980,7 @@ def prepare_all(
             "community_method": community_method,
             "effect_clusters": effect_clusters,
             "timestamp": timestamp,
+            "raw_sources_copied": [p.name for p in raw_source_files],
         },
     )
     manifest_path = run_dir / "run_manifest.json"
