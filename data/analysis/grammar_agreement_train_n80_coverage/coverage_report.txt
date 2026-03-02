@@ -1,0 +1,85 @@
+======================================================================
+INTERVENTION COVERAGE AUDIT  —  Stage 0
+Behaviour: grammar_agreement
+======================================================================
+
+─── 1. Dataset overview ───
+  N intervention prompts (unique)  : 20
+  Total exploded feature records   : 2,900
+    ablation_zero: 35 unique features, 20 prompts
+    patching: 61 unique features, 20 prompts
+    steering: 55 unique features, 20 prompts
+
+─── 2. FULL 48-dim matrix (as used by prepare.py) ───
+  Dimensions  : 61 features × 48 (exp,layer) pairs
+  Total cells : 2,928
+  Observed    : 151  (5.2%)
+  Missing     : 2,777  (94.8%)
+
+─── 3. Structural vs effective missingness ───
+  Structural missingness (wrong-layer NaN, unavoidable) : 93.8%
+  Effective missingness  (right-layer cells, unobserved): 17.5%
+  → The 94.8% reported by prepare.py is ~93.8% structural.
+  → Only 17.5% of cells that SHOULD be observed are missing.
+
+─── 4. Effective 3-dim matrix (feature × experiment_type only) ───
+  Dimensions  : 61 features × 3 experiment types
+  Total cells : 183
+  Observed    : 151  (82.5%)
+  Missing     : 32  (17.5%)
+
+─── 5. Per-feature prompt coverage ───
+  Mean prompts per feature  : 19.8
+  Median                    : 20.0
+  Min                       : 15
+  Max                       : 20
+  Features tested ≥1 prompt : 61 / 61
+
+─── 6. Effective coverage vs N prompts (subsampling curve) ───
+  N=   1  96.0%  ████████████████████████████
+  N=   2  98.0%  █████████████████████████████
+  N=   3  98.7%  █████████████████████████████
+  N=   4  99.3%  █████████████████████████████
+  N=   5  99.3%  █████████████████████████████
+  N=   6  99.3%  █████████████████████████████
+  N=   7  100.0%  ██████████████████████████████
+  N=   8  99.3%  █████████████████████████████
+  N=   9  100.0%  ██████████████████████████████
+  N=  10  100.0%  ██████████████████████████████
+  N=  11  100.0%  ██████████████████████████████
+  N=  12  100.0%  ██████████████████████████████
+  N=  13  100.0%  ██████████████████████████████
+  N=  14  100.0%  ██████████████████████████████
+  N=  15  100.0%  ██████████████████████████████
+  N=  16  100.0%  ██████████████████████████████
+  N=  17  100.0%  ██████████████████████████████
+  N=  18  100.0%  ██████████████████████████████
+  N=  19  100.0%  ██████████████████████████████
+  N=  20  100.0%  ██████████████████████████████
+
+─── 7. Recommended N for target effective coverage ───
+  Target: effective coverage ≥ 80%  (missingness ≤ 20%)  →  N ≥ 1
+  Target: effective coverage ≥ 90%  (missingness ≤ 10%)  →  N ≥ 1
+
+─── 8. Implications for Stage 1 and Stage 3 ───
+  a) STAGE 3 CLUSTERING: use the 3-dim effective matrix (feature × experiment_type),
+     NOT the 48-dim full matrix.  Zero-imputing 93%+ structural zeros and then
+     normalising/clustering produces artefacts, not real clusters.
+     The effective matrix has 17.5% missing cells —
+     much more tractable.
+
+  b) STAGE 1 PROMPTS: more intervention prompts help by:
+       • Reducing variance in mean_effect_size estimates
+       • Ensuring rare features (low frequency in top-k) are tested on ≥1 prompt
+       • Lowering effective missingness if some features are not always top-k
+     See Section 7 for recommended N to achieve target effective coverage.
+     Note: if current effective missingness is already low, the primary gain
+     from more prompts is lower-variance effect estimates for clustering.
+
+  c) STAGE 2 COMMUNITY DETECTION: does not depend on intervention data.
+     Communities should be derived from feature attribute vectors or
+     co-activation counts (see topology report).
+
+======================================================================
+END OF REPORT
+======================================================================
