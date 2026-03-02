@@ -1249,7 +1249,39 @@ def create_prompt_pairs(
                     if forward:
                         pairs.append((forward[0], t))
 
-            logger.info(f"Pairing result: {len(pairs)} pairs (Mode A: direction swap)")
+            if not pairs and forward:
+                # All prompts are forward-only (no reverse direction in this split).
+                # Fall back to cross-template pairing: same concept, different template_idx.
+                # Interpretation: does the antonym circuit transfer across prompt phrasings?
+                logger.warning(
+                    "antonym_operation Mode A: no reverse-direction prompts found. "
+                    "Falling back to cross-template patching "
+                    "(source = same concept, different template_idx)."
+                )
+                by_concept_tmpl = {
+                    (p.get("concept_index", -1), p.get("template_idx", 0)): p
+                    for p in forward
+                }
+                for t in sort_by_margin(forward):
+                    cidx = t.get("concept_index", -1)
+                    tidx = t.get("template_idx", 0)
+                    src = None
+                    for alt_t in range(4):
+                        if alt_t != tidx:
+                            src = by_concept_tmpl.get((cidx, alt_t))
+                            if src:
+                                break
+                    if src:
+                        pairs.append((src, t))
+                    elif len(forward) > 1:
+                        other = next((p for p in forward if p is not t), None)
+                        if other:
+                            pairs.append((other, t))
+                logger.info(
+                    f"Pairing result: {len(pairs)} pairs (Mode A: cross-template fallback)"
+                )
+            else:
+                logger.info(f"Pairing result: {len(pairs)} pairs (Mode A: direction swap)")
 
     else:
         # Generic pairing: consecutive prompts
