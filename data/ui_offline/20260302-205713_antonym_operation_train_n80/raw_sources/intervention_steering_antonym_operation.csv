@@ -1,0 +1,321 @@
+experiment_type,prompt_idx,layer,feature_indices,baseline_logit_diff,intervened_logit_diff,effect_size,abs_effect_size,relative_effect,sign_flipped,metadata,feature_source,skipped_reason,layer_has_graph_features
+steering,0,10,"[15096, 59805, 148569, 25281]",8.125,7.90625,-0.21875,0.21875,0.026923076889940827,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,1,10,"[15096, 59805, 148569, 25281]",9.375,8.875,-0.5,0.5,0.05333333327644444,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,2,10,"[15096, 59805, 148569, 25281]",8.0,9.0,1.0,1.0,0.12499999984374999,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,3,10,"[15096, 59805, 148569, 25281]",6.375,7.1875,0.8125,0.8125,0.12745098019223375,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,4,10,"[15096, 59805, 148569, 25281]",2.0,3.9375,1.9375,1.9375,0.96874999515625,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,5,10,"[15096, 59805, 148569, 25281]",6.0,7.09375,1.09375,1.09375,0.18229166636284722,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,6,10,"[15096, 59805, 148569, 25281]",6.65625,7.375,0.71875,0.71875,0.10798122049505168,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,7,10,"[15096, 59805, 148569, 25281]",7.15625,7.5625,0.40625,0.40625,0.05676855887263782,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,8,10,"[15096, 59805, 148569, 25281]",5.65625,7.15625,1.5,1.5,0.2651933696968957,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,9,10,"[15096, 59805, 148569, 25281]",2.8125,3.84375,1.03125,1.03125,0.366666665362963,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,10,10,"[15096, 59805, 148569, 25281]",9.125,9.9375,0.8125,0.8125,0.08904109579283166,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,11,10,"[15096, 59805, 148569, 25281]",6.875,9.3125,2.4375,2.4375,0.35454545402975207,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,12,10,"[15096, 59805, 148569, 25281]",7.375,8.5625,1.1875,1.1875,0.1610169489342143,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,13,10,"[15096, 59805, 148569, 25281]",5.21875,6.9375,1.71875,1.71875,0.3293413167341963,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,14,10,"[15096, 59805, 148569, 25281]",7.84375,9.0625,1.21875,1.21875,0.1553784858576848,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,15,10,"[15096, 59805, 148569, 25281]",1.5625,3.3125,1.75,1.75,1.1199999928320001,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,16,10,"[15096, 59805, 148569, 25281]",3.5625,5.0625,1.5,1.5,0.42105263039704527,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,17,10,"[15096, 59805, 148569, 25281]",4.1875,6.375,2.1875,2.1875,0.5223880584539987,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,18,10,"[15096, 59805, 148569, 25281]",3.0625,5.15625,2.09375,2.09375,0.6836734671553519,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,19,10,"[15096, 59805, 148569, 25281]",4.9375,6.0,1.0625,1.0625,0.21518987298189393,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,0,11,"[107914, 36396, 46537, 148703, 59878]",8.125,6.53125,-1.59375,1.59375,0.19615384591242602,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,11,"[107914, 36396, 46537, 148703, 59878]",9.375,6.5,-2.875,2.875,0.3066666663395555,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,11,"[107914, 36396, 46537, 148703, 59878]",8.0,7.5625,-0.4375,0.4375,0.05468749993164062,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,11,"[107914, 36396, 46537, 148703, 59878]",6.375,1.625,-4.75,4.75,0.745098038046905,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,11,"[107914, 36396, 46537, 148703, 59878]",2.0,-3.1875,-5.1875,5.1875,2.59374998703125,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,11,"[107914, 36396, 46537, 148703, 59878]",6.0,5.6875,-0.3125,0.3125,0.05208333324652778,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,11,"[107914, 36396, 46537, 148703, 59878]",6.65625,2.9375,-3.71875,3.71875,0.55868544517005,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,11,"[107914, 36396, 46537, 148703, 59878]",7.15625,6.5625,-0.59375,0.59375,0.08296943219847067,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,11,"[107914, 36396, 46537, 148703, 59878]",5.65625,6.1875,0.53125,0.53125,0.09392265176765056,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,11,"[107914, 36396, 46537, 148703, 59878]",2.8125,4.78125,1.96875,1.96875,0.6999999975111111,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,11,"[107914, 36396, 46537, 148703, 59878]",9.125,3.625,-5.5,5.5,0.6027397253668605,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,11,"[107914, 36396, 46537, 148703, 59878]",6.875,7.03125,0.15625,0.15625,0.022727272694214876,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,11,"[107914, 36396, 46537, 148703, 59878]",7.375,6.875,-0.5,0.5,0.06779661007756392,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,11,"[107914, 36396, 46537, 148703, 59878]",5.21875,2.6875,-2.53125,2.53125,0.4850299391903618,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,11,"[107914, 36396, 46537, 148703, 59878]",7.84375,3.875,-3.96875,3.96875,0.5059760949724608,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,11,"[107914, 36396, 46537, 148703, 59878]",1.5625,-5.625,-7.1875,7.1875,4.599999970560001,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,11,"[107914, 36396, 46537, 148703, 59878]",3.5625,2.375,-1.1875,1.1875,0.33333333239766083,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,11,"[107914, 36396, 46537, 148703, 59878]",4.1875,2.25,-1.9375,1.9375,0.46268656605925595,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,11,"[107914, 36396, 46537, 148703, 59878]",3.0625,1.3125,-1.75,1.75,0.5714285695626823,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,11,"[107914, 36396, 46537, 148703, 59878]",4.9375,1.875,-3.0625,3.0625,0.6202531633007531,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,12,"[68142, 40178, 71563, 39488, 4447]",8.125,6.59375,-1.53125,1.53125,0.18846153822958578,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,12,"[68142, 40178, 71563, 39488, 4447]",9.375,7.3125,-2.0625,2.0625,0.21999999976533333,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,12,"[68142, 40178, 71563, 39488, 4447]",8.0,6.78125,-1.21875,1.21875,0.1523437498095703,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,12,"[68142, 40178, 71563, 39488, 4447]",6.375,3.25,-3.125,3.125,0.49019607766243756,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,12,"[68142, 40178, 71563, 39488, 4447]",2.0,-1.5,-3.5,3.5,1.7499999912500002,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,12,"[68142, 40178, 71563, 39488, 4447]",6.0,4.6875,-1.3125,1.3125,0.21874999963541666,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,12,"[68142, 40178, 71563, 39488, 4447]",6.65625,3.46875,-3.1875,3.1875,0.47887323871718573,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,12,"[68142, 40178, 71563, 39488, 4447]",7.15625,5.46875,-1.6875,1.6875,0.23580785993249556,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,12,"[68142, 40178, 71563, 39488, 4447]",5.65625,5.65625,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,12,"[68142, 40178, 71563, 39488, 4447]",2.8125,2.0625,-0.75,0.75,0.26666666571851855,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,12,"[68142, 40178, 71563, 39488, 4447]",9.125,5.1875,-3.9375,3.9375,0.4315068488421842,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,12,"[68142, 40178, 71563, 39488, 4447]",6.875,5.0625,-1.8125,1.8125,0.2636363632528926,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,12,"[68142, 40178, 71563, 39488, 4447]",7.375,8.125,0.75,0.75,0.10169491511634587,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,12,"[68142, 40178, 71563, 39488, 4447]",5.21875,2.5625,-2.65625,2.65625,0.5089820349528488,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,12,"[68142, 40178, 71563, 39488, 4447]",7.84375,4.9375,-2.90625,2.90625,0.3705179278144791,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,12,"[68142, 40178, 71563, 39488, 4447]",1.5625,-2.375,-3.9375,3.9375,2.519999983872,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,12,"[68142, 40178, 71563, 39488, 4447]",3.5625,1.0,-2.5625,2.5625,0.7192982435949523,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,12,"[68142, 40178, 71563, 39488, 4447]",4.1875,1.625,-2.5625,2.5625,0.6119402970461127,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,12,"[68142, 40178, 71563, 39488, 4447]",3.0625,0.0,-3.0625,3.0625,0.9999999967346939,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,12,"[68142, 40178, 71563, 39488, 4447]",4.9375,2.4375,-2.5,2.5,0.506329112898574,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,13,"[132137, 145452, 54591, 72758, 74172]",8.125,6.3125,-1.8125,1.8125,0.22307692280236685,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,13,"[132137, 145452, 54591, 72758, 74172]",9.375,8.125,-1.25,1.25,0.1333333331911111,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,13,"[132137, 145452, 54591, 72758, 74172]",8.0,7.90625,-0.09375,0.09375,0.011718749985351561,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,13,"[132137, 145452, 54591, 72758, 74172]",6.375,4.65625,-1.71875,1.71875,0.26960784271434063,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,13,"[132137, 145452, 54591, 72758, 74172]",2.0,0.8125,-1.1875,1.1875,0.5937499970312501,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,13,"[132137, 145452, 54591, 72758, 74172]",6.0,5.59375,-0.40625,0.40625,0.06770833322048611,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,13,"[132137, 145452, 54591, 72758, 74172]",6.65625,5.75,-0.90625,0.90625,0.1361502345372391,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,13,"[132137, 145452, 54591, 72758, 74172]",7.15625,6.96875,-0.1875,0.1875,0.02620087332583284,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,13,"[132137, 145452, 54591, 72758, 74172]",5.65625,5.84375,0.1875,0.1875,0.033149171212111965,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,13,"[132137, 145452, 54591, 72758, 74172]",2.8125,3.34375,0.53125,0.53125,0.18888888821728395,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,13,"[132137, 145452, 54591, 72758, 74172]",9.125,7.6875,-1.4375,1.4375,0.1575342464027022,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,13,"[132137, 145452, 54591, 72758, 74172]",6.875,5.6875,-1.1875,1.1875,0.17272727247603306,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,13,"[132137, 145452, 54591, 72758, 74172]",7.375,6.90625,-0.46875,0.46875,0.06355932194771617,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,13,"[132137, 145452, 54591, 72758, 74172]",5.21875,6.03125,0.8125,0.8125,0.15568862245616552,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,13,"[132137, 145452, 54591, 72758, 74172]",7.84375,7.9375,0.09375,0.09375,0.011952191219821908,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,13,"[132137, 145452, 54591, 72758, 74172]",1.5625,-1.8125,-3.375,3.375,2.159999986176,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,13,"[132137, 145452, 54591, 72758, 74172]",3.5625,4.75,1.1875,1.1875,0.33333333239766083,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,13,"[132137, 145452, 54591, 72758, 74172]",4.1875,4.875,0.6875,0.6875,0.16417910408554243,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,13,"[132137, 145452, 54591, 72758, 74172]",3.0625,2.8125,-0.25,0.25,0.08163265279466889,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,13,"[132137, 145452, 54591, 72758, 74172]",4.9375,3.25,-1.6875,1.6875,0.3417721512065374,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,14,"[59886, 3216, 147543, 106824, 114892]",8.125,6.1875,-1.9375,1.9375,0.23846153816804733,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,14,"[59886, 3216, 147543, 106824, 114892]",9.375,6.59375,-2.78125,2.78125,0.2966666663502222,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,14,"[59886, 3216, 147543, 106824, 114892]",8.0,7.78125,-0.21875,0.21875,0.02734374996582031,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,14,"[59886, 3216, 147543, 106824, 114892]",6.375,4.78125,-1.59375,1.59375,0.24999999960784314,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,14,"[59886, 3216, 147543, 106824, 114892]",2.0,-0.9375,-2.9375,2.9375,1.4687499926562502,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,14,"[59886, 3216, 147543, 106824, 114892]",6.0,5.125,-0.875,0.875,0.14583333309027777,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,14,"[59886, 3216, 147543, 106824, 114892]",6.65625,4.4375,-2.21875,2.21875,0.33333333283255084,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,14,"[59886, 3216, 147543, 106824, 114892]",7.15625,5.96875,-1.1875,1.1875,0.16593886439694133,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,14,"[59886, 3216, 147543, 106824, 114892]",5.65625,5.46875,-0.1875,0.1875,0.033149171212111965,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,14,"[59886, 3216, 147543, 106824, 114892]",2.8125,3.0625,0.25,0.25,0.08888888857283951,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,14,"[59886, 3216, 147543, 106824, 114892]",9.125,5.75,-3.375,3.375,0.3698630132933008,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,14,"[59886, 3216, 147543, 106824, 114892]",6.875,5.625,-1.25,1.25,0.181818181553719,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,14,"[59886, 3216, 147543, 106824, 114892]",7.375,7.28125,-0.09375,0.09375,0.012711864389543234,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,14,"[59886, 3216, 147543, 106824, 114892]",5.21875,0.71875,-4.5,4.5,0.8622754474495321,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,14,"[59886, 3216, 147543, 106824, 114892]",7.84375,4.4375,-3.40625,3.40625,0.4342629476535293,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,14,"[59886, 3216, 147543, 106824, 114892]",1.5625,-3.1875,-4.75,4.75,3.039999980544,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,14,"[59886, 3216, 147543, 106824, 114892]",3.5625,1.6875,-1.875,1.875,0.5263157879963065,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,14,"[59886, 3216, 147543, 106824, 114892]",4.1875,1.8125,-2.375,2.375,0.5671641777500557,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,14,"[59886, 3216, 147543, 106824, 114892]",3.0625,1.1875,-1.875,1.875,0.6122448959600166,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,14,"[59886, 3216, 147543, 106824, 114892]",4.9375,1.8125,-3.125,3.125,0.6329113911232175,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,15,"[16555, 28063, 24958]",8.125,8.1875,0.0625,0.0625,0.0076923076828402355,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,1,15,"[16555, 28063, 24958]",9.375,8.875,-0.5,0.5,0.05333333327644444,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,2,15,"[16555, 28063, 24958]",8.0,9.0,1.0,1.0,0.12499999984374999,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,3,15,"[16555, 28063, 24958]",6.375,5.875,-0.5,0.5,0.07843137242599,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,4,15,"[16555, 28063, 24958]",2.0,1.625,-0.375,0.375,0.1874999990625,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,5,15,"[16555, 28063, 24958]",6.0,5.4375,-0.5625,0.5625,0.09374999984375,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,6,15,"[16555, 28063, 24958]",6.65625,6.375,-0.28125,0.28125,0.0422535210632811,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,7,15,"[16555, 28063, 24958]",7.15625,6.375,-0.78125,0.78125,0.1091703055243035,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,8,15,"[16555, 28063, 24958]",5.65625,6.375,0.71875,0.71875,0.12707182297976252,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,9,15,"[16555, 28063, 24958]",2.8125,1.9375,-0.875,0.875,0.3111111100049383,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,10,15,"[16555, 28063, 24958]",9.125,8.375,-0.75,0.75,0.08219178073184462,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,11,15,"[16555, 28063, 24958]",6.875,6.125,-0.75,0.75,0.1090909089322314,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,12,15,"[16555, 28063, 24958]",7.375,7.5,0.125,0.125,0.01694915251939098,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,13,15,"[16555, 28063, 24958]",5.21875,4.375,-0.84375,0.84375,0.16167664639678728,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,14,15,"[16555, 28063, 24958]",7.84375,7.90625,0.0625,0.0625,0.007968127479881272,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,15,15,"[16555, 28063, 24958]",1.5625,2.0,0.4375,0.4375,0.27999999820800003,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,16,15,"[16555, 28063, 24958]",3.5625,3.25,-0.3125,0.3125,0.08771929799938442,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,17,15,"[16555, 28063, 24958]",4.1875,4.25,0.0625,0.0625,0.014925373098685676,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,18,15,"[16555, 28063, 24958]",3.0625,2.375,-0.6875,0.6875,0.22448979518533946,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,19,15,"[16555, 28063, 24958]",4.9375,3.9375,-1.0,1.0,0.2025316451594296,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,0,16,"[101500, 88149]",8.125,6.96875,-1.15625,1.15625,0.14230769213254438,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,1,16,"[101500, 88149]",9.375,8.9375,-0.4375,0.4375,0.04666666661688888,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,2,16,"[101500, 88149]",8.0,6.1875,-1.8125,1.8125,0.22656249971679684,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,3,16,"[101500, 88149]",6.375,5.6875,-0.6875,0.6875,0.10784313708573626,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,4,16,"[101500, 88149]",2.0,1.1875,-0.8125,0.8125,0.40624999796875,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,5,16,"[101500, 88149]",6.0,5.21875,-0.78125,0.78125,0.13020833311631944,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,6,16,"[101500, 88149]",6.65625,5.90625,-0.75,0.75,0.1126760561687496,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,7,16,"[101500, 88149]",7.15625,5.15625,-2.0,2.0,0.27947598214221697,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,8,16,"[101500, 88149]",5.65625,4.375,-1.28125,1.28125,0.2265193366160984,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,9,16,"[101500, 88149]",2.8125,2.59375,-0.21875,0.21875,0.07777777750123457,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,10,16,"[101500, 88149]",9.125,8.4375,-0.6875,0.6875,0.07534246567085756,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,11,16,"[101500, 88149]",6.875,5.625,-1.25,1.25,0.181818181553719,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,12,16,"[101500, 88149]",7.375,7.0,-0.375,0.375,0.05084745755817294,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,13,16,"[101500, 88149]",5.21875,5.03125,-0.1875,0.1875,0.0359281436437305,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,14,16,"[101500, 88149]",7.84375,7.25,-0.59375,0.59375,0.07569721105887209,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,15,16,"[101500, 88149]",1.5625,0.375,-1.1875,1.1875,0.759999995136,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,16,16,"[101500, 88149]",3.5625,3.5,-0.0625,0.0625,0.017543859599876886,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,17,16,"[101500, 88149]",4.1875,4.4375,0.25,0.25,0.059701492394742706,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,18,16,"[101500, 88149]",3.0625,3.5,0.4375,0.4375,0.14285714239067057,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,19,16,"[101500, 88149]",4.9375,5.75,0.8125,0.8125,0.16455696169203654,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,0,17,"[108538, 11599, 124447]",8.125,7.5625,-0.5625,0.5625,0.06923076914556213,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,1,17,"[108538, 11599, 124447]",9.375,8.0,-1.375,1.375,0.1466666665102222,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,2,17,"[108538, 11599, 124447]",8.0,6.71875,-1.28125,1.28125,0.16015624979980467,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,3,17,"[108538, 11599, 124447]",6.375,5.28125,-1.09375,1.09375,0.17156862718185314,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,4,17,"[108538, 11599, 124447]",2.0,-0.25,-2.25,2.25,1.124999994375,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,5,17,"[108538, 11599, 124447]",6.0,5.28125,-0.71875,0.71875,0.11979166646701389,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,6,17,"[108538, 11599, 124447]",6.65625,5.78125,-0.875,0.875,0.13145539886354118,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,7,17,"[108538, 11599, 124447]",7.15625,5.875,-1.28125,1.28125,0.17903930105985774,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,8,17,"[108538, 11599, 124447]",5.65625,4.46875,-1.1875,1.1875,0.20994475101004242,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,9,17,"[108538, 11599, 124447]",2.8125,3.0625,0.25,0.25,0.08888888857283951,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,10,17,"[108538, 11599, 124447]",9.125,6.8125,-2.3125,2.3125,0.2534246572565209,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,11,17,"[108538, 11599, 124447]",6.875,5.96875,-0.90625,0.90625,0.1318181816264463,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,12,17,"[108538, 11599, 124447]",7.375,7.625,0.25,0.25,0.03389830503878196,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,13,17,"[108538, 11599, 124447]",5.21875,4.9375,-0.28125,0.28125,0.05389221546559576,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,14,17,"[108538, 11599, 124447]",7.84375,6.84375,-1.0,1.0,0.12749003967810035,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,15,17,"[108538, 11599, 124447]",1.5625,-1.25,-2.8125,2.8125,1.7999999884800002,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,16,17,"[108538, 11599, 124447]",3.5625,2.3125,-1.25,1.25,0.3508771919975377,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,17,17,"[108538, 11599, 124447]",4.1875,3.8125,-0.375,0.375,0.08955223859211406,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,18,17,"[108538, 11599, 124447]",3.0625,2.4375,-0.625,0.625,0.20408163198667223,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,19,17,"[108538, 11599, 124447]",4.9375,3.5625,-1.375,1.375,0.27848101209421566,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 3}",graph,,True
+steering,0,18,"[152305, 36517, 106139, 149556]",8.125,8.5,0.375,0.375,0.046153846097041415,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,1,18,"[152305, 36517, 106139, 149556]",9.375,8.1875,-1.1875,1.1875,0.12666666653155553,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,2,18,"[152305, 36517, 106139, 149556]",8.0,8.1875,0.1875,0.1875,0.023437499970703123,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,3,18,"[152305, 36517, 106139, 149556]",6.375,4.78125,-1.59375,1.59375,0.24999999960784314,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,4,18,"[152305, 36517, 106139, 149556]",2.0,-0.3125,-2.3125,2.3125,1.15624999421875,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,5,18,"[152305, 36517, 106139, 149556]",6.0,5.6875,-0.3125,0.3125,0.05208333324652778,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,6,18,"[152305, 36517, 106139, 149556]",6.65625,5.9375,-0.71875,0.71875,0.10798122049505168,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,7,18,"[152305, 36517, 106139, 149556]",7.15625,6.71875,-0.4375,0.4375,0.06113537109360996,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,8,18,"[152305, 36517, 106139, 149556]",5.65625,5.84375,0.1875,0.1875,0.033149171212111965,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,9,18,"[152305, 36517, 106139, 149556]",2.8125,3.28125,0.46875,0.46875,0.16666666607407407,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,10,18,"[152305, 36517, 106139, 149556]",9.125,7.6875,-1.4375,1.4375,0.1575342464027022,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,11,18,"[152305, 36517, 106139, 149556]",6.875,6.71875,-0.15625,0.15625,0.022727272694214876,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,12,18,"[152305, 36517, 106139, 149556]",7.375,7.46875,0.09375,0.09375,0.012711864389543234,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,13,18,"[152305, 36517, 106139, 149556]",5.21875,5.78125,0.5625,0.5625,0.10778443093119151,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,14,18,"[152305, 36517, 106139, 149556]",7.84375,7.6875,-0.15625,0.15625,0.01992031869970318,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,15,18,"[152305, 36517, 106139, 149556]",1.5625,-1.8125,-3.375,3.375,2.159999986176,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,16,18,"[152305, 36517, 106139, 149556]",3.5625,4.125,0.5625,0.5625,0.15789473639889198,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,17,18,"[152305, 36517, 106139, 149556]",4.1875,4.3125,0.125,0.125,0.029850746197371353,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,18,18,"[152305, 36517, 106139, 149556]",3.0625,3.65625,0.59375,0.59375,0.19387755038733862,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,19,18,"[152305, 36517, 106139, 149556]",4.9375,2.9375,-2.0,2.0,0.4050632903188592,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 4}",graph,,True
+steering,0,19,"[16966, 34170, 124778, 135988, 135640]",8.125,8.0,-0.125,0.125,0.015384615365680471,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,19,"[16966, 34170, 124778, 135988, 135640]",9.375,11.375,2.0,2.0,0.21333333310577776,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,19,"[16966, 34170, 124778, 135988, 135640]",8.0,10.8125,2.8125,2.8125,0.35156249956054686,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,19,"[16966, 34170, 124778, 135988, 135640]",6.375,7.4375,1.0625,1.0625,0.16666666640522876,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,19,"[16966, 34170, 124778, 135988, 135640]",2.0,5.6875,3.6875,3.6875,1.84374999078125,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,19,"[16966, 34170, 124778, 135988, 135640]",6.0,6.0,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,19,"[16966, 34170, 124778, 135988, 135640]",6.65625,8.125,1.46875,1.46875,0.22065727666380128,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,19,"[16966, 34170, 124778, 135988, 135640]",7.15625,8.25,1.09375,1.09375,0.1528384277340249,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,19,"[16966, 34170, 124778, 135988, 135640]",5.65625,6.84375,1.1875,1.1875,0.20994475101004242,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,19,"[16966, 34170, 124778, 135988, 135640]",2.8125,3.09375,0.28125,0.28125,0.09999999964444445,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,19,"[16966, 34170, 124778, 135988, 135640]",9.125,9.8125,0.6875,0.6875,0.07534246567085756,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,19,"[16966, 34170, 124778, 135988, 135640]",6.875,8.375,1.5,1.5,0.2181818178644628,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,19,"[16966, 34170, 124778, 135988, 135640]",7.375,8.0,0.625,0.625,0.0847457625969549,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,19,"[16966, 34170, 124778, 135988, 135640]",5.21875,6.0,0.78125,0.78125,0.14970059851554376,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,19,"[16966, 34170, 124778, 135988, 135640]",7.84375,7.1875,-0.65625,0.65625,0.08366533853875335,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,19,"[16966, 34170, 124778, 135988, 135640]",1.5625,4.5625,3.0,3.0,1.9199999877120002,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,19,"[16966, 34170, 124778, 135988, 135640]",3.5625,4.25,0.6875,0.6875,0.19298245559864574,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,19,"[16966, 34170, 124778, 135988, 135640]",4.1875,5.1875,1.0,1.0,0.23880596957897082,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,19,"[16966, 34170, 124778, 135988, 135640]",3.0625,3.0625,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,19,"[16966, 34170, 124778, 135988, 135640]",4.9375,5.25,0.3125,0.3125,0.06329113911232175,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,20,"[110274, 16630, 8575, 145235, 97102]",8.125,7.125,-1.0,1.0,0.12307692292544377,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,20,"[110274, 16630, 8575, 145235, 97102]",9.375,7.3125,-2.0625,2.0625,0.21999999976533333,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,20,"[110274, 16630, 8575, 145235, 97102]",8.0,6.875,-1.125,1.125,0.14062499982421875,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,20,"[110274, 16630, 8575, 145235, 97102]",6.375,2.125,-4.25,4.25,0.666666665620915,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,20,"[110274, 16630, 8575, 145235, 97102]",2.0,-1.25,-3.25,3.25,1.624999991875,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,20,"[110274, 16630, 8575, 145235, 97102]",6.0,6.5,0.5,0.5,0.08333333319444444,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,20,"[110274, 16630, 8575, 145235, 97102]",6.65625,4.5625,-2.09375,2.09375,0.31455399013775925,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,20,"[110274, 16630, 8575, 145235, 97102]",7.15625,6.90625,-0.25,0.25,0.03493449776777712,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,20,"[110274, 16630, 8575, 145235, 97102]",5.65625,5.125,-0.53125,0.53125,0.09392265176765056,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,20,"[110274, 16630, 8575, 145235, 97102]",2.8125,3.84375,1.03125,1.03125,0.366666665362963,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,20,"[110274, 16630, 8575, 145235, 97102]",9.125,6.3125,-2.8125,2.8125,0.3082191777444173,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,20,"[110274, 16630, 8575, 145235, 97102]",6.875,6.1875,-0.6875,0.6875,0.09999999985454545,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,20,"[110274, 16630, 8575, 145235, 97102]",7.375,6.25,-1.125,1.125,0.1525423726745188,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,20,"[110274, 16630, 8575, 145235, 97102]",5.21875,0.3125,-4.90625,4.90625,0.9401197586776149,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,20,"[110274, 16630, 8575, 145235, 97102]",7.84375,4.1875,-3.65625,3.65625,0.4661354575730544,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,20,"[110274, 16630, 8575, 145235, 97102]",1.5625,-6.8125,-8.375,8.375,5.359999965696001,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,20,"[110274, 16630, 8575, 145235, 97102]",3.5625,0.25,-3.3125,3.3125,0.9298245587934749,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,20,"[110274, 16630, 8575, 145235, 97102]",4.1875,-1.0,-5.1875,5.1875,1.238805967190911,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,20,"[110274, 16630, 8575, 145235, 97102]",3.0625,-0.625,-3.6875,3.6875,1.204081628721366,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,20,"[110274, 16630, 8575, 145235, 97102]",4.9375,2.3125,-2.625,2.625,0.5316455685435026,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,21,"[75521, 45934]",8.125,7.40625,-0.71875,0.71875,0.08846153835266271,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,1,21,"[75521, 45934]",9.375,9.25,-0.125,0.125,0.01333333331911111,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,2,21,"[75521, 45934]",8.0,8.0,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,3,21,"[75521, 45934]",6.375,7.0625,0.6875,0.6875,0.10784313708573626,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,4,21,"[75521, 45934]",2.0,2.0,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,5,21,"[75521, 45934]",6.0,6.09375,0.09375,0.09375,0.015624999973958333,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,6,21,"[75521, 45934]",6.65625,6.75,0.09375,0.09375,0.0140845070210937,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,7,21,"[75521, 45934]",7.15625,6.8125,-0.34375,0.34375,0.048034934430693545,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,8,21,"[75521, 45934]",5.65625,5.09375,-0.5625,0.5625,0.09944751363633589,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,9,21,"[75521, 45934]",2.8125,3.5,0.6875,0.6875,0.24444444357530865,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,10,21,"[75521, 45934]",9.125,9.3125,0.1875,0.1875,0.020547945182961155,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,11,21,"[75521, 45934]",6.875,7.3125,0.4375,0.4375,0.06363636354380166,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,12,21,"[75521, 45934]",7.375,6.34375,-1.03125,1.03125,0.1398305082849756,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,13,21,"[75521, 45934]",5.21875,5.15625,-0.0625,0.0625,0.011976047881243502,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,14,21,"[75521, 45934]",7.84375,7.9375,0.09375,0.09375,0.011952191219821908,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,15,21,"[75521, 45934]",1.5625,3.6875,2.125,2.125,1.3599999912960001,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,16,21,"[75521, 45934]",3.5625,3.375,-0.1875,0.1875,0.05263157879963066,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,17,21,"[75521, 45934]",4.1875,3.625,-0.5625,0.5625,0.13432835788817107,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,18,21,"[75521, 45934]",3.0625,2.75,-0.3125,0.3125,0.10204081599333611,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,19,21,"[75521, 45934]",4.9375,4.3125,-0.625,0.625,0.1265822782246435,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,0,22,"[55083, 41906]",8.125,8.25,0.125,0.125,0.015384615365680471,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,1,22,"[55083, 41906]",9.375,9.75,0.375,0.375,0.03999999995733333,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,2,22,"[55083, 41906]",8.0,8.375,0.375,0.375,0.046874999941406245,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,3,22,"[55083, 41906]",6.375,5.71875,-0.65625,0.65625,0.10294117630911188,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,4,22,"[55083, 41906]",2.0,2.125,0.125,0.125,0.0624999996875,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,5,22,"[55083, 41906]",6.0,6.125,0.125,0.125,0.02083333329861111,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,6,22,"[55083, 41906]",6.65625,4.5,-2.15625,2.15625,0.3239436614851551,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,7,22,"[55083, 41906]",7.15625,7.0625,-0.09375,0.09375,0.01310043666291642,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,8,22,"[55083, 41906]",5.65625,5.875,0.21875,0.21875,0.03867403308079729,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,9,22,"[55083, 41906]",2.8125,3.28125,0.46875,0.46875,0.16666666607407407,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,10,22,"[55083, 41906]",9.125,6.5,-2.625,2.625,0.28767123256145616,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,11,22,"[55083, 41906]",6.875,7.375,0.5,0.5,0.07272727262148761,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,12,22,"[55083, 41906]",7.375,7.625,0.25,0.25,0.03389830503878196,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,13,22,"[55083, 41906]",5.21875,5.75,0.53125,0.53125,0.10179640699056976,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,14,22,"[55083, 41906]",7.84375,6.5,-1.34375,1.34375,0.17131474081744735,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,15,22,"[55083, 41906]",1.5625,0.25,-1.3125,1.3125,0.8399999946240001,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,16,22,"[55083, 41906]",3.5625,3.0625,-0.5,0.5,0.1403508767990151,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,17,22,"[55083, 41906]",4.1875,5.0,0.8125,0.8125,0.19402985028291378,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,18,22,"[55083, 41906]",3.0625,1.75,-1.3125,1.3125,0.4285714271720117,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,19,22,"[55083, 41906]",4.9375,4.25,-0.6875,0.6875,0.13924050604710783,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 2}",graph,,True
+steering,0,23,"[156970, 21775, 147910, 83865, 40170]",8.125,7.0,-1.125,1.125,0.13846153829112426,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,23,"[156970, 21775, 147910, 83865, 40170]",9.375,4.4375,-4.9375,4.9375,0.5266666661048889,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,23,"[156970, 21775, 147910, 83865, 40170]",8.0,6.625,-1.375,1.375,0.17187499978515625,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,23,"[156970, 21775, 147910, 83865, 40170]",6.375,0.4375,-5.9375,5.9375,0.9313725475586313,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,23,"[156970, 21775, 147910, 83865, 40170]",2.0,-0.3125,-2.3125,2.3125,1.15624999421875,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,23,"[156970, 21775, 147910, 83865, 40170]",6.0,4.84375,-1.15625,1.15625,0.1927083330121528,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,23,"[156970, 21775, 147910, 83865, 40170]",6.65625,4.1875,-2.46875,2.46875,0.3708920182221341,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,23,"[156970, 21775, 147910, 83865, 40170]",7.15625,5.0,-2.15625,2.15625,0.30131004324707766,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,23,"[156970, 21775, 147910, 83865, 40170]",5.65625,4.34375,-1.3125,1.3125,0.23204419848478375,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,23,"[156970, 21775, 147910, 83865, 40170]",2.8125,2.4375,-0.375,0.375,0.13333333285925927,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,23,"[156970, 21775, 147910, 83865, 40170]",9.125,6.125,-3.0,3.0,0.3287671229273785,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,23,"[156970, 21775, 147910, 83865, 40170]",6.875,5.5625,-1.3125,1.3125,0.19090909063140496,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,23,"[156970, 21775, 147910, 83865, 40170]",7.375,5.34375,-2.03125,2.03125,0.27542372844010343,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,23,"[156970, 21775, 147910, 83865, 40170]",5.21875,2.84375,-2.375,2.375,0.455089819487253,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,23,"[156970, 21775, 147910, 83865, 40170]",7.84375,6.09375,-1.75,1.75,0.22310756943667562,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,23,"[156970, 21775, 147910, 83865, 40170]",1.5625,-4.0,-5.5625,5.5625,3.5599999772160005,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,23,"[156970, 21775, 147910, 83865, 40170]",3.5625,2.5625,-1.0,1.0,0.2807017535980302,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,23,"[156970, 21775, 147910, 83865, 40170]",4.1875,1.375,-2.8125,2.8125,0.6716417894408554,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,23,"[156970, 21775, 147910, 83865, 40170]",3.0625,0.5,-2.5625,2.5625,0.8367346911453561,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,23,"[156970, 21775, 147910, 83865, 40170]",4.9375,1.75,-3.1875,3.1875,0.6455696189456818,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,24,"[34943, 49489, 105042, 106340, 35447]",8.125,8.375,0.25,0.25,0.030769230731360942,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,24,"[34943, 49489, 105042, 106340, 35447]",9.375,10.375,1.0,1.0,0.10666666655288888,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,24,"[34943, 49489, 105042, 106340, 35447]",8.0,8.0,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,24,"[34943, 49489, 105042, 106340, 35447]",6.375,7.25,0.875,0.875,0.13725490174548252,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,24,"[34943, 49489, 105042, 106340, 35447]",2.0,3.9375,1.9375,1.9375,0.96874999515625,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,24,"[34943, 49489, 105042, 106340, 35447]",6.0,5.28125,-0.71875,0.71875,0.11979166646701389,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,24,"[34943, 49489, 105042, 106340, 35447]",6.65625,5.78125,-0.875,0.875,0.13145539886354118,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,24,"[34943, 49489, 105042, 106340, 35447]",7.15625,7.15625,0.0,0.0,0.0,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,24,"[34943, 49489, 105042, 106340, 35447]",5.65625,6.21875,0.5625,0.5625,0.09944751363633589,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,24,"[34943, 49489, 105042, 106340, 35447]",2.8125,2.90625,0.09375,0.09375,0.03333333321481482,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,24,"[34943, 49489, 105042, 106340, 35447]",9.125,7.5625,-1.5625,1.5625,0.17123287652467628,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,24,"[34943, 49489, 105042, 106340, 35447]",6.875,7.125,0.25,0.25,0.036363636310743803,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,24,"[34943, 49489, 105042, 106340, 35447]",7.375,7.28125,-0.09375,0.09375,0.012711864389543234,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,24,"[34943, 49489, 105042, 106340, 35447]",5.21875,5.75,0.53125,0.53125,0.10179640699056976,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,24,"[34943, 49489, 105042, 106340, 35447]",7.84375,7.1875,-0.65625,0.65625,0.08366533853875335,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,24,"[34943, 49489, 105042, 106340, 35447]",1.5625,4.25,2.6875,2.6875,1.7199999889920001,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,24,"[34943, 49489, 105042, 106340, 35447]",3.5625,4.375,0.8125,0.8125,0.2280701747983995,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,24,"[34943, 49489, 105042, 106340, 35447]",4.1875,4.5,0.3125,0.3125,0.07462686549342838,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,24,"[34943, 49489, 105042, 106340, 35447]",3.0625,4.8125,1.75,1.75,0.5714285695626823,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,24,"[34943, 49489, 105042, 106340, 35447]",4.9375,5.125,0.1875,0.1875,0.03797468346739305,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,0,25,"[51608, 60934, 70077, 27813, 121673]",8.125,8.625,0.5,0.5,0.061538461462721884,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,1,25,"[51608, 60934, 70077, 27813, 121673]",9.375,2.96875,-6.40625,6.40625,0.6833333326044444,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,2,25,"[51608, 60934, 70077, 27813, 121673]",8.0,6.0,-2.0,2.0,0.24999999968749997,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,3,25,"[51608, 60934, 70077, 27813, 121673]",6.375,2.25,-4.125,4.125,0.6470588225144175,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,4,25,"[51608, 60934, 70077, 27813, 121673]",2.0,-4.75,-6.75,6.75,3.3749999831250004,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,5,25,"[51608, 60934, 70077, 27813, 121673]",6.0,5.3125,-0.6875,0.6875,0.11458333314236112,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,6,25,"[51608, 60934, 70077, 27813, 121673]",6.65625,4.625,-2.03125,2.03125,0.3051643187903635,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,7,25,"[51608, 60934, 70077, 27813, 121673]",7.15625,7.09375,-0.0625,0.0625,0.00873362444194428,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,8,25,"[51608, 60934, 70077, 27813, 121673]",5.65625,3.53125,-2.125,2.125,0.37569060707060226,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,9,25,"[51608, 60934, 70077, 27813, 121673]",2.8125,0.25,-2.5625,2.5625,0.911111107871605,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,10,25,"[51608, 60934, 70077, 27813, 121673]",9.125,4.6875,-4.4375,4.4375,0.48630136933008067,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,11,25,"[51608, 60934, 70077, 27813, 121673]",6.875,6.40625,-0.46875,0.46875,0.06818181808264463,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,12,25,"[51608, 60934, 70077, 27813, 121673]",7.375,7.03125,-0.34375,0.34375,0.046610169428325195,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,13,25,"[51608, 60934, 70077, 27813, 121673]",5.21875,2.75,-2.46875,2.46875,0.4730538913091183,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,14,25,"[51608, 60934, 70077, 27813, 121673]",7.84375,5.53125,-2.3125,2.3125,0.29482071675560706,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,15,25,"[51608, 60934, 70077, 27813, 121673]",1.5625,-6.3125,-7.875,7.875,5.039999967744,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,16,25,"[51608, 60934, 70077, 27813, 121673]",3.5625,1.46875,-2.09375,2.09375,0.5877192965958756,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,17,25,"[51608, 60934, 70077, 27813, 121673]",4.1875,-0.0625,-4.25,4.25,1.014925370710626,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,18,25,"[51608, 60934, 70077, 27813, 121673]",3.0625,-0.3125,-3.375,3.375,1.1020408127280301,True,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True
+steering,19,25,"[51608, 60934, 70077, 27813, 121673]",4.9375,1.5625,-3.375,3.375,0.6835443024130748,False,"{'behaviour': 'antonym_operation', 'coefficient': 10.0, 'n_features': 5}",graph,,True

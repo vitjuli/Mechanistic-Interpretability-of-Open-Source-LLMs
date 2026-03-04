@@ -1,27 +1,27 @@
 {
-  "timestamp": "2026-02-24T11:25:48.625470",
+  "timestamp": "2026-03-02T20:54:44.234556",
   "model": "Qwen/Qwen3-4B-Instruct-2507",
   "split": "train",
   "behaviours": {
-    "physics_scalar_vector_operator": {
-      "accuracy": 0.8375,
-      "accuracy_valid_only": 0.8375,
-      "accuracy_sign": 0.9875,
-      "mean_logprob_diff": 4.440260904480238,
-      "mean_logprob_diff_normalized": 4.440260904480238,
-      "median_logprob_diff_normalized": 3.9999854266643524,
-      "std_logprob_diff_normalized": 2.638351890941443,
+    "antonym_operation": {
+      "accuracy": 1.0,
+      "accuracy_valid_only": 1.0,
+      "accuracy_sign": 1.0,
+      "mean_logprob_diff": 6.424153205752373,
+      "mean_logprob_diff_normalized": 6.424153205752373,
+      "median_logprob_diff_normalized": 6.071277141571045,
+      "std_logprob_diff_normalized": 2.5225270730757345,
       "mean_correct_token_len": 1.0,
       "mean_incorrect_token_len": 1.0,
       "length_mismatch_rate": 0.0,
-      "n_success": 67,
+      "n_success": 80,
       "n_total": 80,
       "n_valid": 80,
       "n_errors": 0,
       "passed": true,
       "score_method": "teacher_forced_logprob",
       "success_metric": "normalized_per_token",
-      "threshold": 1.5
+      "threshold": 1.0
     }
   }
 }

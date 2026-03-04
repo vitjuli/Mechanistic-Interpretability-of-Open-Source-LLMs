@@ -1,0 +1,261 @@
+{
+  "git_commit": "2ad620f96aaffbe84bceab9f5d8d44eb4d68a26a",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:42:52",
+      "path": "data/results/interventions/antonym_operation/intervention_ablation_antonym_operation.csv",
+      "size_bytes": 71176
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:42:52",
+      "path": "data/results/interventions/antonym_operation/intervention_ablation_antonym_operation_summary.json",
+      "size_bytes": 881
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:49:54",
+      "path": "data/results/interventions/antonym_operation/intervention_patching_antonym_operation.csv",
+      "size_bytes": 160037
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:49:54",
+      "path": "data/results/interventions/antonym_operation/intervention_patching_antonym_operation_summary.json",
+      "size_bytes": 889
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:09",
+      "path": "data/results/interventions/antonym_operation/intervention_steering_antonym_operation.csv",
+      "size_bytes": 59838
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:09",
+      "path": "data/results/interventions/antonym_operation/intervention_steering_antonym_operation_summary.json",
+      "size_bytes": 920
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:56:28",
+      "path": "data/results/attribution_graphs/antonym_operation/attribution_graph_train_n80.json",
+      "size_bytes": 62557
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:03",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_10.csv",
+      "size_bytes": 491
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:12",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_11.csv",
+      "size_bytes": 583
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:22",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_12.csv",
+      "size_bytes": 578
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:31",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_13.csv",
+      "size_bytes": 588
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:40",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_14.csv",
+      "size_bytes": 755
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:50",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_15.csv",
+      "size_bytes": 412
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:50:59",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_16.csv",
+      "size_bytes": 321
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:08",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_17.csv",
+      "size_bytes": 410
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:17",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_18.csv",
+      "size_bytes": 499
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:27",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_19.csv",
+      "size_bytes": 663
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:36",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_20.csv",
+      "size_bytes": 748
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:45",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_21.csv",
+      "size_bytes": 327
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:51:55",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_22.csv",
+      "size_bytes": 329
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:52:04",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_23.csv",
+      "size_bytes": 580
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:52:13",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_24.csv",
+      "size_bytes": 745
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:52:22",
+      "path": "data/results/interventions/antonym_operation/importance/feature_importance_layer_25.csv",
+      "size_bytes": 574
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:42:52",
+      "path": "data/results/interventions/antonym_operation/layer_coverage_ablation_antonym_operation.csv",
+      "size_bytes": 502
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:49:54",
+      "path": "data/results/interventions/antonym_operation/layer_coverage_patching_antonym_operation.csv",
+      "size_bytes": 502
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:09",
+      "path": "data/results/interventions/antonym_operation/layer_coverage_steering_antonym_operation.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:14",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/interventions.csv",
+      "size_bytes": 289852
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:14",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/common_prompt_idx.json",
+      "size_bytes": 334
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:14",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/audit.json",
+      "size_bytes": 94432
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/interventions_layer_agg.csv",
+      "size_bytes": 7185
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/interventions_prompt_agg.csv",
+      "size_bytes": 8952
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/interventions_feature_agg.csv",
+      "size_bytes": 27643
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/feature_importance.csv",
+      "size_bytes": 6183
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/layer_coverage.csv",
+      "size_bytes": 1750
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/supernodes.json",
+      "size_bytes": 1394
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:15",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/supernodes_summary.csv",
+      "size_bytes": 140
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:27",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/supernodes_effect.json",
+      "size_bytes": 1426
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:27",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/supernodes_effect_summary.csv",
+      "size_bytes": 450
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-02T20:57:27",
+      "path": "data/ui_offline/20260302-205713_antonym_operation_train_n80/graph.json",
+      "size_bytes": 60501
+    }
+  ],
+  "parameters": {
+    "behaviour": "antonym_operation",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 80,
+    "raw_sources_copied": [
+      "attribution_graph_train_n80.json",
+      "attribution_graph_train_n80_metadata.json",
+      "intervention_ablation_antonym_operation.csv",
+      "intervention_patching_antonym_operation.csv",
+      "intervention_steering_antonym_operation.csv",
+      "intervention_ablation_antonym_operation_summary.json",
+      "intervention_patching_antonym_operation_summary.json",
+      "intervention_steering_antonym_operation_summary.json"
+    ],
+    "run_id": "20260302-205713_antonym_operation_train_n80",
+    "split": "train",
+    "timestamp": "2026-03-02T20:57:13.914237"
+  },
+  "timestamp": "2026-03-02T20:57:27.406824"
+}
