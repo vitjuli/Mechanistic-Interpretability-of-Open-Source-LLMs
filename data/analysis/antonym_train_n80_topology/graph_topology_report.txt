@@ -1,0 +1,94 @@
+======================================================================
+ATTRIBUTION GRAPH TOPOLOGY AUDIT  —  Stage 0
+======================================================================
+
+─── 1. Graph summary ───
+  Total nodes   : 75
+  Total links   : 216
+  Feature nodes : 72
+  Hub nodes     : 3  ['input', 'output_correct', 'output_incorrect']
+
+─── 2. Edge classification ───
+  Hub → Feature          : 72
+  Feature → Hub          : 144
+  Feature → Feature      : 0  ← STAR TOPOLOGY CONFIRMED
+
+─── 3. Edge weight statistics ───
+  N edges with weight : 216
+  Positive (excitatory)  : 113  (52.3%)
+  Negative (inhibitory)  : 103  (47.7%)
+  Mean (signed)       : 0.0360
+  Std                 : 0.9877
+  Min                 : -1.3663
+  Max                 : 1.3663
+  Mean |weight|       : 0.9777
+  Median |weight|     : 0.9635
+
+─── 4. Feature degree statistics ───
+  In-degree values  : [1]  (all features, should be uniform)
+  Out-degree values : [2]  (all features, should be uniform)
+  All in-degrees identical  : True
+  All out-degrees identical : True
+  → Pure star topology confirmed by degree regularity.
+
+─── 5. Features per layer ───
+  Layer 10:   4  ████
+  Layer 11:   5  █████
+  Layer 12:   5  █████
+  Layer 13:   5  █████
+  Layer 14:   7  ███████
+  Layer 15:   3  ███
+  Layer 16:   2  ██
+  Layer 17:   3  ███
+  Layer 18:   4  ████
+  Layer 19:   6  ██████
+  Layer 20:   7  ███████
+  Layer 21:   2  ██
+  Layer 22:   2  ██
+  Layer 23:   5  █████
+  Layer 24:   7  ███████
+  Layer 25:   5  █████
+
+─── 6. Feature attribute summary ───
+  specific_score: mean=0.743  std=0.222  min=0.113  max=1.178
+  frequency     : mean=0.236  std=0.197  min=0.100  max=0.887
+  beta_sign: 41 excitatory (+1),  31 inhibitory (−1)
+
+─── 7. Why Louvain returns 1 community ───
+  The attribution graph has a STAR TOPOLOGY — every feature node connects to
+  exactly the same three hub nodes ("input", "output_correct",
+  "output_incorrect") and to no other feature node.
+
+  When converted to undirected form (as Louvain requires), the graph becomes
+  a complete bipartite structure:
+      {input, output_correct, output_incorrect} ↔ {F1 … Fn}
+
+  All feature nodes are IDENTICALLY positioned: each has exactly the same two
+  neighbours (input and one output hub) via undirected edges.  There is no
+  denser subgraph of features to exploit; modularity is flat across all
+  possible partitions of the feature set.
+
+  Consequence: Louvain Q(1 big community) ≈ 0, and any split into k>1
+  communities achieves Q ≤ 0 because there are no within-community feature–
+  feature edges to reward.  Raising the resolution parameter γ also does not
+  help: the null model already predicts no community structure.
+
+  This is NOT a bug or a parameter choice issue.  It is a structural property
+  of the current per-prompt union graph, which records each feature's
+  marginal contribution to the output but stores no pairwise feature
+  interactions.
+
+  CORRECT APPROACHES FOR STAGE 2:
+    (A) Feature-profile clustering — cluster features on their node attribute
+        vectors: (layer_bin, beta_sign, specific_score, frequency).  Features
+        that operate at similar depths with the same sign form natural groups.
+    (B) Co-activation graph communities — build feature–feature edges from
+        the per-prompt top-k lists stored by script 04 or the graph's own
+        union_params, then run Louvain/Leiden on THAT graph.  An edge between
+        F_i and F_j is weighted by the number of prompts in which both appear
+        in the top-k.  This approximates Anthropic's cross-layer Jacobian
+        edges without requiring Jacobian computation.
+
+======================================================================
+END OF REPORT
+======================================================================

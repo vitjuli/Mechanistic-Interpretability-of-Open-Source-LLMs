@@ -1,0 +1,32 @@
+{
+  "n_nodes": 75,
+  "n_links": 216,
+  "n_feat_nodes": 72,
+  "n_hub_nodes": 3,
+  "n_ff_edges": 0,
+  "star_topology_confirmed": true,
+  "n_positive_edges": 113,
+  "n_negative_edges": 103,
+  "mean_abs_weight": 0.9777031650985148,
+  "n_layers": 16,
+  "layer_counts": {
+    "14": 7,
+    "24": 7,
+    "19": 6,
+    "23": 5,
+    "18": 4,
+    "12": 5,
+    "25": 5,
+    "22": 2,
+    "17": 3,
+    "20": 7,
+    "15": 3,
+    "13": 5,
+    "11": 5,
+    "10": 4,
+    "21": 2,
+    "16": 2
+  },
+  "excitatory_features": 41,
+  "inhibitory_features": 31
+}
