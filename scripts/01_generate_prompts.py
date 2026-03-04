@@ -4,12 +4,15 @@ Generate synthetic prompts for behaviours.
 Supported behaviours:
   - grammar_agreement: Subject-verb number agreement (singular/plural)
   - physics_scalar_vector_operator: Classify operators/quantities as scalar vs vector
-  - antonym_operation: Predict the antonym of an adjective (multilingual)
+  - antonym_operation: Predict the antonym of an adjective (EN only, v0)
+  - multilingual_antonym: EN+FR antonym + EN synonym prompts for Anthropic circuits
+                          reproduction (operation/operand/language swap experiments)
 
 Usage:
     python scripts/01_generate_prompts.py
     python scripts/01_generate_prompts.py --behaviour physics_scalar_vector_operator
     python scripts/01_generate_prompts.py --behaviour antonym_operation
+    python scripts/01_generate_prompts.py --behaviour multilingual_antonym
 """
 
 import json
@@ -552,7 +555,192 @@ GENERATORS = {
     "grammar_agreement": generate_grammar_agreement_prompts,
     "physics_scalar_vector_operator": generate_physics_scalar_vector_operator_prompts,
     "antonym_operation": generate_antonym_operation_prompts,
+    # multilingual_antonym registered below after its definition
 }
+
+
+# ===========================================================================
+# multilingual_antonym
+#
+# Reproduces the Anthropic "Multilingual Circuits" case study structure.
+# Three independently-intervene-able axes:
+#   (1) operation : antonym vs synonym  (C1 swap)
+#   (2) operand   : small vs hot        (C2 swap)
+#   (3) language  : EN vs FR            (C3 swap)
+#
+# Data sources:
+#   - EN antonym pairs: 9 concepts (audited subset of antonym_operation's 25)
+#   - FR antonym pairs: 8 concepts (concept_idx=1 "hot/cold" fails: froid=2 tokens)
+#   - EN synonym pairs: 9/9 pass tokenization audit (b_tokenize_audit_multilingual.py)
+#   - FR synonym pairs: 0 valid — FR synonyms are NOT single-token
+#
+# Tokenization audit: 2026-03-04, Qwen3-4B-Instruct-2507 tokenizer.
+# ---------------------------------------------------------------------------
+
+# 9 cross-language concepts used in this behaviour.
+# Schema: (concept_index, en_word, en_antonym, fr_word, fr_antonym, has_fr)
+# has_fr=False means the FR antonym pair failed the tokenization audit.
+_ML_CONCEPTS: List[Tuple] = [
+    (0, "small",  "large",   "petit",    "grand",      True),
+    (1, "hot",    "cold",    None,        None,         False),  # froid=2 tokens
+    (2, "fast",   "slow",    "vite",     "lent",        True),
+    (3, "new",    "old",     "nouveau",  "vieux",       True),
+    (4, "empty",  "full",    "vide",     "plein",       True),
+    (5, "high",   "low",     "haut",     "bas",         True),
+    (6, "long",   "short",   "long",     "court",       True),
+    (7, "clean",  "dirty",   "propre",   "sale",        True),
+    (8, "easy",   "hard",    "facile",   "difficile",   True),
+]
+
+# EN synonym pairs — all 9/9 passed audit (2026-03-04).
+# Schema: concept_index → (synonym_of_word, synonym_of_antonym)
+_ML_SYNONYMS_EN: Dict[int, Tuple[str, str]] = {
+    0: ("tiny",    "big"),       # small→tiny,    large→big
+    1: ("warm",    "cool"),      # hot→warm,      cold→cool
+    2: ("quick",   "gradual"),   # fast→quick,    slow→gradual
+    3: ("fresh",   "aged"),      # new→fresh,     old→aged
+    4: ("bare",    "packed"),    # empty→bare,    full→packed
+    5: ("tall",    "short"),     # high→tall,     low→short
+    6: ("lengthy", "brief"),     # long→lengthy,  short→brief
+    7: ("neat",    "messy"),     # clean→neat,    dirty→messy
+    8: ("simple",  "tough"),     # easy→simple,   hard→tough
+}
+
+# Antonym prompt templates — same 4 variants as antonym_operation.
+_ML_ANT_TEMPLATES: Dict[str, List[str]] = {
+    "en": [
+        'The opposite of "{word}" is',      # T0
+        'The antonym of "{word}" is',       # T1
+        '"{word}" is the opposite of',      # T2
+        '"{word}" is the antonym of',       # T3
+    ],
+    "fr": [
+        'Le contraire de "{word}" est',                 # T0
+        "L'antonyme de \"{word}\" est",                 # T1
+        '"{word}" est le contraire de',                 # T2
+        '"{word}" est l\'antonyme de',                  # T3
+    ],
+}
+
+# Synonym prompt templates — 4 variants, EN only (FR synonyms failed audit).
+_ML_SYN_TEMPLATES: Dict[str, List[str]] = {
+    "en": [
+        'A word similar in meaning to "{word}" is',  # T0
+        'A synonym of "{word}" is',                  # T1
+        '"{word}" means roughly the same as',        # T2
+        'The synonym of "{word}" is',                # T3
+    ],
+}
+
+
+def generate_multilingual_antonym_prompts(
+    n_train: int = 80,
+    n_test: int = 24,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate multilingual antonym + synonym prompts for Anthropic circuits reproduction.
+
+    Prompt pool (104 total, before train/test split):
+      - EN antonym : 9 concepts × 4 templates = 36
+      - FR antonym : 8 concepts × 4 templates = 32  (concept_idx=1 excluded, froid fails)
+      - EN synonym : 9 concepts × 4 templates = 36
+      - FR synonym : 0                               (no valid single-token FR synonyms)
+
+    Fields in each prompt dict:
+      prompt          : text fed to the model (excludes the predicted token)
+      correct_answer  : target token with leading space (e.g. ' large')
+      incorrect_answer: word itself with leading space  (e.g. ' small')
+      word            : source adjective
+      target          : word the model should predict (= antonym or synonym)
+      antonym         : ground-truth antonym for this concept
+      synonym_word    : ground-truth synonym for this concept (EN only; None for FR)
+      synonym_antonym : synonym of the antonym (EN only; None for FR)
+      language        : "en" | "fr"
+      operation       : "antonym" | "synonym"
+      concept_index   : 0-8 (shared across languages and operations)
+      template_idx    : 0-3
+      cross_lang_valid: True iff concept has a valid FR antonym pair
+
+    Patching pair modes (used by script 07 --patch_mode):
+      C1 (operation swap): source=antonym prompt, target=synonym prompt;
+                           same concept_index + language
+      C2 (operand swap)  : source=hot antonym (idx=1), target=small antonym (idx=0);
+                           same language (EN only, FR hot/cold unavailable)
+      C3 (language swap) : source=EN antonym, target=FR antonym;
+                           same concept_index (8 concepts with has_fr=True)
+    """
+    rng = random.Random(seed)
+    all_prompts: List[Dict] = []
+
+    for cidx, en_word, en_ant, fr_word, fr_ant, has_fr in _ML_CONCEPTS:
+        syn_pair = _ML_SYNONYMS_EN.get(cidx)      # (syn_word, syn_ant) or None
+        syn_word = syn_pair[0] if syn_pair else None
+        syn_ant  = syn_pair[1] if syn_pair else None
+
+        # --- EN antonym prompts ---
+        for tidx, tmpl in enumerate(_ML_ANT_TEMPLATES["en"]):
+            all_prompts.append({
+                "prompt":           tmpl.format(word=en_word),
+                "correct_answer":   f" {en_ant}",
+                "incorrect_answer": f" {en_word}",
+                "word":             en_word,
+                "target":           en_ant,
+                "antonym":          en_ant,
+                "synonym_word":     syn_word,
+                "synonym_antonym":  syn_ant,
+                "language":         "en",
+                "operation":        "antonym",
+                "concept_index":    cidx,
+                "template_idx":     tidx,
+                "cross_lang_valid": has_fr,
+            })
+
+        # --- FR antonym prompts (only when has_fr=True) ---
+        if has_fr:
+            for tidx, tmpl in enumerate(_ML_ANT_TEMPLATES["fr"]):
+                all_prompts.append({
+                    "prompt":           tmpl.format(word=fr_word),
+                    "correct_answer":   f" {fr_ant}",
+                    "incorrect_answer": f" {fr_word}",
+                    "word":             fr_word,
+                    "target":           fr_ant,
+                    "antonym":          fr_ant,
+                    "synonym_word":     None,   # FR synonyms unavailable
+                    "synonym_antonym":  None,
+                    "language":         "fr",
+                    "operation":        "antonym",
+                    "concept_index":    cidx,
+                    "template_idx":     tidx,
+                    "cross_lang_valid": True,
+                })
+
+        # --- EN synonym prompts (all 9 concepts pass audit) ---
+        if syn_pair is not None:
+            for tidx, tmpl in enumerate(_ML_SYN_TEMPLATES["en"]):
+                all_prompts.append({
+                    "prompt":           tmpl.format(word=en_word),
+                    "correct_answer":   f" {syn_word}",
+                    "incorrect_answer": f" {en_word}",
+                    "word":             en_word,
+                    "target":           syn_word,
+                    "antonym":          en_ant,
+                    "synonym_word":     syn_word,
+                    "synonym_antonym":  syn_ant,
+                    "language":         "en",
+                    "operation":        "synonym",
+                    "concept_index":    cidx,
+                    "template_idx":     tidx,
+                    "cross_lang_valid": has_fr,
+                })
+
+    rng.shuffle(all_prompts)
+    train_prompts = all_prompts[:n_train]
+    test_prompts  = all_prompts[n_train : n_train + n_test]
+    return train_prompts, test_prompts
+
+
+GENERATORS["multilingual_antonym"] = generate_multilingual_antonym_prompts
 
 
 def main():

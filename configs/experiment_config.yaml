@@ -42,6 +42,18 @@ behaviours:
     # Correct/incorrect answers use leading space: ' large' / ' small'.
     # Tokenization audit 2026-03-01: all 25 EN pairs single-token with leading space.
 
+  multilingual_antonym:
+    train_size: 80
+    test_size: 24
+    min_logit_diff: 0.5
+    success_threshold: 0.65
+    description: "EN+FR antonym + EN synonym prompts for Anthropic multilingual circuits reproduction"
+    # Pool: 104 prompts total (EN ant 36 + FR ant 32 + EN syn 36).
+    # Tokenization audit 2026-03-04: 9/9 EN synonym pairs valid; 8/9 FR antonym pairs valid
+    # (concept_idx=1 hot/cold excluded from FR: 'froid' tokenises as 2 tokens).
+    # Three intervention axes: C1=operation swap, C2=operand swap (EN only), C3=language swap.
+    # See scripts/b_tokenize_audit_multilingual.py for audit details.
+
 # Activation capture
 activations:
   layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)
