@@ -1004,6 +1004,7 @@ def create_prompt_pairs(
     prompts: List[Dict],
     behaviour: str,
     source_prompts: Optional[List[Dict]] = None,
+    patch_mode: str = "default",
 ) -> List[Tuple[Dict, Dict]]:
     """
     Create (source, target) pairs for patching experiments.
@@ -1282,6 +1283,110 @@ def create_prompt_pairs(
                 )
             else:
                 logger.info(f"Pairing result: {len(pairs)} pairs (Mode A: direction swap)")
+
+    elif behaviour == "multilingual_antonym":
+        # Three patch modes matching Anthropic's three independent intervention axes.
+        #
+        # C1 — Operation swap (antonym → synonym):
+        #   source = EN antonym prompt for concept X
+        #   target = EN synonym prompt for concept X
+        #   Test: does patching antonym features suppress synonym prediction?
+        #
+        # C2 — Operand swap (hot → small, EN only):
+        #   source = EN antonym for concept_index=1 (hot→cold)
+        #   target = EN antonym for concept_index=0 (small→large)
+        #   Test: does patching hot-operand features shift output toward "cold"?
+        #
+        # C3 — Language swap (EN → FR):
+        #   source = EN antonym prompt for concept X
+        #   target = FR antonym prompt for concept X
+        #   Test: does patching EN features shift FR output toward EN answer?
+        #
+        # default: same-concept cross-language (C3) if both languages present,
+        #          else same-concept cross-template (like antonym_operation fallback).
+
+        effective_mode = patch_mode if patch_mode != "default" else "C3"
+        logger.info(f"multilingual_antonym pairing: patch_mode={effective_mode}")
+
+        if effective_mode == "C1":
+            # source=antonym, target=synonym; match by concept_index+language+template_idx
+            ant_map: Dict = {}  # (cidx, lang, tidx) → prompt
+            for p in prompts:
+                if p.get("operation") == "antonym":
+                    key = (p.get("concept_index"), p.get("language"), p.get("template_idx"))
+                    ant_map[key] = p
+
+            for t in prompts:
+                if t.get("operation") == "synonym":
+                    cidx = t.get("concept_index")
+                    lang = t.get("language")
+                    tidx = t.get("template_idx")
+                    src = ant_map.get((cidx, lang, tidx))
+                    if src is None:
+                        # try any template_idx for same concept+lang
+                        for alt in range(4):
+                            src = ant_map.get((cidx, lang, alt))
+                            if src:
+                                break
+                    if src:
+                        pairs.append((src, t))
+                    else:
+                        logger.warning(f"C1: no antonym source for synonym {t.get('prompt')[:40]!r}")
+
+            logger.info(f"C1 pairing result: {len(pairs)} pairs")
+
+        elif effective_mode == "C2":
+            # source=hot antonym (concept_idx=1, EN), target=small antonym (concept_idx=0, EN)
+            hot_map: Dict = {}    # template_idx → prompt
+            small_map: Dict = {}  # template_idx → prompt
+            for p in prompts:
+                if p.get("operation") == "antonym" and p.get("language") == "en":
+                    tidx = p.get("template_idx")
+                    if p.get("concept_index") == 1:
+                        hot_map[tidx] = p
+                    elif p.get("concept_index") == 0:
+                        small_map[tidx] = p
+
+            if not hot_map:
+                logger.error("C2: no EN hot/cold antonym prompts found (concept_idx=1). "
+                             "Check that concept_idx=1 prompts are in the split.")
+            for tidx, target in small_map.items():
+                src = hot_map.get(tidx) or (next(iter(hot_map.values())) if hot_map else None)
+                if src:
+                    pairs.append((src, target))
+
+            logger.info(f"C2 pairing result: {len(pairs)} pairs "
+                        f"({len(hot_map)} hot sources, {len(small_map)} small targets)")
+
+        else:  # C3 (default)
+            # source=EN antonym, target=FR antonym; match by concept_index+template_idx
+            en_map: Dict = {}  # (cidx, tidx) → prompt
+            for p in prompts:
+                if p.get("operation") == "antonym" and p.get("language") == "en":
+                    key = (p.get("concept_index"), p.get("template_idx"))
+                    en_map[key] = p
+
+            fr_targets = [p for p in prompts
+                          if p.get("operation") == "antonym" and p.get("language") == "fr"]
+            matched = 0
+            for t in fr_targets:
+                key = (t.get("concept_index"), t.get("template_idx"))
+                src = en_map.get(key)
+                if src is None:
+                    # try any template_idx for same concept
+                    for alt in range(4):
+                        src = en_map.get((t.get("concept_index"), alt))
+                        if src:
+                            break
+                if src:
+                    pairs.append((src, t))
+                    matched += 1
+                else:
+                    logger.warning(f"C3: no EN source for FR target concept_idx="
+                                   f"{t.get('concept_index')} template_idx={t.get('template_idx')}")
+
+            logger.info(f"C3 pairing result: {matched} pairs "
+                        f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)")
 
     else:
         # Generic pairing: consecutive prompts
@@ -1611,6 +1716,19 @@ def main():
         type=int,
         default=5,
         help="Number of top features to ablate (default: 5). Increase for ensemble ablation.",
+    )
+    parser.add_argument(
+        "--patch_mode",
+        type=str,
+        default="default",
+        choices=["default", "C1", "C2", "C3"],
+        help=(
+            "Patching pair construction mode for multilingual_antonym behaviour. "
+            "C1=operation swap (antonym→synonym, same concept+language); "
+            "C2=operand swap (hot→small, EN only); "
+            "C3=language swap (EN→FR, same concept; also the default for multilingual_antonym). "
+            "Ignored for other behaviours."
+        ),
     )
     parser.add_argument(
         "--ablation_sign",
@@ -2154,7 +2272,9 @@ def main():
                 _patch_skipped_layers: set = set()  # layers skipped due to no graph features
 
                 # Create pairs from the unified sample_prompts
-                pairs = create_prompt_pairs(sample_prompts, behaviour, source_prompts=source_prompts)
+                pairs = create_prompt_pairs(sample_prompts, behaviour,
+                                           source_prompts=source_prompts,
+                                           patch_mode=args.patch_mode)
                 print(f"  Created {len(pairs)} pairs for patching")
 
                 expected = len(sample_prompts)
