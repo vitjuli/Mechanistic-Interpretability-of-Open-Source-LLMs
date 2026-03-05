@@ -666,6 +666,25 @@ def main():
             success_threshold,
         )
 
+        # Enforce baseline gate for multilingual_circuits
+        if behaviour == "multilingual_circuits" and "language" in results_df.columns:
+            lang_acc = (
+                results_df.groupby("language")["logprob_diff_normalized"]
+                .apply(lambda s: (s > 0).mean())
+            )
+            en_acc  = float(lang_acc.get("en", 0.0))
+            fr_acc  = float(lang_acc.get("fr", 0.0))
+            mean_nd = float(results_df["logprob_diff_normalized"].mean())
+            gate_ok = (en_acc >= 0.90) and (fr_acc >= 0.75) and (mean_nd >= 1.0)
+            print("\n--- Baseline Gate (multilingual_circuits) ---")
+            print(f"  EN sign_accuracy : {en_acc:.3f}  (≥ 0.90)  {'PASS' if en_acc >= 0.90 else 'FAIL'}")
+            print(f"  FR sign_accuracy : {fr_acc:.3f}  (≥ 0.75)  {'PASS' if fr_acc >= 0.75 else 'FAIL'}")
+            print(f"  mean_norm_logprob: {mean_nd:.3f}  (≥ 1.00)  {'PASS' if mean_nd >= 1.0 else 'FAIL'}")
+            if not gate_ok:
+                print("\nERROR: Baseline gate FAILED. Do not proceed to CSD3.")
+                sys.exit(1)
+            print("Overall gate: PASS")
+
         all_results[behaviour] = results_df
         all_metrics[behaviour] = metrics
 

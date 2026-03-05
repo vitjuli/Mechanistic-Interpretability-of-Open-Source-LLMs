@@ -257,6 +257,9 @@ def find_bridge_features(ablation_csv: Path, train_jsonl: Path,
     effect_size = intervened_logit_diff - baseline_logit_diff
     A negative value means ablating the feature HURTS the model (feature supports
     the correct answer) — relevant for both languages → bridge.
+
+    Works with both per-feature rows (feature_id column present and non-empty)
+    and legacy bundled rows (feature_id absent/empty → derived from feature_indices[0]).
     """
     print("\n" + "=" * 60)
     print("4. BRIDGE FEATURES")
@@ -268,16 +271,29 @@ def find_bridge_features(ablation_csv: Path, train_jsonl: Path,
 
     df = pd.read_csv(ablation_csv)
 
-    # Parse feature_indices column (stored as stringified list e.g. "[68550]")
-    def parse_feature_idx(val):
-        try:
-            lst = ast.literal_eval(str(val))
-            return lst[0] if isinstance(lst, list) and lst else None
-        except Exception:
-            return None
+    # Resolve feature_id: prefer explicit column; fall back to parsing feature_indices[0]
+    per_feature_mode = (
+        "feature_id" in df.columns
+        and df["feature_id"].notna().any()
+        and (df["feature_id"].astype(str) != "").any()
+    )
+    if per_feature_mode:
+        print(f"  Using explicit feature_id column (per-feature mode, {len(df)} rows)")
+    else:
+        print(f"  Deriving feature_id from feature_indices[0] (bundled mode, {len(df)} rows)")
+        def parse_feature_idx(val):
+            try:
+                lst = ast.literal_eval(str(val))
+                return lst[0] if isinstance(lst, list) and lst else None
+            except Exception:
+                return None
+        fidx = df["feature_indices"].apply(parse_feature_idx)
+        df["feature_id"] = "L" + df["layer"].astype(str) + "_F" + fidx.astype(str)
 
-    df["feature_idx_0"] = df["feature_indices"].apply(parse_feature_idx)
-    df["feature_id"] = "L" + df["layer"].astype(str) + "_F" + df["feature_idx_0"].astype(str)
+    # Always extract numeric feature index from feature_id for display/pivot
+    df["feature_idx_0"] = (
+        df["feature_id"].str.extract(r"_F(\d+)$")[0].astype(float).astype("Int64")
+    )
 
     # Assign language by prompt_idx (EN: 0..n_en-1, FR: n_en..)
     df["language"] = df["prompt_idx"].apply(lambda i: "en" if i < n_en else "fr")
@@ -348,10 +364,15 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
     effect_size < 0 → disruption (patching EN features hurts FR model's confidence
     in the correct FR answer).
 
+    Per-feature mode: each row = one feature × one pair × one layer.
+    Bundled mode: each row = all features × one pair × one layer.
+
     Reported:
-      disruption_rate = fraction of rows with effect_size < 0
-      flip_rate       = fraction of rows with sign_flipped = True
-      mean_effect_size ± SEM (overall and per concept_index)
+      disruption_rate           = fraction of rows with effect_size < 0
+      flip_rate                 = fraction of rows with sign_flipped = True
+      mean_effect_size ± SEM    = overall and per-layer
+      lang_swap_strength        = fraction of FEATURES with mean_effect < 0 across all pairs
+                                  (per-feature mode only; analogous to bridge criterion)
     """
     print("\n" + "=" * 60)
     print("C3 PATCHING — LANGUAGE SWAP (EN→FR)")
@@ -368,16 +389,20 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
     prompts_en = prompts[prompts["language"] == "en"].set_index("prompt_idx")
 
     if "concept_index" in df.columns:
-        # Already in the CSV from metadata spread
+        # Already in the CSV as a direct column
         pass
-    elif "prompt_idx" in df.columns:
-        # Attach concept_index from EN source prompt
-        df = df.merge(
-            prompts_en[["concept_index"]].rename(columns={"concept_index": "concept_index"}),
-            left_on="prompt_idx",
-            right_index=True,
-            how="left",
-        )
+    elif "metadata" in df.columns:
+        # Parse concept_index (and template_idx) from the metadata dict column.
+        # This is the preferred path after the per-feature conversion which stores
+        # concept_index and template_idx in the metadata dict for each row.
+        def _extract_meta(meta_str, field):
+            try:
+                d = ast.literal_eval(str(meta_str))
+                return d.get(field) if isinstance(d, dict) else None
+            except Exception:
+                return None
+        df["concept_index"] = df["metadata"].apply(lambda m: _extract_meta(m, "concept_index"))
+        df["template_idx"]  = df["metadata"].apply(lambda m: _extract_meta(m, "template_idx"))
 
     # Overall stats
     effect = df["effect_size"].values
@@ -420,6 +445,28 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
         concept_stats = []
         print("  (concept_index not available in patching CSV)")
 
+    # Per-feature language swap strength (per-feature mode only)
+    # = fraction of FEATURES whose mean patching effect across all pairs is < 0
+    # This measures which features reliably contribute to cross-language routing disruption.
+    lang_swap_strength = float("nan")
+    lang_swap_features = []
+    if "feature_id" in df.columns and df["feature_id"].notna().any() and (df["feature_id"].astype(str) != "").any():
+        feat_means = df.groupby("feature_id")["effect_size"].mean()
+        n_disrupting = int((feat_means < 0).sum())
+        n_total_feats = len(feat_means)
+        lang_swap_strength = n_disrupting / n_total_feats if n_total_feats > 0 else float("nan")
+        lang_swap_features = feat_means[feat_means < 0].sort_values().index.tolist()
+        print(f"\n  Lang-swap disrupting features (mean_effect < 0): "
+              f"{n_disrupting}/{n_total_feats} = {lang_swap_strength:.3f}")
+        print(f"  Top disrupting: {lang_swap_features[:5]}")
+        # Save per-feature lang-swap stats
+        feat_df = feat_means.reset_index()
+        feat_df.columns = ["feature_id", "mean_effect_size"]
+        feat_df["disrupts"] = feat_df["mean_effect_size"] < 0
+        feat_df = feat_df.sort_values("mean_effect_size")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        feat_df.to_csv(out_dir / "c3_patching_per_feature.csv", index=False)
+
     # Save
     out_dir.mkdir(parents=True, exist_ok=True)
     summary_text = (
@@ -430,6 +477,8 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
         f"flip_rate:        {flip_rate:.4f}\n"
         f"mean_effect_size: {mean_eff:+.4f} ± {sem_eff:.4f}  "
         f"(95% CI [{ci_lo:+.4f}, {ci_hi:+.4f}])\n"
+        f"lang_swap_strength (frac features with mean_effect < 0): "
+        f"{lang_swap_strength:.4f}\n"
     )
     with open(out_dir / "c3_patching_stats.txt", "w") as f:
         f.write(summary_text)
@@ -450,6 +499,8 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
         "sem_effect_size": sem_eff,
         "ci_lo": ci_lo,
         "ci_hi": ci_hi,
+        "lang_swap_strength": lang_swap_strength,
+        "n_lang_swap_features": len(lang_swap_features),
     }
 
 
@@ -485,16 +536,38 @@ def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
     lang_fr = gate.get("lang_stats", {}).get("fr", {})
     dr = c3_stats.get("disruption_rate", float("nan"))
 
+    lss = c3_stats.get("lang_swap_strength", float("nan"))
+    n_lsf = c3_stats.get("n_lang_swap_features", "N/A")
+
     # Anthropic mapping table
     anthropic_map = f"""
-## Anthropic → Ours Mapping
+## Anthropic → Ours: Match vs Mismatch
+
+### Matches (after per-feature conversion)
+| Aspect | Anthropic | Ours |
+|---|---|---|
+| Intervention type | Per-feature causal (SAE feature ablation/patching) | Per-feature causal (transcoder feature ablation/patching) ✓ |
+| Language pairs | EN + FR (antonym task) | EN + FR (antonym task) ✓ |
+| Intervention target | C3: patch EN features into FR context | C3: patch EN features into FR context ✓ |
+| Bridge features | Consistent negative effect in both languages | Consistent negative mean_effect in EN + FR ✓ |
+
+### Mismatches (documented; not changed)
+| Aspect | Anthropic | Ours | Impact |
+|---|---|---|---|
+| Token positions | All positions in paragraph | Decision token only (last) | IoU less discriminative |
+| Feature type | Sparse Autoencoder (SAE) features | Transcoder features | Different feature geometry |
+| Graph topology | Full circuit (feature–feature edges) | Star (input→feature→output only) | Community detection trivial |
+| Languages | EN + FR (+ possibly others) | EN + FR only | Narrower reproduction |
+| N prompts | ~thousands (pre-trained circuit) | 48 (24 EN + 24 FR) | Smaller sample |
+
+### Claim-level Results
 
 | Anthropic Claim | Metric | Our Value | Status |
 |---|---|---|---|
-| (1) Language-specific features | Min IoU across layers | {min_iou_row.get('iou', float('nan')):.4f} | PROXY |
-| (2) Shared cross-lang features | Max IoU across layers | {max_iou_row.get('iou', float('nan')):.4f} | PROXY |
-| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | {mid_mean_iou:.4f} vs {el_mean_iou:.4f} | PROXY |
-| (4) Bridge features degrade both languages | n_bridges with consistent negative effect | {n_bridges} | PARTIAL |
+| (1) Language-specific features exist | Min per-layer IoU | {min_iou_row.get('iou', float('nan')):.4f} | PROXY — partial support |
+| (2) Shared cross-lang features exist | Max per-layer IoU | {max_iou_row.get('iou', float('nan')):.4f} | PROXY — partial support |
+| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | {mid_mean_iou:.4f} vs {el_mean_iou:.4f} | PROXY — weak (decision token limits contrast) |
+| (4) Bridge features degrade both langs | n bridge features / C3 lang-swap strength | {n_bridges} bridges; {lss:.3f} C3 disrupt frac | PARTIAL ✓ |
 """
 
     lines = [

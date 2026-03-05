@@ -36,8 +36,9 @@
 #   data/results/features/multilingual_circuits_train_features_*.pkl
 #   data/results/graphs/multilingual_circuits_train_n48.json
 #   data/results/interventions/multilingual_circuits/
-#     ablation_*.csv              — all graph features (top_k=20)
-#     patching_C3_*.csv           — EN→FR language swap (24 pairs × 16 layers)
+#     ablation_*.csv       — per-feature: 1 row/(prompt, layer, feat) ≈ 4,600 rows
+#     patching_C3_*.csv    — per-feature: 1 row/(pair, layer, feat)   ≈ 2,300 rows
+#     Both CSVs have explicit feature_id column ("L{layer}_F{feat_idx}")
 #   data/ui_offline/*_multilingual_circuits_train_n48/
 #
 # BASELINE GATE (script 02 will report; DO NOT proceed to CSD3 if gate fails):
@@ -136,13 +137,14 @@ python -u scripts/06_build_attribution_graph.py \
     --layers $LAYERS
 
 # ══════════════════════════════════════════════════════════════
-# STAGE C — Step 07: Ablation (top_k=20, all 48 prompts)
+# STAGE C — Step 07: Ablation (top_k=20, per-feature, all 48 prompts)
 #
-# top_k=20 covers all graph features per layer (same rationale as
-# multilingual_antonym: avg ~4 features/layer → top-20 ≥ 95% coverage).
+# --per_feature: one forward pass per graph feature per prompt per layer
+# (Anthropic-faithful causal intervention; ~48 × 16 × ~6 feats ≈ 4,600 rows).
+# top_k=20 ensures all graph features are iterated (avg ~4-6 per layer).
 # ══════════════════════════════════════════════════════════════
 echo ""
-echo "==== [STAGE C] Step 07: Ablation (top_k=${TOP_K}) ===="
+echo "==== [STAGE C] Step 07: Ablation (top_k=${TOP_K}, per_feature) ===="
 date
 python -u scripts/07_run_interventions.py \
     --behaviour "$BEHAVIOUR" \
@@ -151,17 +153,19 @@ python -u scripts/07_run_interventions.py \
     --n_prompts "$N_PROMPTS" \
     --top_k "$TOP_K" \
     --layers $LAYERS \
-    --graph_n_prompts "$N_PROMPTS"
+    --graph_n_prompts "$N_PROMPTS" \
+    --per_feature
 
 # ══════════════════════════════════════════════════════════════
-# STAGE C — Step 07: Patching C3 — language swap (EN → FR)
+# STAGE C — Step 07: Patching C3 — language swap (EN → FR), per-feature
 #
 # source = EN antonym prompt (concept X, template T)
 # target = FR antonym prompt (concept X, template T)
-# Pairs: 24 FR train prompts → 24 (EN, FR) pairs × 16 layers = 384 rows.
+# --per_feature: one patch per graph feature per pair per layer
+# (~24 pairs × 16 layers × ~6 feats ≈ 2,300 rows).
 # ══════════════════════════════════════════════════════════════
 echo ""
-echo "==== [STAGE C] Step 07: Patching C3 — language swap (EN→FR) ===="
+echo "==== [STAGE C] Step 07: Patching C3 — language swap (EN→FR, per_feature) ===="
 date
 python -u scripts/07_run_interventions.py \
     --behaviour "$BEHAVIOUR" \
@@ -171,7 +175,8 @@ python -u scripts/07_run_interventions.py \
     --n_prompts "$N_PROMPTS" \
     --top_k "$TOP_K" \
     --layers $LAYERS \
-    --graph_n_prompts "$N_PROMPTS"
+    --graph_n_prompts "$N_PROMPTS" \
+    --per_feature
 
 # ══════════════════════════════════════════════════════════════
 # STAGE D — Step 09: Prepare offline UI

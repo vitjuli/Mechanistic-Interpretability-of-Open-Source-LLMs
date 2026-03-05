@@ -794,16 +794,17 @@ def generate_multilingual_circuits_prompts(
         if hf
     ]
 
-    for lang in ["en", "fr"]:
-        templates = _ML_ANT_TEMPLATES[lang]
-        for cidx, en_word, en_ant, fr_word, fr_ant in mc_concepts:
+    # Draw test_tidx ONCE per concept (shared between EN and FR) so that
+    # C3 patching pairs always have matching template_idx in source and target.
+    for cidx, en_word, en_ant, fr_word, fr_ant in mc_concepts:
+        tidxs = list(range(4))
+        rng.shuffle(tidxs)
+        test_tidx = tidxs[0]  # same for EN and FR
+
+        for lang in ["en", "fr"]:
+            templates = _ML_ANT_TEMPLATES[lang]
             word = en_word if lang == "en" else fr_word
             ant  = en_ant  if lang == "en" else fr_ant
-
-            # Stratified: shuffle template indices, first → test, rest → train
-            tidxs = list(range(4))
-            rng.shuffle(tidxs)
-            test_tidx = tidxs[0]
 
             for tidx, tmpl in enumerate(templates):
                 p = {

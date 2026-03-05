@@ -346,19 +346,39 @@ def build_prompt_agg(df: pd.DataFrame) -> pd.DataFrame:
 
 def build_feature_agg(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Explode feature_indices -> one row per (experiment_type, layer, feature_id).
-    Then aggregate across prompts.
+    Aggregate effects per (experiment_type, layer, feature_id).
+
+    Supports two input formats:
+    - Per-feature mode: explicit 'feature_id' column with 'L{layer}_F{idx}' strings
+      (one row per prompt × layer × feature — no explode needed).
+    - Bundled mode: 'feature_indices' column with lists → explode first.
     """
     if df.empty:
         return pd.DataFrame()
 
-    # Explode feature_indices
-    exploded = df.explode("feature_indices").rename(
-        columns={"feature_indices": "feature_id"}
+    # Detect per-feature mode: explicit non-empty string feature_id column
+    has_feature_id = (
+        "feature_id" in df.columns
+        and df["feature_id"].notna().any()
+        and (df["feature_id"].astype(str).str.strip() != "").any()
     )
-    exploded["feature_id"] = pd.to_numeric(exploded["feature_id"], errors="coerce")
-    exploded = exploded.dropna(subset=["feature_id"])
-    exploded["feature_id"] = exploded["feature_id"].astype(int)
+
+    if has_feature_id:
+        # Per-feature mode: already one row per (prompt, layer, feature).
+        # Extract numeric feature index from "L{layer}_F{idx}" string.
+        exploded = df.copy()
+        numeric_fid = exploded["feature_id"].str.extract(r"_F(\d+)$")[0]
+        exploded["feature_id"] = pd.to_numeric(numeric_fid, errors="coerce")
+        exploded = exploded.dropna(subset=["feature_id"])
+        exploded["feature_id"] = exploded["feature_id"].astype(int)
+    else:
+        # Bundled mode: explode list of feature indices.
+        exploded = df.explode("feature_indices").rename(
+            columns={"feature_indices": "feature_id"}
+        )
+        exploded["feature_id"] = pd.to_numeric(exploded["feature_id"], errors="coerce")
+        exploded = exploded.dropna(subset=["feature_id"])
+        exploded["feature_id"] = exploded["feature_id"].astype(int)
 
     rows = []
     for (exp, layer, fid), grp in exploded.groupby(

@@ -6,30 +6,30 @@ Behaviour: `multilingual_circuits` | Split: train | n_prompts: 48 (24 EN + 24 FR
 
 | Metric | Value | Threshold | Status |
 |---|---|---|---|
-| EN sign_accuracy | 1.0000 | ≥ 0.90 | PASS |
-| FR sign_accuracy | 0.7500 | ≥ 0.75 | PASS |
-| mean_norm_logprob_diff | 3.5834 | ≥ 1.0 | PASS |
+| EN sign_accuracy | nan | ≥ 0.90 | FAIL |
+| FR sign_accuracy | nan | ≥ 0.75 | FAIL |
+| mean_norm_logprob_diff | nan | ≥ 1.0 | FAIL |
 
-**Overall gate: PASS**
+**Overall gate: UNKNOWN**
 
 ## C3 Patching (Language Swap EN→FR)
 
 | Metric | Value | Target |
 |---|---|---|
-| disruption_rate (effect < 0) | 0.5286 | ≥ 0.40 |
-| flip_rate (sign_flipped) | 0.0677 | report only |
-| mean_effect_size ± SEM | -0.0958 ± 0.0387 | report only |
-| 95% bootstrap CI | [-0.1766, -0.0189] | — |
+| disruption_rate (effect < 0) | nan | ≥ 0.40 |
+| flip_rate (sign_flipped) | nan | report only |
+| mean_effect_size ± SEM | +nan ± nan | report only |
+| 95% bootstrap CI | [+nan, +nan] | — |
 
-**C3 target met: YES**
+**C3 target met: NO**
 
 ## Per-Layer IoU (EN vs FR feature activation sets)
 
-Mean IoU: 0.4133
-Max IoU layer: 16.0 (IoU = 0.4797)
-Min IoU layer: 15.0 (IoU = 0.3407)
-Middle layers (12–20) mean IoU: 0.4192
-Early/late layers mean IoU:     0.4057
+Mean IoU: nan
+Max IoU layer: N/A (IoU = nan)
+Min IoU layer: N/A (IoU = nan)
+Middle layers (12–20) mean IoU: nan
+Early/late layers mean IoU:     nan
 
 See `iou_per_layer.csv` for full per-layer breakdown.
 
@@ -38,19 +38,38 @@ See `iou_per_layer.csv` for full per-layer breakdown.
 Bridge = feature where mean ablation effect < 0 in BOTH EN and FR.
 
 Total graph features: N/A (see bridge_features.csv)
-Bridge features:      9
+Bridge features:      0
 
 See `bridge_features_only.csv` for details.
 
 
-## Anthropic → Ours Mapping
+## Anthropic → Ours: Match vs Mismatch
+
+### Matches (after per-feature conversion)
+| Aspect | Anthropic | Ours |
+|---|---|---|
+| Intervention type | Per-feature causal (SAE feature ablation/patching) | Per-feature causal (transcoder feature ablation/patching) ✓ |
+| Language pairs | EN + FR (antonym task) | EN + FR (antonym task) ✓ |
+| Intervention target | C3: patch EN features into FR context | C3: patch EN features into FR context ✓ |
+| Bridge features | Consistent negative effect in both languages | Consistent negative mean_effect in EN + FR ✓ |
+
+### Mismatches (documented; not changed)
+| Aspect | Anthropic | Ours | Impact |
+|---|---|---|---|
+| Token positions | All positions in paragraph | Decision token only (last) | IoU less discriminative |
+| Feature type | Sparse Autoencoder (SAE) features | Transcoder features | Different feature geometry |
+| Graph topology | Full circuit (feature–feature edges) | Star (input→feature→output only) | Community detection trivial |
+| Languages | EN + FR (+ possibly others) | EN + FR only | Narrower reproduction |
+| N prompts | ~thousands (pre-trained circuit) | 48 (24 EN + 24 FR) | Smaller sample |
+
+### Claim-level Results
 
 | Anthropic Claim | Metric | Our Value | Status |
 |---|---|---|---|
-| (1) Language-specific features | Min IoU across layers | 0.3407 | PROXY |
-| (2) Shared cross-lang features | Max IoU across layers | 0.4797 | PROXY |
-| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | 0.4192 vs 0.4057 | PROXY |
-| (4) Bridge features degrade both languages | n_bridges with consistent negative effect | 9 | PARTIAL |
+| (1) Language-specific features exist | Min per-layer IoU | nan | PROXY — partial support |
+| (2) Shared cross-lang features exist | Max per-layer IoU | nan | PROXY — partial support |
+| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | nan vs nan | PROXY — weak (decision token limits contrast) |
+| (4) Bridge features degrade both langs | n bridge features / C3 lang-swap strength | 0 bridges; nan C3 disrupt frac | PARTIAL ✓ |
 
 
 ## Notes

@@ -122,6 +122,8 @@ class InterventionResult:
     feature_source: str = "graph"
     skipped_reason: Optional[str] = None  # reserved for future sentinel rows
     layer_has_graph_features: bool = True
+    feature_id: str = ""  # "L{layer}_F{feat_idx}"; set in per-feature mode; empty in bundled mode
+    concept_index: int = -1  # concept_index from prompt metadata; -1 if not available
 
 
 def load_config(config_path: str = "configs/experiment_config.yaml") -> Dict:
@@ -1765,6 +1767,17 @@ def main():
         ),
     )
     parser.add_argument(
+        "--per_feature",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Run one intervention per feature (feature-level causal analysis). "
+            "Default: True for multilingual_circuits (Anthropic-faithful reproduction), "
+            "False for all other behaviours (backward-compatible bundled format). "
+            "Override with --per_feature or --no-per_feature."
+        ),
+    )
+    parser.add_argument(
         "--ablation_sign",
         type=str,
         default="pos",
@@ -2065,6 +2078,28 @@ def main():
 
         logger.info(f"Experiments to run: {experiments_to_run}")
 
+        # Per-feature mode: one forward pass per feature (Anthropic-faithful).
+        # Default True for multilingual_circuits; False (bundled) for all other behaviours.
+        per_feature: bool = (
+            args.per_feature
+            if args.per_feature is not None
+            else (behaviour == "multilingual_circuits")
+        )
+        n_graph_features = sum(len(v) for v in top_features_by_layer.values())
+        if per_feature:
+            n_abl_rows_est = len(sample_prompts) * n_graph_features
+            logger.info(
+                f"per_feature=True (Anthropic-faithful): "
+                f"ablation rows ≈ {len(sample_prompts)} prompts × "
+                f"{n_graph_features} graph features = {n_abl_rows_est}"
+            )
+        else:
+            logger.info(
+                f"per_feature=False (bundled): "
+                f"ablation rows = {len(sample_prompts)} prompts × {len(layers)} layers = "
+                f"{len(sample_prompts) * len(layers)}"
+            )
+
         for exp_type in experiments_to_run:
             print(f"\n--- Running {exp_type} experiments ---")
             logger.info(f"Using {len(sample_prompts)} prompts for {exp_type}")
@@ -2258,23 +2293,32 @@ def main():
                             logger.warning(f"Activation-aware selection failed for layer {layer}: {e}. Using sign-filtered list.")
                             layer_features = layer_features[:args.top_k]
 
-                        try:
-                            result = experiment.run_ablation_experiment(
-                                prompt=prompt,
-                                prompt_idx=i,
-                                correct_token=correct,
-                                incorrect_token=incorrect,
-                                layer=layer,
-                                feature_indices=layer_features,
-                                mode="zero",
-                            )
-                            # Tag with graph-vs-control label
-                            result.feature_source = _abl_feature_src
-                            result.layer_has_graph_features = _abl_layer_has_graph
-                            all_results.append(result)
-                        except ValueError as e:
-                            logger.warning(f"Skipping prompt {i} layer {layer}: {e}")
-                            continue
+                        # Per-feature: one ablation per feature; bundled: all at once.
+                        ablation_groups = (
+                            [[f] for f in layer_features] if per_feature else [layer_features]
+                        )
+                        for feat_group in ablation_groups:
+                            try:
+                                result = experiment.run_ablation_experiment(
+                                    prompt=prompt,
+                                    prompt_idx=i,
+                                    correct_token=correct,
+                                    incorrect_token=incorrect,
+                                    layer=layer,
+                                    feature_indices=feat_group,
+                                    mode="zero",
+                                )
+                                # Tag with graph-vs-control label
+                                result.feature_source = _abl_feature_src
+                                result.layer_has_graph_features = _abl_layer_has_graph
+                                if per_feature:
+                                    result.feature_id = f"L{layer}_F{feat_group[0]}"
+                                all_results.append(result)
+                            except ValueError as e:
+                                logger.warning(
+                                    f"Skipping prompt {i} layer {layer} feat {feat_group}: {e}"
+                                )
+                                continue
 
                 save_results(all_results, output_path / behaviour, behaviour, "ablation", metadata)
                 # Build layer-source map from results + skipped set, then write coverage file
@@ -2374,37 +2418,63 @@ def main():
                                 _patch_skipped_layers.add(layer)
                                 continue
 
-                        try:
-                            result = experiment.run_patching_experiment(
-                                source_prompt=source["prompt"],
-                                target_prompt=target["prompt"],
-                                prompt_idx=idx,
-                                source_correct=source_correct,
-                                target_correct=target_correct,
-                                target_incorrect=target_incorrect,
-                                layer=layer,
-                                candidate_features=cands,  # pair-specific top-k selected inside
-                                top_k=args.top_k,
-                            )
+                        # Per-feature: patch each graph feature individually;
+                        # bundled: patch top-k features selected by |src-tgt| diff.
+                        patch_groups = (
+                            [[f] for f in cands[:args.top_k]] if per_feature else [None]
+                        )
+                        for feat_group in patch_groups:
+                            try:
+                                if per_feature:
+                                    result = experiment.run_patching_experiment(
+                                        source_prompt=source["prompt"],
+                                        target_prompt=target["prompt"],
+                                        prompt_idx=idx,
+                                        source_correct=source_correct,
+                                        target_correct=target_correct,
+                                        target_incorrect=target_incorrect,
+                                        layer=layer,
+                                        feature_indices=feat_group,  # single feature
+                                    )
+                                else:
+                                    result = experiment.run_patching_experiment(
+                                        source_prompt=source["prompt"],
+                                        target_prompt=target["prompt"],
+                                        prompt_idx=idx,
+                                        source_correct=source_correct,
+                                        target_correct=target_correct,
+                                        target_incorrect=target_incorrect,
+                                        layer=layer,
+                                        candidate_features=cands,  # top-k by diff internally
+                                        top_k=args.top_k,
+                                    )
 
-                            # Enrich metadata
-                            result.metadata.update({
-                                "source_margin": float(source_margin),
-                                "target_margin": float(result.baseline_logit_diff),
-                                "source_number": source.get("number", "unknown"),
-                                "target_number": target.get("number", "unknown"),
-                                "source_orig_idx": source.get("orig_idx", -1),
-                                "target_orig_idx": target.get("orig_idx", -1),
-                            })
+                                # Enrich metadata
+                                result.metadata.update({
+                                    "source_margin": float(source_margin),
+                                    "target_margin": float(result.baseline_logit_diff),
+                                    "source_number": source.get("number", "unknown"),
+                                    "target_number": target.get("number", "unknown"),
+                                    "source_orig_idx": source.get("orig_idx", -1),
+                                    "target_orig_idx": target.get("orig_idx", -1),
+                                    # concept/template so analysis can do per-concept breakdown
+                                    "concept_index": target.get("concept_index", -1),
+                                    "template_idx": target.get("template_idx", -1),
+                                })
 
-                            # Tag with graph-vs-control label
-                            result.feature_source = _patch_feature_src
-                            result.layer_has_graph_features = _patch_layer_has_graph
-                            results.append(result)
+                                # Tag with graph-vs-control label
+                                result.feature_source = _patch_feature_src
+                                result.layer_has_graph_features = _patch_layer_has_graph
+                                if per_feature and feat_group is not None:
+                                    result.feature_id = f"L{layer}_F{feat_group[0]}"
+                                result.concept_index = target.get("concept_index", -1)
+                                results.append(result)
 
-                        except (ValueError, KeyError) as e:
-                            logger.warning(f"Skipping pair {idx} layer {layer}: {e}")
-                            continue
+                            except (ValueError, KeyError) as e:
+                                logger.warning(
+                                    f"Skipping pair {idx} layer {layer} feat {feat_group}: {e}"
+                                )
+                                continue
 
                 save_results(results, output_path / behaviour, behaviour, patching_exp_type, metadata)
                 # Build layer-source map from results + skipped set, then write coverage file
