@@ -1,0 +1,143 @@
+{
+  "git_commit": "a73b8ce073aeb23307da2e3b86bbd2a753d032e7",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:40:16",
+      "path": "data/results/interventions/multilingual_circuits/intervention_ablation_multilingual_circuits.csv",
+      "size_bytes": 174364
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:40:16",
+      "path": "data/results/interventions/multilingual_circuits/intervention_ablation_multilingual_circuits_summary.json",
+      "size_bytes": 929
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits/intervention_patching_multilingual_circuits.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits/intervention_patching_multilingual_circuits_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits/intervention_steering_multilingual_circuits.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits/intervention_steering_multilingual_circuits_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:22:48",
+      "path": "data/results/attribution_graphs/multilingual_circuits/attribution_graph_train_n48.json",
+      "size_bytes": 83381
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:40:16",
+      "path": "data/results/interventions/multilingual_circuits/layer_coverage_ablation_multilingual_circuits.csv",
+      "size_bytes": 508
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:54",
+      "path": "data/results/interventions/multilingual_circuits/layer_coverage_patching_C3_multilingual_circuits.csv",
+      "size_bytes": 508
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:56",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/interventions.csv",
+      "size_bytes": 369361
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:56",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/common_prompt_idx.json",
+      "size_bytes": 366
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:56",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/audit.json",
+      "size_bytes": 111472
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:56",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/interventions_layer_agg.csv",
+      "size_bytes": 6009
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:57",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/interventions_prompt_agg.csv",
+      "size_bytes": 10852
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:57",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/interventions_feature_agg.csv",
+      "size_bytes": 27782
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:57",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/layer_coverage.csv",
+      "size_bytes": 1266
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:57",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/supernodes.json",
+      "size_bytes": 1853
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:48:57",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/supernodes_summary.csv",
+      "size_bytes": 140
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:49:06",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/supernodes_effect.json",
+      "size_bytes": 1898
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:49:06",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/supernodes_effect_summary.csv",
+      "size_bytes": 503
+    },
+    {
+      "exists": true,
+      "modified": "2026-03-05T09:49:06",
+      "path": "data/ui_offline/20260305-094855_multilingual_circuits_train_n48/graph.json",
+      "size_bytes": 81705
+    }
+  ],
+  "parameters": {
+    "behaviour": "multilingual_circuits",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 48,
+    "raw_sources_copied": [
+      "attribution_graph_train_n48.json",
+      "attribution_graph_train_n48_metadata.json",
+      "intervention_ablation_multilingual_circuits.csv",
+      "intervention_patching_C3_multilingual_circuits.csv",
+      "intervention_ablation_multilingual_circuits_summary.json",
+      "intervention_patching_C3_multilingual_circuits_summary.json"
+    ],
+    "run_id": "20260305-094855_multilingual_circuits_train_n48",
+    "split": "train",
+    "timestamp": "2026-03-05T09:48:55.945765"
+  },
+  "timestamp": "2026-03-05T09:49:06.729988"
+}

@@ -1,27 +1,27 @@
 {
-  "timestamp": "2026-03-02T20:54:44.234556",
+  "timestamp": "2026-03-05T09:20:52.925314",
   "model": "Qwen/Qwen3-4B-Instruct-2507",
   "split": "train",
   "behaviours": {
-    "antonym_operation": {
-      "accuracy": 1.0,
-      "accuracy_valid_only": 1.0,
-      "accuracy_sign": 1.0,
-      "mean_logprob_diff": 6.424153205752373,
-      "mean_logprob_diff_normalized": 6.424153205752373,
-      "median_logprob_diff_normalized": 6.071277141571045,
-      "std_logprob_diff_normalized": 2.5225270730757345,
+    "multilingual_circuits": {
+      "accuracy": 0.7916666666666666,
+      "accuracy_valid_only": 0.7916666666666666,
+      "accuracy_sign": 0.875,
+      "mean_logprob_diff": 3.5833772669235864,
+      "mean_logprob_diff_normalized": 3.5833772669235864,
+      "median_logprob_diff_normalized": 3.4628183841705322,
+      "std_logprob_diff_normalized": 3.370867160918514,
       "mean_correct_token_len": 1.0,
       "mean_incorrect_token_len": 1.0,
       "length_mismatch_rate": 0.0,
-      "n_success": 80,
-      "n_total": 80,
-      "n_valid": 80,
+      "n_success": 38,
+      "n_total": 48,
+      "n_valid": 48,
       "n_errors": 0,
-      "passed": true,
+      "passed": false,
       "score_method": "teacher_forced_logprob",
       "success_metric": "normalized_per_token",
-      "threshold": 1.0
+      "threshold": 0.5
     }
   }
 }
