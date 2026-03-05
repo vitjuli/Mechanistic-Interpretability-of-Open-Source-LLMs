@@ -1388,6 +1388,40 @@ def create_prompt_pairs(
             logger.info(f"C3 pairing result: {matched} pairs "
                         f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)")
 
+    elif behaviour == "multilingual_circuits":
+        # C3 only: language swap (EN antonym → FR antonym), same concept + template_idx.
+        # All prompts are antonym-only in this behaviour; patch_mode is ignored (always C3).
+        en_map: Dict = {}  # (cidx, tidx) → EN prompt
+        for p in prompts:
+            if p.get("language") == "en":
+                key = (p.get("concept_index"), p.get("template_idx"))
+                en_map[key] = p
+
+        fr_targets = [p for p in prompts if p.get("language") == "fr"]
+        matched = 0
+        for t in fr_targets:
+            key = (t.get("concept_index"), t.get("template_idx"))
+            src = en_map.get(key)
+            if src is None:
+                # Fallback: any template for the same concept
+                for alt in range(4):
+                    src = en_map.get((t.get("concept_index"), alt))
+                    if src:
+                        break
+            if src:
+                pairs.append((src, t))
+                matched += 1
+            else:
+                logger.warning(
+                    f"multilingual_circuits C3: no EN source for FR concept_idx="
+                    f"{t.get('concept_index')} template_idx={t.get('template_idx')}"
+                )
+
+        logger.info(
+            f"multilingual_circuits C3 pairing: {matched} pairs "
+            f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)"
+        )
+
     else:
         # Generic pairing: consecutive prompts
         for i in range(0, len(prompts) - 1, 2):
@@ -1650,7 +1684,7 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits"],
         default="grammar_agreement",
         help="Which behaviour to analyze",
     )
@@ -2271,11 +2305,19 @@ def main():
                 results: List[InterventionResult] = []
                 _patch_skipped_layers: set = set()  # layers skipped due to no graph features
 
+                # Output filename: use patch_mode suffix so C1/C2/C3 don't overwrite each other.
+                # "default" keeps the canonical "patching" name for backward compatibility.
+                patching_exp_type = (
+                    f"patching_{args.patch_mode}"
+                    if args.patch_mode != "default"
+                    else "patching"
+                )
+
                 # Create pairs from the unified sample_prompts
                 pairs = create_prompt_pairs(sample_prompts, behaviour,
                                            source_prompts=source_prompts,
                                            patch_mode=args.patch_mode)
-                print(f"  Created {len(pairs)} pairs for patching")
+                print(f"  Created {len(pairs)} pairs for patching ({patching_exp_type})")
 
                 expected = len(sample_prompts)
                 if len(pairs) < expected:
@@ -2286,7 +2328,7 @@ def main():
 
                 if not pairs:
                     logger.warning("No pairs created! Check your prompts/margins.")
-                    save_results(results, output_path / behaviour, behaviour, "patching", metadata)
+                    save_results(results, output_path / behaviour, behaviour, patching_exp_type, metadata)
                     continue
 
                 for idx, (source, target) in enumerate(tqdm(pairs, desc="Patching")):
@@ -2364,7 +2406,7 @@ def main():
                             logger.warning(f"Skipping pair {idx} layer {layer}: {e}")
                             continue
 
-                save_results(results, output_path / behaviour, behaviour, "patching", metadata)
+                save_results(results, output_path / behaviour, behaviour, patching_exp_type, metadata)
                 # Build layer-source map from results + skipped set, then write coverage file
                 _patch_src_map: Dict[int, str] = {}
                 for _lc in layers:
@@ -2376,7 +2418,7 @@ def main():
                             "skipped",
                         )
                 save_layer_coverage(
-                    output_path / behaviour, behaviour, "patching",
+                    output_path / behaviour, behaviour, patching_exp_type,
                     layers, _patch_src_map, top_features_by_layer,
                 )
                 if not results and not args.control_fallback:

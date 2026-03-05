@@ -743,6 +743,94 @@ def generate_multilingual_antonym_prompts(
 GENERATORS["multilingual_antonym"] = generate_multilingual_antonym_prompts
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Behaviour: multilingual_circuits
+#   Antonym-only EN+FR prompts for a 1-to-1 reproduction of Anthropic's
+#   "Multilingual Circuits" case study (no synonyms, no operand-swap).
+#   8 cross-language concepts (concept_index in {0,2,3,4,5,6,7,8}).
+#   Stratified split: for each (concept_index, language) group, 1 template
+#   goes to test and 3 go to train → train=48, test=16.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_multilingual_circuits_prompts(
+    n_train: int = 48,
+    n_test: int = 16,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate multilingual antonym-only prompts for Anthropic circuits reproduction.
+
+    8 cross-language concepts (concept_idx=1 excluded: 'froid' = 2 tokens):
+      indices 0, 2, 3, 4, 5, 6, 7, 8.
+    4 templates × 2 languages = 8 prompts per concept → 64 total.
+
+    Stratified split: for each of 16 (concept_index, language) groups, shuffle
+    [0,1,2,3] template indices; assign first shuffled index to test and the
+    remaining 3 to train.
+    → train = 24 EN + 24 FR = 48, test = 8 EN + 8 FR = 16.
+
+    Fields in each prompt dict:
+      prompt          : text fed to the model
+      correct_answer  : target token with leading space (e.g. ' large')
+      incorrect_answer: word itself with leading space  (e.g. ' small')
+      word            : source adjective
+      antonym         : ground-truth antonym for this concept
+      language        : "en" | "fr"
+      concept_index   : 0–8 (only cross-lang valid indices are included)
+      template_idx    : 0–3
+      cross_lang_valid: always True (all included concepts pass FR tokenization audit)
+
+    Intervention axis (script 07 --patch_mode):
+      C3 (language swap): source=EN antonym, target=FR antonym, same concept_index.
+    """
+    rng = random.Random(seed)
+    train_prompts: List[Dict] = []
+    test_prompts:  List[Dict] = []
+
+    # 8 cross-language concepts (has_fr=True from _ML_CONCEPTS)
+    mc_concepts = [
+        (cidx, ew, ea, fw, fa)
+        for cidx, ew, ea, fw, fa, hf in _ML_CONCEPTS
+        if hf
+    ]
+
+    for lang in ["en", "fr"]:
+        templates = _ML_ANT_TEMPLATES[lang]
+        for cidx, en_word, en_ant, fr_word, fr_ant in mc_concepts:
+            word = en_word if lang == "en" else fr_word
+            ant  = en_ant  if lang == "en" else fr_ant
+
+            # Stratified: shuffle template indices, first → test, rest → train
+            tidxs = list(range(4))
+            rng.shuffle(tidxs)
+            test_tidx = tidxs[0]
+
+            for tidx, tmpl in enumerate(templates):
+                p = {
+                    "prompt":           tmpl.format(word=word),
+                    "correct_answer":   f" {ant}",
+                    "incorrect_answer": f" {word}",
+                    "word":             word,
+                    "antonym":          ant,
+                    "language":         lang,
+                    "concept_index":    cidx,
+                    "template_idx":     tidx,
+                    "cross_lang_valid": True,
+                }
+                if tidx == test_tidx:
+                    test_prompts.append(p)
+                else:
+                    train_prompts.append(p)
+
+    assert len(train_prompts) == 48, f"Expected 48 train, got {len(train_prompts)}"
+    assert len(test_prompts)  == 16, f"Expected 16 test, got {len(test_prompts)}"
+
+    return train_prompts, test_prompts
+
+
+GENERATORS["multilingual_circuits"] = generate_multilingual_circuits_prompts
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate synthetic prompts")
     parser.add_argument(

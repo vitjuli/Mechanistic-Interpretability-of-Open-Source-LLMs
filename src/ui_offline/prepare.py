@@ -137,18 +137,36 @@ def build_unified_interventions(
     Returns:
         (unified_df, audit_dict)
     """
-    exp_types = ["ablation", "patching", "steering"]
     frames = []
     summaries: Dict[str, Dict] = {}
 
-    for exp in exp_types:
-        csv_path = interventions_dir / f"intervention_{exp}_{behaviour}.csv"
+    # Discover all intervention CSVs for this behaviour.
+    # Handles both canonical names (intervention_patching_{beh}.csv) and
+    # patch-mode-specific names (intervention_patching_C1_{beh}.csv etc.)
+    all_csvs = sorted(interventions_dir.glob(f"intervention_*_{behaviour}.csv"))
+    if not all_csvs:
+        # Fallback: try canonical set in case glob finds nothing
+        all_csvs = [
+            interventions_dir / f"intervention_{e}_{behaviour}.csv"
+            for e in ["ablation_zero", "ablation", "patching", "steering"]
+        ]
+
+    for csv_path in all_csvs:
+        if not csv_path.exists():
+            continue
+        # Derive experiment type label from filename:
+        #   intervention_{exp_type}_{behaviour}.csv  →  exp_type
+        stem = csv_path.stem  # e.g. "intervention_patching_C1_multilingual_antonym"
+        prefix = f"intervention_"
+        suffix = f"_{behaviour}"
+        exp = stem[len(prefix):-len(suffix)] if stem.startswith(prefix) and stem.endswith(suffix) else stem
+
         df = load_intervention_csv(csv_path)
         if df.empty:
             continue
 
         # Load companion summary JSON for model_size etc.
-        summary_path = interventions_dir / f"intervention_{exp}_{behaviour}_summary.json"
+        summary_path = csv_path.with_name(csv_path.stem + "_summary.json")
         if summary_path.exists():
             with open(summary_path) as f:
                 summaries[exp] = json.load(f)

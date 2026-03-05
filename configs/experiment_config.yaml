@@ -54,6 +54,20 @@ behaviours:
     # Three intervention axes: C1=operation swap, C2=operand swap (EN only), C3=language swap.
     # See scripts/b_tokenize_audit_multilingual.py for audit details.
 
+  multilingual_circuits:
+    train_size: 48
+    test_size: 16
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "EN+FR concept-aligned antonym-only prompts for Anthropic multilingual circuits 1-to-1 reproduction"
+    # 8 cross-language concepts (concept_idx=1 excluded: 'froid' = 2 tokens).
+    # Stratified split: for each of 16 (concept_index, language) groups, 1 template → test,
+    # 3 templates → train. → train=48 (24 EN + 24 FR), test=16 (8 EN + 8 FR).
+    # Only C3 (language swap) patching: source=EN antonym, target=FR antonym, same concept.
+    # Baseline gate: EN sign_accuracy ≥ 0.90, FR sign_accuracy ≥ 0.75,
+    #   overall mean_norm_logprob_diff ≥ 1.0.
+    # See scripts/b_tokenize_audit_multilingual.py for FR tokenization audit.
+
 # Activation capture
 activations:
   layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)
