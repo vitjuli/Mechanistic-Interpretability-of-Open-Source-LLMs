@@ -1,0 +1,11 @@
+Baseline gate: PASS
+
+[PASS] en_sign_acc: 1.0000 (threshold >= 0.9)
+[PASS] fr_sign_acc: 0.7500 (threshold >= 0.75)
+[PASS] mean_norm_diff: 3.5834 (threshold >= 1.0)
+
+Per-language:
+  EN: sign_acc=1.0000  mean_norm_diff=6.1457  n=24  n_pass=24
+  FR: sign_acc=0.7500  mean_norm_diff=1.0211  n=24  n_pass=18
+
+Overall: sign_acc=0.8750  mean_norm_diff=3.5834
