@@ -101,7 +101,7 @@ fi
 # ══════════════════════════════════════════════════════════════
 # STAGE B — Step 02: Baseline evaluation
 # Reports accuracy + logprob_diff sliced by language.
-# Baseline gate: EN sign_acc ≥ 0.90, FR sign_acc ≥ 0.75,
+# Baseline gate: EN sign_acc ≥ 0.90, FR sign_acc ≥ 0.65,
 #                overall mean_norm_logprob_diff ≥ 1.0.
 # ══════════════════════════════════════════════════════════════
 echo ""

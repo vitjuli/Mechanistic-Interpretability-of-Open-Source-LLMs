@@ -1,0 +1,62 @@
+# Conda environment for Qwen3-4B mechanistic interpretability
+# Usage: conda env create -f environment.yml
+# Activate: conda activate qwen-circuits
+
+name: qwen-circuits
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python version
+  - python=3.10
+
+  # PyTorch with CUDA 12.1
+  - pytorch=2.2.0
+  - pytorch-cuda=12.1
+  - torchvision
+  - torchaudio
+
+  # Core scientific computing
+  - numpy=1.26.0
+  - pandas=2.1.0
+  - scipy=1.11.0
+  - scikit-learn=1.3.0
+
+  # Visualization
+  - matplotlib=3.8.0
+  - seaborn=0.13.0
+  - plotly=5.18.0
+
+  # Graph analysis
+  - networkx=3.2
+
+  # Utilities
+  - tqdm=4.66.0
+  - pyyaml=6.0
+
+  # Jupyter
+  - jupyter=1.0.0
+  - jupyterlab=4.0.0
+  - ipywidgets=8.1.0
+  - nbformat=5.9.0
+
+  # Development
+  - pytest=7.4.0
+  - black=23.9.0
+  - isort=5.12.0
+
+  # Pip dependencies (HuggingFace ecosystem)
+  - pip
+  - pip:
+    - transformers>=4.40.0
+    - accelerate>=0.25.0
+    - safetensors>=0.4.0
+    - huggingface-hub>=0.20.0
+    - tokenizers>=0.15.0
+
+# Environment variables
+variables:
+  PYTHONHASHSEED: "42"

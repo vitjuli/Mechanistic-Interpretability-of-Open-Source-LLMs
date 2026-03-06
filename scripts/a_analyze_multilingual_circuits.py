@@ -101,8 +101,10 @@ def check_baseline_gate(baseline_csv: Path, out_dir: Path) -> dict:
 
     df = pd.read_csv(baseline_csv)
 
-    # sign correct = logprob_diff > 0
-    df["sign_correct"] = df["logprob_diff"] > 0
+    # Use logprob_diff_normalized (consistent with 02_run_baseline.py gate logic).
+    # For this dataset all answers are 1 token so normalized == unnormalized, but
+    # using the normalized column is correct and robust to future multi-token cases.
+    df["sign_correct"] = df["logprob_diff_normalized"] > 0
 
     overall_sign_acc = df["sign_correct"].mean()
     overall_mean_norm = df["logprob_diff_normalized"].mean()
@@ -175,17 +177,25 @@ def check_baseline_gate(baseline_csv: Path, out_dir: Path) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def compute_iou(features_dir: Path, behaviour: str, split: str,
-                n_en: int, n_fr: int, layers: list, out_dir: Path) -> pd.DataFrame:
+                train_jsonl: Path, layers: list, out_dir: Path) -> pd.DataFrame:
     """
     Compute per-layer IoU between EN and FR feature sets.
 
     Uses top_k_indices.npy from script 04 (shape: n_prompts × top_k).
-    EN prompts are assumed to be indices 0..(n_en-1),
-    FR prompts are indices n_en..(n_en+n_fr-1).
+    Language assignment is derived from the JSONL 'language' column, NOT from
+    index position — the JSONL is interleaved by concept (EN+FR alternating),
+    so index-based slicing would measure concept-group similarity, not language.
     """
     print("\n" + "=" * 60)
     print("2+3. PER-LAYER IOU (EN vs FR feature activation sets)")
     print("=" * 60)
+
+    # Derive true EN/FR prompt indices from JSONL metadata
+    prompts = load_prompts(train_jsonl)
+    en_indices = sorted(prompts.loc[prompts["language"] == "en", "prompt_idx"].tolist())
+    fr_indices = sorted(prompts.loc[prompts["language"] == "fr", "prompt_idx"].tolist())
+    print(f"  EN prompt indices ({len(en_indices)}): {en_indices[:4]}...")
+    print(f"  FR prompt indices ({len(fr_indices)}): {fr_indices[:4]}...")
 
     rows = []
     for layer in layers:
@@ -203,15 +213,13 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
             continue
 
         n_total = idx.shape[0]
-        en_end = n_en
-        fr_end = n_en + n_fr
-        assert fr_end <= n_total, (
-            f"Expected {n_en} EN + {n_fr} FR = {fr_end} prompts, "
-            f"but .npy has {n_total} rows"
+        assert max(en_indices + fr_indices) < n_total, (
+            f"Prompt index out of range: .npy has {n_total} rows but "
+            f"max prompt index is {max(en_indices + fr_indices)}"
         )
 
-        en_feats = set(idx[:en_end, :].flatten().tolist())
-        fr_feats = set(idx[en_end:fr_end, :].flatten().tolist())
+        en_feats = set(idx[en_indices, :].flatten().tolist())
+        fr_feats = set(idx[fr_indices, :].flatten().tolist())
 
         intersection = en_feats & fr_feats
         union = en_feats | fr_feats
@@ -250,7 +258,7 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def find_bridge_features(ablation_csv: Path, train_jsonl: Path,
-                         n_en: int, out_dir: Path) -> pd.DataFrame:
+                         out_dir: Path) -> pd.DataFrame:
     """
     A "bridge" feature has mean_effect < 0 for BOTH EN and FR prompts.
 
@@ -295,8 +303,11 @@ def find_bridge_features(ablation_csv: Path, train_jsonl: Path,
         df["feature_id"].str.extract(r"_F(\d+)$")[0].astype(float).astype("Int64")
     )
 
-    # Assign language by prompt_idx (EN: 0..n_en-1, FR: n_en..)
-    df["language"] = df["prompt_idx"].apply(lambda i: "en" if i < n_en else "fr")
+    # Assign language from JSONL metadata (NOT index-based: JSONL is interleaved
+    # by concept, so prompt_idx < n_en would give concept-group halves, not languages).
+    prompts = load_prompts(train_jsonl)
+    idx_to_lang = dict(zip(prompts["prompt_idx"], prompts["language"]))
+    df["language"] = df["prompt_idx"].map(idx_to_lang)
 
     # Compute per-feature, per-language mean_effect_size
     grp = df.groupby(["feature_id", "layer", "feature_idx_0", "language"])["effect_size"]
@@ -647,10 +658,6 @@ def main():
     parser = argparse.ArgumentParser(description="Multilingual circuits analysis")
     parser.add_argument("--behaviour", default="multilingual_circuits")
     parser.add_argument("--split",     default="train")
-    parser.add_argument("--n_en",      type=int, default=24,
-                        help="Number of EN prompts in train split (default: 24)")
-    parser.add_argument("--n_fr",      type=int, default=24,
-                        help="Number of FR prompts in train split (default: 24)")
     parser.add_argument("--layers",    nargs="+", type=int,
                         default=list(range(10, 26)),
                         help="Layers to compute IoU for (default: 10-25)")
@@ -670,13 +677,13 @@ def main():
     # 2+3. Per-layer IoU
     iou_df = compute_iou(
         P["features_dir"], args.behaviour, args.split,
-        n_en=args.n_en, n_fr=args.n_fr,
+        train_jsonl=P["train_jsonl"],
         layers=args.layers, out_dir=out_dir,
     )
 
     # 4. Bridge features
     bridge_df = find_bridge_features(P["ablation_csv"], P["train_jsonl"],
-                                     n_en=args.n_en, out_dir=out_dir)
+                                     out_dir=out_dir)
 
     # C3 patching stats
     c3_stats = analyze_c3_patching(P["c3_csv"], P["train_jsonl"], out_dir)
