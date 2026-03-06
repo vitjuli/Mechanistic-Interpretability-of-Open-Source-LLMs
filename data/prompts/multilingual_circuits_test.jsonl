@@ -1,7 +1,7 @@
 {"prompt": "\"small\" is the opposite of", "correct_answer": " large", "incorrect_answer": " small", "word": "small", "antonym": "large", "language": "en", "concept_index": 0, "template_idx": 2, "cross_lang_valid": true}
 {"prompt": "\"petit\" est le contraire de", "correct_answer": " grand", "incorrect_answer": " petit", "word": "petit", "antonym": "grand", "language": "fr", "concept_index": 0, "template_idx": 2, "cross_lang_valid": true}
 {"prompt": "\"fast\" is the antonym of", "correct_answer": " slow", "incorrect_answer": " fast", "word": "fast", "antonym": "slow", "language": "en", "concept_index": 2, "template_idx": 3, "cross_lang_valid": true}
-{"prompt": "\"vite\" est l'antonyme de", "correct_answer": " lent", "incorrect_answer": " vite", "word": "vite", "antonym": "lent", "language": "fr", "concept_index": 2, "template_idx": 3, "cross_lang_valid": true}
+{"prompt": "\"rapide\" est l'antonyme de", "correct_answer": " lent", "incorrect_answer": " rapide", "word": "rapide", "antonym": "lent", "language": "fr", "concept_index": 2, "template_idx": 3, "cross_lang_valid": true}
 {"prompt": "The antonym of \"new\" is", "correct_answer": " old", "incorrect_answer": " new", "word": "new", "antonym": "old", "language": "en", "concept_index": 3, "template_idx": 1, "cross_lang_valid": true}
 {"prompt": "L'antonyme de \"nouveau\" est", "correct_answer": " vieux", "incorrect_answer": " nouveau", "word": "nouveau", "antonym": "vieux", "language": "fr", "concept_index": 3, "template_idx": 1, "cross_lang_valid": true}
 {"prompt": "The antonym of \"empty\" is", "correct_answer": " full", "incorrect_answer": " empty", "word": "empty", "antonym": "full", "language": "en", "concept_index": 4, "template_idx": 1, "cross_lang_valid": true}

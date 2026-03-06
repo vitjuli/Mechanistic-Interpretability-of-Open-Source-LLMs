@@ -583,7 +583,7 @@ GENERATORS = {
 _ML_CONCEPTS: List[Tuple] = [
     (0, "small",  "large",   "petit",    "grand",      True),
     (1, "hot",    "cold",    None,        None,         False),  # froid=2 tokens
-    (2, "fast",   "slow",    "vite",     "lent",        True),
+    (2, "fast",   "slow",    "rapide",   "lent",        True),  # was "vite" (adverb); "rapide" is adj, parallel to EN "fast"
     (3, "new",    "old",     "nouveau",  "vieux",       True),
     (4, "empty",  "full",    "vide",     "plein",       True),
     (5, "high",   "low",     "haut",     "bas",         True),
