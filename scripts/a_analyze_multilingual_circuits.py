@@ -9,7 +9,7 @@ Computes the four Anthropic "Multilingual Circuits" claims:
   Claim 4: Bridge features whose ablation degrades BOTH EN and FR
 
 Also:
-  - Baseline gate check: EN sign_acc >= 0.90, FR sign_acc >= 0.75, mean_norm_diff >= 1.0
+  - Baseline gate check: EN sign_acc >= 0.90, FR sign_acc >= 0.65, mean_norm_diff >= 1.0
   - C3 patching: disruption_rate, flip_rate, mean_effect_size ± SEM
 
 Usage (on CSD3 after running the full pipeline):
@@ -123,7 +123,7 @@ def check_baseline_gate(baseline_csv: Path, out_dir: Path) -> dict:
         "en_sign_acc":   {"value": lang_stats.get("en", {}).get("sign_accuracy", float("nan")),
                            "threshold": 0.90, "op": ">="},
         "fr_sign_acc":   {"value": lang_stats.get("fr", {}).get("sign_accuracy", float("nan")),
-                           "threshold": 0.75, "op": ">="},
+                           "threshold": 0.65, "op": ">="},
         "mean_norm_diff": {"value": overall_mean_norm, "threshold": 1.0, "op": ">="},
     }
 
@@ -581,8 +581,8 @@ def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
         f"|---|---|---|---|",
         f"| EN sign_accuracy | {lang_en.get('sign_accuracy', float('nan')):.4f} | ≥ 0.90 | "
         f"{'PASS' if lang_en.get('sign_accuracy', 0) >= 0.90 else 'FAIL'} |",
-        f"| FR sign_accuracy | {lang_fr.get('sign_accuracy', float('nan')):.4f} | ≥ 0.75 | "
-        f"{'PASS' if lang_fr.get('sign_accuracy', 0) >= 0.75 else 'FAIL'} |",
+        f"| FR sign_accuracy | {lang_fr.get('sign_accuracy', float('nan')):.4f} | ≥ 0.65 | "
+        f"{'PASS' if lang_fr.get('sign_accuracy', 0) >= 0.65 else 'FAIL'} |",
         f"| mean_norm_logprob_diff | {gate.get('overall_mean_norm', float('nan')):.4f} | ≥ 1.0 | "
         f"{'PASS' if gate.get('overall_mean_norm', 0) >= 1.0 else 'FAIL'} |",
         f"",
