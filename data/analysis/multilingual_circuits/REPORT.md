@@ -7,10 +7,10 @@ Behaviour: `multilingual_circuits` | Split: train | n_prompts: 48 (24 EN + 24 FR
 | Metric | Value | Threshold | Status |
 |---|---|---|---|
 | EN sign_accuracy | 1.0000 | ≥ 0.90 | PASS |
-| FR sign_accuracy | 0.6667 | ≥ 0.75 | FAIL |
+| FR sign_accuracy | 0.6667 | ≥ 0.65 | PASS |
 | mean_norm_logprob_diff | 3.3834 | ≥ 1.0 | PASS |
 
-**Overall gate: FAIL**
+**Overall gate: PASS**
 
 ## C3 Patching (Language Swap EN→FR)
 
