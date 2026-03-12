@@ -194,9 +194,11 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
     prompts = load_prompts(train_jsonl)
     en_indices = sorted(prompts.loc[prompts["language"] == "en", "prompt_idx"].tolist())
     fr_indices = sorted(prompts.loc[prompts["language"] == "fr", "prompt_idx"].tolist())
+    n_prompts = len(en_indices) + len(fr_indices)
     print(f"  EN prompt indices ({len(en_indices)}): {en_indices[:4]}...")
     print(f"  FR prompt indices ({len(fr_indices)}): {fr_indices[:4]}...")
 
+    prompt_to_rows = None  # lazy-loaded for multi-token mode (e.g. last_5)
     rows = []
     for layer in layers:
         npy_path = (features_dir / f"layer_{layer}"
@@ -213,13 +215,26 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
             continue
 
         n_total = idx.shape[0]
-        assert max(en_indices + fr_indices) < n_total, (
-            f"Prompt index out of range: .npy has {n_total} rows but "
-            f"max prompt index is {max(en_indices + fr_indices)}"
-        )
+        if n_total == n_prompts:
+            en_rows, fr_rows = en_indices, fr_indices
+        else:
+            # Multi-token mode (e.g. last_5): map sample rows to prompts via position_map
+            if prompt_to_rows is None:
+                pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
+                pm = json.load(open(pm_path))
+                prompt_to_rows = {}
+                for row_idx, entry in enumerate(pm):
+                    p = entry["prompt_idx"]
+                    if p not in prompt_to_rows:
+                        prompt_to_rows[p] = []
+                    prompt_to_rows[p].append(row_idx)
+                print(f"  Multi-token mode: {n_total} rows for {n_prompts} prompts "
+                      f"({n_total // n_prompts} positions/prompt)")
+            en_rows = [r for p in en_indices for r in prompt_to_rows.get(p, [])]
+            fr_rows = [r for p in fr_indices for r in prompt_to_rows.get(p, [])]
 
-        en_feats = set(idx[en_indices, :].flatten().tolist())
-        fr_feats = set(idx[fr_indices, :].flatten().tolist())
+        en_feats = set(idx[en_rows, :].flatten().tolist())
+        fr_feats = set(idx[fr_rows, :].flatten().tolist())
 
         intersection = en_feats & fr_feats
         union = en_feats | fr_feats
