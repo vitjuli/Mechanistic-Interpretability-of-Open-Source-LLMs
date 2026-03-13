@@ -25,11 +25,11 @@ Behaviour: `multilingual_circuits` | Split: train | n_prompts: 48 (24 EN + 24 FR
 
 ## Per-Layer IoU (EN vs FR feature activation sets)
 
-Mean IoU: 0.4229
-Max IoU layer: 16.0 (IoU = 0.4934)
-Min IoU layer: 25.0 (IoU = 0.3598)
-Middle layers (12–20) mean IoU: 0.4314
-Early/late layers mean IoU:     0.4120
+Mean IoU: 0.3191
+Max IoU layer: 20.0 (IoU = 0.3793)
+Min IoU layer: 25.0 (IoU = 0.2475)
+Middle layers (12–20) mean IoU: 0.3431
+Early/late layers mean IoU:     0.2883
 
 See `iou_per_layer.csv` for full per-layer breakdown.
 
@@ -66,9 +66,9 @@ See `bridge_features_only.csv` for details.
 
 | Anthropic Claim | Metric | Our Value | Status |
 |---|---|---|---|
-| (1) Language-specific features exist | Min per-layer IoU | 0.3598 | PROXY — partial support |
-| (2) Shared cross-lang features exist | Max per-layer IoU | 0.4934 | PROXY — partial support |
-| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | 0.4314 vs 0.4120 | PROXY — weak (decision token limits contrast) |
+| (1) Language-specific features exist | Min per-layer IoU | 0.2475 | PROXY — partial support |
+| (2) Shared cross-lang features exist | Max per-layer IoU | 0.3793 | PROXY — partial support |
+| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | 0.3431 vs 0.2883 | PROXY — weak (decision token limits contrast) |
 | (4) Bridge features degrade both langs | n bridge features / C3 lang-swap strength | 32 bridges; 0.621 C3 disrupt frac | PARTIAL ✓ |
 
 
