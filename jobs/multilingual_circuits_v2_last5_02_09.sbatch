@@ -102,10 +102,11 @@ python -u scripts/02_run_baseline.py \
 # ══════════════════════════════════════════════════════════════
 # STAGE B — Step 04: Extract transcoder features
 #
-# KEY CHANGE vs v1: --token_positions last_5
+# KEY CHANGE vs v1: --context_tokens 5  (was --context_tokens 1, i.e. decision only)
+# Internally sets token_positions="last_5" in capture_mlp_inputs().
 # Extracts features at the last 5 token positions per prompt.
 # Output: top_k_indices.npy shape (240, 50) instead of (48, 50).
-# position_map.json will have 240 entries (5 per prompt).
+# position_map.json will have 240 entries (5 per prompt, each with is_decision_position).
 # ══════════════════════════════════════════════════════════════
 echo ""
 echo "==== [STAGE B] Step 04: Extract transcoder features (last_5) ===="
@@ -116,7 +117,7 @@ python -u scripts/04_extract_transcoder_features.py \
     --model_size 4b \
     --layers $LAYERS \
     --top_k 50 \
-    --token_positions last_5
+    --context_tokens 5
 
 # ══════════════════════════════════════════════════════════════
 # STAGE B — Step 06: Build attribution graph
