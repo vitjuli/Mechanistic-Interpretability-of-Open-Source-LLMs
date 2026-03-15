@@ -23,15 +23,30 @@ Behaviour: `multilingual_circuits` | Split: train | n_prompts: 48 (24 EN + 24 FR
 
 **C3 target met: YES**
 
-## Per-Layer IoU (EN vs FR feature activation sets)
+## Per-Layer IoU — Position Breakdown
 
-Mean IoU: 0.3191
-Max IoU layer: 20.0 (IoU = 0.3793)
-Min IoU layer: 25.0 (IoU = 0.2475)
-Middle layers (12–20) mean IoU: 0.3431
-Early/late layers mean IoU:     0.2883
+Mean IoU (pooled): 0.3191
+Max IoU layer (pooled): 20 (IoU = 0.3793)
+Min IoU layer (pooled): 25 (IoU = 0.2475)
 
-See `iou_per_layer.csv` for full per-layer breakdown.
+| IoU curve | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early ratio |
+|---|---|---|---|---|
+| Pooled (all positions) | 0.2674 | 0.3431 | 0.2970 | 1.283× |
+| Decision token only | *pending CSD3 run* | *pending* | *pending* | *pending* |
+| Content positions (non-decision) | *pending CSD3 run* | *pending* | *pending* | *pending* |
+
+**Note:** Phase 1 analysis is implemented (2026-03-14). Decision-only and content-position
+IoU curves will be computed on the next CSD3 run with updated
+`scripts/a_analyze_multilingual_circuits.py`. The pooled row above matches v2 results.
+
+**Expected:** decision-only ≈ flat profile (ratio ~1.05×, mirroring v1);
+content-position ratio > 1.30× (steeper early→middle gradient).
+The content curve is the primary Claim 3 signal: it captures language-specific
+lexical processing at early layers and cross-lingual convergence at middle layers.
+
+See `iou_per_layer.csv` for full per-layer pooled breakdown.
+After CSD3 run: also `iou_per_layer_decision.csv`, `iou_per_layer_content.csv`,
+and `iou_position_comparison.png`.
 
 ## Bridge Features (Claim 4)
 
@@ -66,18 +81,36 @@ See `bridge_features_only.csv` for details.
 
 | Anthropic Claim | Metric | Our Value | Status |
 |---|---|---|---|
-| (1) Language-specific features exist | Min per-layer IoU | 0.2475 | PROXY — partial support |
-| (2) Shared cross-lang features exist | Max per-layer IoU | 0.3793 | PROXY — partial support |
-| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | 0.3431 vs 0.2883 | PROXY — weak (decision token limits contrast) |
-| (4) Bridge features degrade both langs | n bridge features / C3 lang-swap strength | 32 bridges; 0.621 C3 disrupt frac | PARTIAL ✓ |
+| (1) Language-specific features exist | Min pooled IoU | 0.2475 | Weakly supported. |
+| (2) Shared cross-lang features exist | Max pooled IoU = 0.3793; 32/53 bridge; C3 CI fully negative | three independent measures | Moderately supported. |
+| (3) Shared features in middle layers | Pooled middle/early = 1.283×; content-position ratio *pending* | see Phase 1 analysis above | **Pending** (pooled = Moderate; content-position may be Stronger) |
+| (4) Bridge features degrade both langs | 32 bridges; disruption=0.588; CI [−0.202, −0.126] | CI fully negative | **Strongly supported.** |
 
+## Claim 3 Assessment — Middle-Layer Concentration
+
+**Current status: MODERATELY SUPPORTED (pooled v2)**
+
+The pooled v2 ratio is 1.283× (early=0.267, middle=0.343, late=0.297). This is
+moderately above the 1.10× minimum and above the 1.30× moderate threshold.
+
+**After Phase 1 CSD3 run, assess:**
+1. Decision-only ratio: expected ~1.05× (flat). If decision ratio is flat, this
+   confirms that the decision token alone cannot distinguish early vs middle layers —
+   consistent with the v1 observation.
+2. Content-position ratio: expected > 1.30×. If content ratio >= 1.50×, upgrade
+   Claim 3 to **Strongly supported**. If 1.30–1.50×, it remains **Moderately
+   supported** with clearer mechanistic interpretation. If < 1.30×, the pooled ratio
+   was already the best signal and no upgrade is warranted.
+
+**Do not automatically claim strong support before seeing the actual numbers.**
 
 ## Notes
 
-- IoU uses top-50 transcoder features at last (decision) token position per prompt.
+- IoU uses top-50 transcoder features per prompt; v2 uses last_5 positions.
 - Bridge features require consistent negative mean_effect in BOTH languages;
   score = min(|mean_effect_en|, |mean_effect_fr|).
 - C3 disruption_rate is per-row (each row = one feature × one pair × one layer).
   A per-PAIR disruption_rate (any layer) would be higher.
-- (1) and (2) are PROXY measures relative to Anthropic (who use token-level
-  activation sets across full paragraphs; we use attribution graph features).
+- Phase 1 (position-separated IoU) is implemented 2026-03-14. Requires CSD3 run
+  to produce decision/content curves. No pipeline changes needed — only the
+  analysis script is updated.

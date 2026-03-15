@@ -1,0 +1,35 @@
+C3 Patching Summary
+===================
+Rows: 2280
+disruption_rate: 0.5877  (target >= 0.40)
+flip_rate:        0.0719
+mean_effect_size: -0.1657 ± 0.0194  (95% CI [-0.2023, -0.1262])
+lang_swap_strength (frac features with mean_effect < 0): 0.6211
+
+Per-layer:
+  layer=10  disrupt=0.1583  mean_eff=+0.8160  n=240
+  layer=11  disrupt=0.6736  mean_eff=-0.1827  n=144
+  layer=12  disrupt=0.8542  mean_eff=-0.4646  n=144
+  layer=13  disrupt=0.4375  mean_eff=-0.0879  n=144
+  layer=14  disrupt=0.4167  mean_eff=+0.1029  n=24
+  layer=15  disrupt=0.5104  mean_eff=+0.1035  n=96
+  layer=16  disrupt=0.4583  mean_eff=+0.0221  n=24
+  layer=17  disrupt=0.3750  mean_eff=+0.2673  n=48
+  layer=18  disrupt=0.5000  mean_eff=-0.2415  n=48
+  layer=19  disrupt=0.3611  mean_eff=+0.1081  n=72
+  layer=20  disrupt=0.8490  mean_eff=-0.6553  n=192
+  layer=21  disrupt=0.5139  mean_eff=+0.0506  n=144
+  layer=22  disrupt=0.7969  mean_eff=-0.5182  n=192
+  layer=23  disrupt=0.7008  mean_eff=-0.6487  n=264
+  layer=24  disrupt=0.4773  mean_eff=+0.1140  n=264
+  layer=25  disrupt=0.7500  mean_eff=-0.5443  n=240
+
+Per-concept:
+  concept= 0  disrupt=0.5895  mean_eff=-0.1083  n=285
+  concept= 2  disrupt=0.5579  mean_eff=-0.4152  n=285
+  concept= 3  disrupt=0.5719  mean_eff=-0.1116  n=285
+  concept= 4  disrupt=0.6316  mean_eff=-0.1543  n=285
+  concept= 5  disrupt=0.6561  mean_eff=-0.3325  n=285
+  concept= 6  disrupt=0.5754  mean_eff=+0.0024  n=285
+  concept= 7  disrupt=0.5298  mean_eff=-0.0294  n=285
+  concept= 8  disrupt=0.5895  mean_eff=-0.1771  n=285

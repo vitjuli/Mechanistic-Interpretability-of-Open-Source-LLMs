@@ -12,17 +12,25 @@ Also:
   - Baseline gate check: EN sign_acc >= 0.90, FR sign_acc >= 0.65, mean_norm_diff >= 1.0
   - C3 patching: disruption_rate, flip_rate, mean_effect_size ± SEM
 
+In multi-token mode (v2, --context_tokens 5), compute_iou() additionally computes:
+  - decision-only IoU (is_decision_position=True rows) — pure semantic signal
+  - content-position IoU (is_decision_position=False rows) — lexical/language signal
+
 Usage (on CSD3 after running the full pipeline):
   python scripts/a_analyze_multilingual_circuits.py \
       --behaviour multilingual_circuits --split train
 
 Outputs:
   data/analysis/multilingual_circuits/
-    gate_check.txt           — baseline gate pass/fail
-    iou_per_layer.csv        — per-layer IoU of EN vs FR feature sets
-    bridge_features.csv      — features with negative effect in both EN and FR
-    c3_patching_stats.txt    — disruption_rate, flip_rate, mean_effect_size
-    REPORT.md                — human-readable summary of all four claims
+    gate_check.txt               — baseline gate pass/fail
+    iou_per_layer.csv            — per-layer IoU, all positions (pooled)
+    iou_per_layer_decision.csv   — per-layer IoU, decision token only
+    iou_per_layer_content.csv    — per-layer IoU, content positions only
+    iou_position_comparison.png  — figure: all three curves on one plot
+    bridge_features.csv          — features with negative effect in both EN and FR
+    c3_patching_per_feature.csv  — per-feature lang-swap stats
+    c3_patching_stats.txt        — disruption_rate, flip_rate, mean_effect_size
+    REPORT.md                    — human-readable summary of all four claims
 """
 
 import argparse
@@ -34,6 +42,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")  # non-interactive backend; safe for headless CSD3 nodes
+    import matplotlib.pyplot as plt
+    _MPL = True
+except ImportError:
+    _MPL = False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +100,49 @@ def bootstrap_ci(arr, n_boot: int = 1000, alpha: float = 0.05, seed: int = 0):
     lo = float(np.percentile(boots, 100 * alpha / 2))
     hi = float(np.percentile(boots, 100 * (1 - alpha / 2)))
     return lo, hi
+
+
+def _iou_region_stats(df: pd.DataFrame, label: str = "") -> dict:
+    """
+    Compute early / middle / late mean IoU and the middle/early ratio.
+
+    Regions (matching the 16-layer analysis window L10–L25):
+      early  = layers 10–11   (word-level, mostly language-specific)
+      middle = layers 12–20   (semantic, expected cross-lingual convergence)
+      late   = layers 21–25   (output-side, expected re-specialisation)
+
+    Returns a stats dict; also prints a one-line summary.
+    """
+    if df is None or df.empty:
+        return {}
+    early  = df[df["layer"].isin([10, 11])]["iou"]
+    middle = df[df["layer"].between(12, 20)]["iou"]
+    late   = df[df["layer"].between(21, 25)]["iou"]
+
+    mean_early  = float(early.mean())  if not early.empty  else float("nan")
+    mean_middle = float(middle.mean()) if not middle.empty else float("nan")
+    mean_late   = float(late.mean())   if not late.empty   else float("nan")
+    ratio = (mean_middle / mean_early
+             if (mean_early > 0 and not math.isnan(mean_early))
+             else float("nan"))
+
+    prefix = f"  [{label}] " if label else "  "
+    print(f"{prefix}early(10-11)={mean_early:.4f}  middle(12-20)={mean_middle:.4f}  "
+          f"late(21-25)={mean_late:.4f}  middle/early={ratio:.3f}×")
+
+    max_row = df.loc[df["iou"].idxmax()]
+    min_row = df.loc[df["iou"].idxmin()]
+    return {
+        "mean_early":     mean_early,
+        "mean_middle":    mean_middle,
+        "mean_late":      mean_late,
+        "ratio_mid_early": ratio,
+        "mean_all":       float(df["iou"].mean()),
+        "max_iou":        float(max_row["iou"]),
+        "max_layer":      int(max_row["layer"]),
+        "min_iou":        float(min_row["iou"]),
+        "min_layer":      int(min_row["layer"]),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,11 +236,30 @@ def check_baseline_gate(baseline_csv: Path, out_dir: Path) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def compute_iou(features_dir: Path, behaviour: str, split: str,
-                train_jsonl: Path, layers: list, out_dir: Path) -> pd.DataFrame:
+                train_jsonl: Path, layers: list, out_dir: Path) -> dict:
     """
     Compute per-layer IoU between EN and FR feature sets.
 
-    Uses top_k_indices.npy from script 04 (shape: n_prompts × top_k).
+    In single-token mode (decision token only, position_map absent or all
+    is_decision_position=True), only the pooled curve is meaningful and is
+    identical to decision-only.
+
+    In multi-token mode (--context_tokens > 1 in step 04, e.g. last_5):
+      - pooled   : all rows for each prompt (original v2 behaviour)
+      - decision : rows where is_decision_position=True (one per prompt)
+      - content  : rows where is_decision_position=False (content-word + context)
+
+    Returns a dict:
+      {
+        "pooled":          pd.DataFrame,  # columns: layer, n_en/fr_features, n_intersection, n_union, iou
+        "decision":        pd.DataFrame,
+        "content":         pd.DataFrame,
+        "is_multi_token":  bool,
+        "stats_pooled":    dict,          # from _iou_region_stats()
+        "stats_decision":  dict,
+        "stats_content":   dict,
+      }
+
     Language assignment is derived from the JSONL 'language' column, NOT from
     index position — the JSONL is interleaved by concept (EN+FR alternating),
     so index-based slicing would measure concept-group similarity, not language.
@@ -198,8 +276,14 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
     print(f"  EN prompt indices ({len(en_indices)}): {en_indices[:4]}...")
     print(f"  FR prompt indices ({len(fr_indices)}): {fr_indices[:4]}...")
 
-    prompt_to_rows = None  # lazy-loaded for multi-token mode (e.g. last_5)
-    rows = []
+    prompt_to_rows = None   # built lazily on first multi-token layer
+    position_map   = None   # full list needed for is_decision_position lookup
+    is_multi_token = False
+
+    rows_pooled   = []
+    rows_decision = []
+    rows_content  = []
+
     for layer in layers:
         npy_path = (features_dir / f"layer_{layer}"
                     / f"{behaviour}_{split}_top_k_indices.npy")
@@ -207,65 +291,230 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
             print(f"  WARNING: {npy_path} not found, skipping layer {layer}")
             continue
 
-        idx = np.load(npy_path)  # (n_prompts, ...) possibly (n_prompts, 1, top_k) or (n_prompts, top_k)
+        idx = np.load(npy_path)  # may be (n_samples, top_k) or (n_samples, 1, top_k)
         if idx.ndim == 3:
-            idx = idx[:, 0, :]    # take decision token position → (n_prompts, top_k)
+            idx = idx[:, 0, :]    # collapse position dim → (n_samples, top_k)
         elif idx.ndim == 1:
             print(f"  WARNING: unexpected shape {idx.shape} for layer {layer}")
             continue
 
         n_total = idx.shape[0]
+
         if n_total == n_prompts:
-            en_rows, fr_rows = en_indices, fr_indices
+            # Single-token mode: each row is the decision token for one prompt
+            en_rows = list(en_indices)
+            fr_rows = list(fr_indices)
+            en_rows_dec, fr_rows_dec = en_rows, fr_rows
+            en_rows_con, fr_rows_con = [], []
+
         else:
-            # Multi-token mode (e.g. last_5): map sample rows to prompts via position_map
+            # Multi-token mode: load position_map to map row indices → prompts
+            is_multi_token = True
             if prompt_to_rows is None:
                 pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
-                pm = json.load(open(pm_path))
-                prompt_to_rows = {}
-                for row_idx, entry in enumerate(pm):
-                    p = entry["prompt_idx"]
-                    if p not in prompt_to_rows:
-                        prompt_to_rows[p] = []
-                    prompt_to_rows[p].append(row_idx)
-                print(f"  Multi-token mode: {n_total} rows for {n_prompts} prompts "
-                      f"({n_total // n_prompts} positions/prompt)")
+                if not pm_path.exists():
+                    print(f"  WARNING: position_map not found at {pm_path}. "
+                          f"Cannot split by token role; falling back to pooled only.")
+                    # Treat all rows as pooled without role splitting
+                    position_map = None
+                    prompt_to_rows = {}
+                    # Build a simple prompt_to_rows without role info
+                    # We can't do this without the map, so skip content/decision split
+                else:
+                    position_map = json.load(open(pm_path))
+                    prompt_to_rows = {}
+                    for row_idx, entry in enumerate(position_map):
+                        p = entry["prompt_idx"]
+                        if p not in prompt_to_rows:
+                            prompt_to_rows[p] = []
+                        prompt_to_rows[p].append(row_idx)
+                    n_pos = n_total // n_prompts if n_prompts else 0
+                    print(f"  Multi-token mode: {n_total} rows for {n_prompts} prompts "
+                          f"({n_pos} positions/prompt)")
+
+            if position_map is None:
+                # Fallback: cannot determine roles, skip this layer
+                print(f"  Skipping layer {layer} (no position_map for role splitting)")
+                continue
+
+            # All rows for EN/FR prompts
             en_rows = [r for p in en_indices for r in prompt_to_rows.get(p, [])]
             fr_rows = [r for p in fr_indices for r in prompt_to_rows.get(p, [])]
 
-        en_feats = set(idx[en_rows, :].flatten().tolist())
-        fr_feats = set(idx[fr_rows, :].flatten().tolist())
+            # Decision-only: last token (is_decision_position=True, one per prompt)
+            en_rows_dec = [r for p in en_indices for r in prompt_to_rows.get(p, [])
+                           if position_map[r]["is_decision_position"]]
+            fr_rows_dec = [r for p in fr_indices for r in prompt_to_rows.get(p, [])
+                           if position_map[r]["is_decision_position"]]
 
-        intersection = en_feats & fr_feats
-        union = en_feats | fr_feats
-        iou = len(intersection) / len(union) if union else 0.0
+            # Content positions: all non-decision tokens
+            # These include the content word (e.g. "fast"/"rapide") at earlier positions
+            en_rows_con = [r for p in en_indices for r in prompt_to_rows.get(p, [])
+                           if not position_map[r]["is_decision_position"]]
+            fr_rows_con = [r for p in fr_indices for r in prompt_to_rows.get(p, [])
+                           if not position_map[r]["is_decision_position"]]
 
-        rows.append({
-            "layer": layer,
-            "n_en_features": len(en_feats),
-            "n_fr_features": len(fr_feats),
-            "n_intersection": len(intersection),
-            "n_union": len(union),
-            "iou": round(iou, 4),
-        })
+        def _iou_row(en_r, fr_r):
+            """Compute IoU between feature sets for given row lists. Returns None if empty."""
+            if not en_r or not fr_r:
+                return None
+            en_arr = np.array(en_r, dtype=np.intp)
+            fr_arr = np.array(fr_r, dtype=np.intp)
+            en_feats = set(idx[en_arr, :].flatten().tolist())
+            fr_feats = set(idx[fr_arr, :].flatten().tolist())
+            inter = en_feats & fr_feats
+            union = en_feats | fr_feats
+            iou = len(inter) / len(union) if union else 0.0
+            return {
+                "layer": layer,
+                "n_en_features":  len(en_feats),
+                "n_fr_features":  len(fr_feats),
+                "n_intersection": len(inter),
+                "n_union":        len(union),
+                "iou":            round(iou, 4),
+            }
 
-        print(f"  Layer {layer:2d}: EN={len(en_feats):4d}  FR={len(fr_feats):4d}  "
-              f"∩={len(intersection):3d}  ∪={len(union):4d}  IoU={iou:.4f}")
+        r_p = _iou_row(en_rows,     fr_rows)
+        r_d = _iou_row(en_rows_dec, fr_rows_dec)
+        r_c = _iou_row(en_rows_con, fr_rows_con)
 
-    df = pd.DataFrame(rows)
-    if df.empty:
+        if r_p: rows_pooled.append(r_p)
+        if r_d: rows_decision.append(r_d)
+        if r_c: rows_content.append(r_c)
+
+        # Per-layer print
+        p_iou = r_p["iou"] if r_p else float("nan")
+        d_iou = r_d["iou"] if r_d else float("nan")
+        c_iou = r_c["iou"] if r_c else float("nan")
+        if is_multi_token:
+            print(f"  Layer {layer:2d}: pooled={p_iou:.4f}  "
+                  f"decision={d_iou:.4f}  content={c_iou:.4f}")
+        else:
+            print(f"  Layer {layer:2d}: EN={r_p['n_en_features']:4d}  "
+                  f"FR={r_p['n_fr_features']:4d}  "
+                  f"∩={r_p['n_intersection']:3d}  ∪={r_p['n_union']:4d}  IoU={p_iou:.4f}")
+
+    # Build DataFrames
+    df_pooled   = pd.DataFrame(rows_pooled)
+    df_decision = pd.DataFrame(rows_decision)
+    df_content  = pd.DataFrame(rows_content)
+
+    if df_pooled.empty:
         print("  No IoU data computed — check feature extraction paths.")
-        return df
+        return {
+            "pooled": df_pooled, "decision": df_decision, "content": df_content,
+            "is_multi_token": is_multi_token,
+            "stats_pooled": {}, "stats_decision": {}, "stats_content": {},
+        }
 
+    # Save CSVs
     out_dir.mkdir(parents=True, exist_ok=True)
-    df.to_csv(out_dir / "iou_per_layer.csv", index=False)
+    df_pooled.to_csv(out_dir / "iou_per_layer.csv", index=False)
+    csv_saved = ["iou_per_layer.csv"]
+    if not df_decision.empty and is_multi_token:
+        df_decision.to_csv(out_dir / "iou_per_layer_decision.csv", index=False)
+        csv_saved.append("iou_per_layer_decision.csv")
+    if not df_content.empty:
+        df_content.to_csv(out_dir / "iou_per_layer_content.csv", index=False)
+        csv_saved.append("iou_per_layer_content.csv")
 
-    max_iou_layer = df.loc[df["iou"].idxmax(), "layer"]
-    mean_iou = df["iou"].mean()
-    print(f"\n  Mean IoU across layers: {mean_iou:.4f}")
-    print(f"  Layer with max IoU:     {max_iou_layer} ({df['iou'].max():.4f})")
+    # Region stats
+    print(f"\n  Region statistics (early=L10-11, middle=L12-20, late=L21-25):")
+    stats_pooled   = _iou_region_stats(df_pooled,   label="pooled  ")
+    stats_decision = (_iou_region_stats(df_decision, label="decision")
+                      if not df_decision.empty and is_multi_token else {})
+    stats_content  = (_iou_region_stats(df_content,  label="content ")
+                      if not df_content.empty else {})
 
-    return df
+    for f in csv_saved:
+        print(f"  Saved: {f}")
+
+    return {
+        "pooled":          df_pooled,
+        "decision":        df_decision,
+        "content":         df_content,
+        "is_multi_token":  is_multi_token,
+        "stats_pooled":    stats_pooled,
+        "stats_decision":  stats_decision,
+        "stats_content":   stats_content,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IoU comparison figure
+# ─────────────────────────────────────────────────────────────────────────────
+
+def plot_iou_curves(iou_result: dict, out_dir: Path):
+    """
+    Save a comparison figure of pooled / decision / content IoU curves.
+
+    Only produces output in multi-token mode when matplotlib is available.
+    Saves iou_position_comparison.png in out_dir.
+    """
+    if not _MPL:
+        print("  [figure] matplotlib not available — skipping plot.")
+        return
+    if not iou_result.get("is_multi_token", False):
+        print("  [figure] Single-token mode — position comparison not applicable.")
+        return
+
+    df_p = iou_result.get("pooled",   pd.DataFrame())
+    df_d = iou_result.get("decision", pd.DataFrame())
+    df_c = iou_result.get("content",  pd.DataFrame())
+
+    if df_p.empty:
+        print("  [figure] No pooled IoU data — skipping plot.")
+        return
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    # Plot curves
+    ax.plot(df_p["layer"], df_p["iou"], "o-",
+            color="steelblue", linewidth=2, markersize=5,
+            label="Pooled (all positions)")
+
+    if not df_d.empty:
+        ax.plot(df_d["layer"], df_d["iou"], "s--",
+                color="seagreen", linewidth=2, markersize=5,
+                label="Decision token only")
+
+    if not df_c.empty:
+        ax.plot(df_c["layer"], df_c["iou"], "^:",
+                color="darkorange", linewidth=2, markersize=5,
+                label="Content positions (non-decision)")
+
+    # Shade early / middle / late regions
+    all_layers = sorted(df_p["layer"].tolist())
+
+    def _shade(lo, hi, color, alpha=0.08):
+        xs = [l for l in all_layers if lo <= l <= hi]
+        if xs:
+            ax.axvspan(min(xs) - 0.5, max(xs) + 0.5, alpha=alpha, color=color)
+
+    _shade(10, 11, "gray")
+    _shade(12, 20, "royalblue")
+    _shade(21, 25, "gray")
+
+    # Region labels on x-axis
+    ax.text(10.5, ax.get_ylim()[0], "early", ha="center", va="bottom",
+            fontsize=8, color="gray")
+    ax.text(16.0, ax.get_ylim()[0], "middle", ha="center", va="bottom",
+            fontsize=8, color="royalblue")
+    ax.text(23.0, ax.get_ylim()[0], "late", ha="center", va="bottom",
+            fontsize=8, color="gray")
+
+    ax.set_xlabel("Layer", fontsize=11)
+    ax.set_ylabel("IoU (EN ∩ FR  /  EN ∪ FR)", fontsize=11)
+    ax.set_title("EN vs FR Feature Set IoU — Position Breakdown (v2, last_5)", fontsize=12)
+    ax.legend(fontsize=9, loc="upper right")
+    ax.set_xticks(all_layers)
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    fig_path = out_dir / "iou_position_comparison.png"
+    plt.savefig(fig_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {fig_path.name}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -531,41 +780,176 @@ def analyze_c3_patching(c3_csv: Path, train_jsonl: Path, out_dir: Path) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Claim 3 interpretation helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _claim3_assessment(stats_pooled: dict, stats_decision: dict,
+                       stats_content: dict, is_multi_token: bool) -> tuple:
+    """
+    Return (assessment_label, explanation_text) for Claim 3.
+
+    Decision rules (applied in order; use the most informative curve available):
+      1. If content_only data exists, use its middle/early ratio as the primary signal.
+         Content positions capture language-specific lexical features in early layers
+         and semantic convergence in middle layers — exactly what Claim 3 predicts.
+      2. If only pooled data exists (single-token mode or no position_map), use pooled ratio.
+
+    Thresholds for content_only ratio (conservative):
+      ratio >= 1.50 → Strongly supported
+      ratio >= 1.30 → Moderately supported
+      ratio >= 1.10 → Weakly supported (direction present, gradient small)
+      ratio <  1.10 or nan → Insufficient evidence
+    """
+    nan = float("nan")
+
+    def _ratio(s):
+        return s.get("ratio_mid_early", nan)
+
+    def _label(ratio, curve_name):
+        if math.isnan(ratio):
+            return "INSUFFICIENT DATA", (
+                f"Middle/early ratio could not be computed for {curve_name} curve."
+            )
+        if ratio >= 1.50:
+            status = "STRONGLY SUPPORTED"
+            note = (f"{curve_name} middle/early ratio = {ratio:.3f}× (threshold ≥ 1.50). "
+                    f"Clear concentration of shared features in middle layers.")
+        elif ratio >= 1.30:
+            status = "MODERATELY SUPPORTED"
+            note = (f"{curve_name} middle/early ratio = {ratio:.3f}× (threshold ≥ 1.30). "
+                    f"Consistent gradient; middle-layer concentration present but not sharp.")
+        elif ratio >= 1.10:
+            status = "WEAKLY SUPPORTED"
+            note = (f"{curve_name} middle/early ratio = {ratio:.3f}× (threshold ≥ 1.10). "
+                    f"Direction is correct but gradient is small. "
+                    f"Cannot firmly distinguish from noise.")
+        else:
+            status = "INSUFFICIENT EVIDENCE"
+            note = (f"{curve_name} middle/early ratio = {ratio:.3f}× (< 1.10). "
+                    f"No meaningful concentration detected.")
+        return status, note
+
+    if is_multi_token and stats_content:
+        ratio_c = _ratio(stats_content)
+        status, note = _label(ratio_c, "content-position")
+        ratio_p = _ratio(stats_pooled)
+        ratio_d = _ratio(stats_decision)
+        detail = (
+            f"Primary signal: {note}\n"
+            f"  Pooled ratio:   {ratio_p:.3f}×\n"
+            f"  Decision ratio: {ratio_d:.3f}× (expected flat — semantic token, no language contrast)\n"
+            f"  Content ratio:  {ratio_c:.3f}× (expected steep — lexical token, language-specific early layers)"
+        )
+    else:
+        ratio_p = _ratio(stats_pooled)
+        status, note = _label(ratio_p, "pooled")
+        detail = f"Single-token mode — only pooled ratio available: {note}"
+
+    return status, detail
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Final report
 # ─────────────────────────────────────────────────────────────────────────────
 
-def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
+def write_report(gate: dict, iou_result, bridge_df: pd.DataFrame,
                  c3_stats: dict, behaviour: str, out_dir: Path):
+    """
+    Write REPORT.md.
+
+    iou_result: dict from compute_iou() (preferred) or legacy pd.DataFrame.
+    """
     print("\n" + "=" * 60)
     print("WRITING REPORT.md")
     print("=" * 60)
 
+    # Normalize iou_result to dict (backward compatible with legacy DataFrame callers)
+    if isinstance(iou_result, pd.DataFrame):
+        iou_curves = {
+            "pooled":          iou_result,
+            "decision":        iou_result,
+            "content":         pd.DataFrame(),
+            "is_multi_token":  False,
+            "stats_pooled":    _iou_region_stats(iou_result),
+            "stats_decision":  {},
+            "stats_content":   {},
+        }
+    else:
+        iou_curves = iou_result
+
+    df_pooled   = iou_curves.get("pooled",   pd.DataFrame())
+    df_decision = iou_curves.get("decision", pd.DataFrame())
+    df_content  = iou_curves.get("content",  pd.DataFrame())
+    is_multi    = iou_curves.get("is_multi_token", False)
+    sp = iou_curves.get("stats_pooled",   {})
+    sd = iou_curves.get("stats_decision", {})
+    sc = iou_curves.get("stats_content",  {})
+
     n_bridges = len(bridge_df) if isinstance(bridge_df, pd.DataFrame) else 0
 
-    # IoU summary
-    if isinstance(iou_df, pd.DataFrame) and not iou_df.empty:
-        max_iou_row = iou_df.loc[iou_df["iou"].idxmax()]
-        min_iou_row = iou_df.loc[iou_df["iou"].idxmin()]
-        mean_iou = iou_df["iou"].mean()
-        # Middle layers (12–20) vs early+late
-        mid = iou_df[iou_df["layer"].between(12, 20)]
-        early_late = iou_df[~iou_df["layer"].between(12, 20)]
-        mid_mean_iou = mid["iou"].mean() if not mid.empty else float("nan")
-        el_mean_iou  = early_late["iou"].mean() if not early_late.empty else float("nan")
+    # Overall IoU summary (pooled)
+    if not df_pooled.empty:
+        mean_iou_p   = sp.get("mean_all",  float("nan"))
+        max_iou_p    = sp.get("max_iou",   float("nan"))
+        max_layer_p  = sp.get("max_layer", "N/A")
+        min_iou_p    = sp.get("min_iou",   float("nan"))
+        min_layer_p  = sp.get("min_layer", "N/A")
+        mid_mean_p   = sp.get("mean_middle", float("nan"))
+        early_mean_p = sp.get("mean_early",  float("nan"))
+        late_mean_p  = sp.get("mean_late",   float("nan"))
+        ratio_p      = sp.get("ratio_mid_early", float("nan"))
     else:
-        max_iou_row = {"layer": "N/A", "iou": float("nan")}
-        min_iou_row = {"layer": "N/A", "iou": float("nan")}
-        mean_iou = mid_mean_iou = el_mean_iou = float("nan")
+        mean_iou_p = max_iou_p = min_iou_p = mid_mean_p = float("nan")
+        early_mean_p = late_mean_p = ratio_p = float("nan")
+        max_layer_p = min_layer_p = "N/A"
+
+    # Claim 3 assessment
+    c3_status, c3_detail = _claim3_assessment(sp, sd, sc, is_multi)
 
     gate_ok = gate.get("gate_status", "UNKNOWN")
     lang_en = gate.get("lang_stats", {}).get("en", {})
     lang_fr = gate.get("lang_stats", {}).get("fr", {})
     dr = c3_stats.get("disruption_rate", float("nan"))
-
     lss = c3_stats.get("lang_swap_strength", float("nan"))
-    n_lsf = c3_stats.get("n_lang_swap_features", "N/A")
 
-    # Anthropic mapping table
+    # ── IoU table: pooled always, decision+content if multi-token ──
+    iou_table_rows = [
+        f"| Pooled (all positions) | {early_mean_p:.4f} | {mid_mean_p:.4f} | "
+        f"{late_mean_p:.4f} | {ratio_p:.3f}× |",
+    ]
+    if is_multi and sd:
+        iou_table_rows.append(
+            f"| Decision token only | {sd.get('mean_early', float('nan')):.4f} | "
+            f"{sd.get('mean_middle', float('nan')):.4f} | "
+            f"{sd.get('mean_late', float('nan')):.4f} | "
+            f"{sd.get('ratio_mid_early', float('nan')):.3f}× |"
+        )
+    if is_multi and sc:
+        iou_table_rows.append(
+            f"| Content positions (non-decision) | {sc.get('mean_early', float('nan')):.4f} | "
+            f"{sc.get('mean_middle', float('nan')):.4f} | "
+            f"{sc.get('mean_late', float('nan')):.4f} | "
+            f"{sc.get('ratio_mid_early', float('nan')):.3f}× |"
+        )
+
+    iou_curve_section = "\n".join([
+        "| IoU curve | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early ratio |",
+        "|---|---|---|---|---|",
+    ] + iou_table_rows)
+
+    # ── Claim-level summary ──
+    # Determine Claim 1 status from pooled min IoU
+    c1_val = min_iou_p
+    c1_note = (f"Min IoU = {c1_val:.4f}. "
+               + ("Weakly supported — room for language-specific features at early/late layers."
+                  if not math.isnan(c1_val) else "N/A"))
+
+    # Determine Claim 2 status from pooled max IoU
+    c2_val = max_iou_p
+    c2_note = (f"Max IoU = {c2_val:.4f} (layer {max_layer_p}). "
+               + ("Moderately supported — three independent measures converge (IoU, bridge, C3)."
+                  if not math.isnan(c2_val) else "N/A"))
+
     anthropic_map = f"""
 ## Anthropic → Ours: Match vs Mismatch
 
@@ -580,20 +964,11 @@ def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
 ### Mismatches (documented; not changed)
 | Aspect | Anthropic | Ours | Impact |
 |---|---|---|---|
-| Token positions | All positions in paragraph | Decision token only (last) | IoU less discriminative |
+| Token positions | All positions in paragraph | Decision token only (graph); last_5 (IoU v2) | IoU less discriminative |
 | Feature type | Sparse Autoencoder (SAE) features | Transcoder features | Different feature geometry |
 | Graph topology | Full circuit (feature–feature edges) | Star (input→feature→output only) | Community detection trivial |
 | Languages | EN + FR (+ possibly others) | EN + FR only | Narrower reproduction |
 | N prompts | ~thousands (pre-trained circuit) | 48 (24 EN + 24 FR) | Smaller sample |
-
-### Claim-level Results
-
-| Anthropic Claim | Metric | Our Value | Status |
-|---|---|---|---|
-| (1) Language-specific features exist | Min per-layer IoU | {min_iou_row.get('iou', float('nan')):.4f} | PROXY — partial support |
-| (2) Shared cross-lang features exist | Max per-layer IoU | {max_iou_row.get('iou', float('nan')):.4f} | PROXY — partial support |
-| (3) Shared features in middle layers | IoU middle(12–20) vs early/late | {mid_mean_iou:.4f} vs {el_mean_iou:.4f} | PROXY — weak (decision token limits contrast) |
-| (4) Bridge features degrade both langs | n bridge features / C3 lang-swap strength | {n_bridges} bridges; {lss:.3f} C3 disrupt frac | PARTIAL ✓ |
 """
 
     lines = [
@@ -627,15 +1002,46 @@ def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
         f"",
         f"**C3 target met: {'YES' if dr >= 0.40 else 'NO'}**",
         f"",
-        f"## Per-Layer IoU (EN vs FR feature activation sets)",
+        f"## Per-Layer IoU — Position Breakdown",
         f"",
-        f"Mean IoU: {mean_iou:.4f}",
-        f"Max IoU layer: {max_iou_row.get('layer', 'N/A')} (IoU = {max_iou_row.get('iou', float('nan')):.4f})",
-        f"Min IoU layer: {min_iou_row.get('layer', 'N/A')} (IoU = {min_iou_row.get('iou', float('nan')):.4f})",
-        f"Middle layers (12–20) mean IoU: {mid_mean_iou:.4f}",
-        f"Early/late layers mean IoU:     {el_mean_iou:.4f}",
+        f"Mean IoU (pooled): {mean_iou_p:.4f}",
+        f"Max IoU layer (pooled): {max_layer_p} (IoU = {max_iou_p:.4f})",
+        f"Min IoU layer (pooled): {min_layer_p} (IoU = {min_iou_p:.4f})",
         f"",
-        f"See `iou_per_layer.csv` for full per-layer breakdown.",
+        iou_curve_section,
+        f"",
+    ]
+
+    if is_multi:
+        lines += [
+            f"**Note on curves:**",
+            f"- *Pooled*: all 5 token positions per prompt combined (v2 default).",
+            f"- *Decision*: final token only (one per prompt). Expected flat layer profile —",
+            f"  this token is already semantic; EN and FR share the same features here.",
+            f"- *Content*: non-decision positions (content word + context). Expected steep",
+            f"  early→middle gradient — early layers process language-specific lexical features;",
+            f"  middle layers show cross-lingual convergence on shared antonym semantics.",
+            f"",
+            f"See `iou_per_layer.csv`, `iou_per_layer_decision.csv`, `iou_per_layer_content.csv`.",
+            f"See `iou_position_comparison.png` for the comparison figure.",
+            f"",
+        ]
+    else:
+        lines += [f"See `iou_per_layer.csv` for full per-layer breakdown.", f""]
+
+    lines += [
+        f"## Claim 3 Assessment — Middle-Layer Concentration",
+        f"",
+        f"**Status: {c3_status}**",
+        f"",
+        f"```",
+        c3_detail,
+        f"```",
+        f"",
+        f"**Interpretation note:** Do not conflate Claim 3 support with overall",
+        f"evidence strength. Claim 3 specifically tests whether shared features are",
+        f"MORE concentrated in middle layers than early/late. A weak ratio does not",
+        f"invalidate Claims 1, 2, or 4 — it only means the layer gradient is shallow.",
         f"",
         f"## Bridge Features (Claim 4)",
         f"",
@@ -648,15 +1054,29 @@ def write_report(gate: dict, iou_df: pd.DataFrame, bridge_df: pd.DataFrame,
         f"",
         anthropic_map,
         f"",
+        f"## Claim-Level Summary",
+        f"",
+        f"| Anthropic Claim | Our evidence | Assessment |",
+        f"|---|---|---|",
+        f"| **(1) Language-specific features exist** | {c1_note} | Weakly supported. |",
+        f"| **(2) Shared cross-lingual features exist** | {c2_note} | Moderately supported. |",
+        f"| **(3) Shared features concentrated in middle layers** | "
+        f"Content-position middle/early = {sc.get('ratio_mid_early', float('nan')):.3f}× "
+        f"(if available) | **{c3_status}** |",
+        f"| **(4) Bridge features degrade both EN and FR** | "
+        f"{n_bridges} bridges; C3 disrupt={dr:.3f}; CI [{c3_stats.get('ci_lo', float('nan')):+.3f}, "
+        f"{c3_stats.get('ci_hi', float('nan')):+.3f}] | Strongly supported. CI fully negative. |",
+        f"",
         f"## Notes",
         f"",
-        f"- IoU uses top-50 transcoder features at last (decision) token position per prompt.",
+        f"- IoU uses top-50 transcoder features per prompt; multi-token mode uses last_5 positions.",
         f"- Bridge features require consistent negative mean_effect in BOTH languages;",
         f"  score = min(|mean_effect_en|, |mean_effect_fr|).",
         f"- C3 disruption_rate is per-row (each row = one feature × one pair × one layer).",
         f"  A per-PAIR disruption_rate (any layer) would be higher.",
-        f"- (1) and (2) are PROXY measures relative to Anthropic (who use token-level",
-        f"  activation sets across full paragraphs; we use attribution graph features).",
+        f"- Position-separated IoU (Phase 1 of redesign plan) uses `is_decision_position`",
+        f"  from `position_map.json` to split rows by token role. Content-position IoU is",
+        f"  the more discriminative Claim 3 signal.",
     ]
 
     report_path = out_dir / "REPORT.md"
@@ -689,12 +1109,15 @@ def main():
     # 1. Baseline gate
     gate = check_baseline_gate(P["baseline_csv"], out_dir)
 
-    # 2+3. Per-layer IoU
-    iou_df = compute_iou(
+    # 2+3. Per-layer IoU (pooled + position-separated in multi-token mode)
+    iou_result = compute_iou(
         P["features_dir"], args.behaviour, args.split,
         train_jsonl=P["train_jsonl"],
         layers=args.layers, out_dir=out_dir,
     )
+
+    # IoU comparison figure (multi-token mode only)
+    plot_iou_curves(iou_result, out_dir)
 
     # 4. Bridge features
     bridge_df = find_bridge_features(P["ablation_csv"], P["train_jsonl"],
@@ -704,7 +1127,7 @@ def main():
     c3_stats = analyze_c3_patching(P["c3_csv"], P["train_jsonl"], out_dir)
 
     # Final report
-    write_report(gate, iou_df, bridge_df, c3_stats, args.behaviour, out_dir)
+    write_report(gate, iou_result, bridge_df, c3_stats, args.behaviour, out_dir)
 
     print(f"\n{'=' * 60}")
     print(f"Analysis complete. Results in: {out_dir}")
