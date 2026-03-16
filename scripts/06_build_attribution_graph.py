@@ -684,6 +684,7 @@ class TranscoderAttributionBuilder:
         min_prompts: Optional[int] = None,
         max_frequency: float = 0.90,
         seed: int = 0,
+        vw_threshold: Optional[float] = None,
     ) -> nx.DiGraph:
         """
         Build attribution graph from UNION of per-prompt top-k features.
@@ -742,6 +743,7 @@ class TranscoderAttributionBuilder:
         added = 0
         skipped_rare = 0
         skipped_always_on = 0
+        included_features: set = set()
         for (layer, feat), scores in feature_scores.items():
             n_seen = len(scores)
             freq = n_seen / N
@@ -801,7 +803,8 @@ class TranscoderAttributionBuilder:
             G.add_edge(feat_id, "output_incorrect", weight=-w)
             
             added += 1
-        
+            included_features.add((layer, feat))
+
         logger.info(
             f"Per-prompt union graph: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}, "
             f"features={added}, total_candidates={len(feature_scores)}, "
@@ -820,7 +823,47 @@ class TranscoderAttributionBuilder:
             "max_frequency": float(max_frequency),
             "seed": int(seed),
         }
-        
+
+        # Phase 2: Add virtual-weight inter-feature edges
+        # Virtual weight W_vw[tgt, src] = W_enc_tgt[tgt, :] · W_dec_src[src, :]
+        # approximates the linear influence of source feature src (at src_layer)
+        # on target feature tgt (at tgt_layer) through the residual stream.
+        # Only adjacent layer pairs are connected (nearest-layer DAG).
+        if vw_threshold is not None:
+            graph_layers = sorted(set(layer for (layer, _) in included_features))
+            n_vw = 0
+            for i in range(len(graph_layers) - 1):
+                src_layer = graph_layers[i]
+                tgt_layer = graph_layers[i + 1]
+                src_feats = sorted(f for (l, f) in included_features if l == src_layer)
+                tgt_feats = sorted(f for (l, f) in included_features if l == tgt_layer)
+                if not src_feats or not tgt_feats:
+                    continue
+                source_tc = self.transcoder_set[src_layer]
+                target_tc = self.transcoder_set[tgt_layer]
+                with torch.no_grad():
+                    # Submatrix only — never materialise the full (d_tc × d_tc) product
+                    W_dec_src = source_tc.W_dec[src_feats, :].float()   # (n_src, d_model)
+                    W_enc_tgt = target_tc.W_enc[tgt_feats, :].float()   # (n_tgt, d_model)
+                    vw_sub = (W_enc_tgt @ W_dec_src.T).cpu()            # (n_tgt, n_src)
+                for ti, tgt_feat in enumerate(tgt_feats):
+                    for si, src_feat in enumerate(src_feats):
+                        w = float(vw_sub[ti, si])
+                        if abs(w) >= vw_threshold:
+                            G.add_edge(
+                                f"L{src_layer}_F{src_feat}",
+                                f"L{tgt_layer}_F{tgt_feat}",
+                                weight=w,
+                                edge_type="virtual_weight",
+                            )
+                            n_vw += 1
+            G.graph["union_params"]["vw_threshold"] = float(vw_threshold)
+            G.graph["union_params"]["n_vw_edges"] = int(n_vw)
+            logger.info(
+                f"Virtual-weight edges: {n_vw} added "
+                f"(threshold={vw_threshold}, layers={graph_layers})"
+            )
+
         return G
 
     def compute_virtual_weights(
@@ -934,6 +977,16 @@ def main():
         nargs="+",
         default=None,
         help="Specific layers to analyze",
+    )
+    parser.add_argument(
+        "--vw_threshold",
+        type=float,
+        default=None,
+        help=(
+            "If set, add virtual-weight edges between feature nodes at adjacent layers. "
+            "Only edges with |weight| >= vw_threshold are kept. "
+            "Use 0.0 to add all edges; None (default) disables virtual weights (star topology)."
+        ),
     )
     args = parser.parse_args()
 
@@ -1165,6 +1218,7 @@ def main():
             k_per_prompt=k_per_prompt,
             min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
             max_frequency=max_frequency,
+            vw_threshold=args.vw_threshold,
         )
 
         # Save graph
@@ -1210,6 +1264,8 @@ def main():
             },
             "activation_observation": "topk_truncated",
             "topk_per_token": int(topk_size),
+            "vw_threshold": args.vw_threshold,
+            "n_vw_edges": int(G.graph.get("union_params", {}).get("n_vw_edges", 0)),
         }
         save_graph(G, output_path, name, metadata)  # Use variable name with _nN suffix
 

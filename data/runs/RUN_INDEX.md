@@ -43,11 +43,17 @@ the time the analysis script was run.
 | FR sign_accuracy | 0.667 (16/24) | ≥ 0.65 | PASS |
 | mean_norm_logprob_diff | 3.511 | ≥ 1.00 | PASS |
 | IoU mean (all layers) | 0.423 | — | — |
-| IoU middle (12–20) | 0.431 | > early/late | WEAK ✓ |
-| IoU early/late | 0.412 | — | — |
+| IoU early (10–11) | 0.390 | — | — |
+| IoU middle (12–20) | 0.439 | — | — |
+| IoU late (21–25) | 0.422 | — | — |
+| **Middle/early ratio** | **1.125×** | > 1 | WEAK ✓ |
 | Bridge features | 32/53 (60.4%) | — | — |
 | C3 disruption_rate | 0.588 | ≥ 0.40 | PASS |
 | C3 mean_effect_size | −0.166 ± 0.019 | CI fully negative | ✓ |
+
+**Note (2026-03-15):** Middle/early ratio was previously recorded as 1.047× using a
+non-standard formula (mid / mean(early∪late)). Corrected to 1.125× (mid/early).
+See `COMPARISON_v1_v2.md` for details.
 
 ### Fixes active in this run
 1. FR concept 2 vocabulary: `vite` → `rapide` (adj/adj match)
@@ -76,25 +82,75 @@ Improve Claim 3. Decision-token IoU (v1) loses the layer-wise language-specifici
 `compute_iou()` in `scripts/a_analyze_multilingual_circuits.py` updated (backward-compatible): detects multi-token mode via `idx.shape[0] != n_prompts`, loads `position_map.json` once to map sample rows → prompt_idx, groups EN/FR samples correctly.
 
 ### Key metrics
-| Metric | Value | vs v1 |
+| Metric | Value | vs v1 (corrected) |
 |---|---|---|
 | EN sign_accuracy | 1.000 | same |
 | FR sign_accuracy | 0.667 | same |
 | IoU mean (all layers) | 0.319 | 0.423 (lower absolute, expected) |
-| IoU early (10–11) | 0.267 | 0.390 |
-| IoU middle (12–20) | 0.343 | 0.431 |
-| IoU late (21–25) | 0.297 | 0.421 |
-| **Middle/early ratio** | **1.283×** | 1.047× |
-| IoU max | L20 = 0.379 | L16 = 0.493 |
-| IoU min | L25 = 0.248 | L25 = 0.360 |
+| IoU early (10–11) — pooled | 0.267 | 0.390 |
+| IoU middle (12–20) — pooled | 0.343 | 0.439 |
+| IoU late (21–25) — pooled | 0.297 | 0.422 |
+| **Middle/early ratio — pooled** | **1.283×** | **1.125×** (corrected from 1.047×) |
+| IoU early — decision-only | 0.390 | 0.390 (matches v1 ✓) |
+| IoU middle — decision-only | 0.431 | 0.439 |
+| Middle/early — decision-only | 1.106× | 1.125× (validates v1) |
+| Middle/early — content-only | 1.257× | — |
+| IoU max | L20 = 0.379 (pooled) | L16 = 0.493 |
+| IoU min | L25 = 0.248 (pooled) | L25 = 0.360 |
 | Bridge features | 32/53 (60.4%) | same |
 | C3 disruption_rate | 0.588 | same |
 | C3 mean_effect_size | −0.166 ± 0.019 | same |
 
-### Claim 3 upgrade
-- v1: 1.047× (direction only, weak)
-- v2: **1.283×, middle > late > early** — moderately supported
+### Claim 3 assessment (Phase 1, 2026-03-15)
+- v1 (corrected): **1.125×** (decision-only; previously 1.047× due to formula error)
+- v2 decision-only: **1.106×** (matches v1 — same measurement, validates consistency)
+- v2 content-only: **1.257×** (content positions diluted by structural tokens)
+- v2 pooled: **1.283×** (best available signal; borderline moderate/weak)
+- All three curves: middle > late > early — direction unambiguous, gradient shallow
+- **Status: borderline weak/moderate — direction confirmed, amplitude modest**
+
+### Phase 1 new outputs (in `data/analysis/multilingual_circuits/`)
+- `iou_per_layer_decision.csv` — decision-token IoU per layer
+- `iou_per_layer_content.csv` — content-position IoU per layer
+- `iou_position_comparison.png` — comparison figure
 
 See `COMPARISON_v1_v2.md` for full comparison.
+
+---
+
+## v3 — multilingual_circuits_v3_vw (PENDING CSD3)
+
+**Analysis date:** pending
+**SLURM job:** pending
+**SBATCH:** `jobs/multilingual_circuits_v3_vw_06.sbatch`
+**Change vs v2:** Step 06 uses `--vw_threshold 0.01` → adds virtual-weight inter-feature edges between adjacent layer pairs. All other steps identical to v2 (features from SLURM 25058380).
+
+### Purpose
+Replace star topology (95 nodes, 285 edges, no feature→feature connections) with a
+DAG where features can influence features at the next layer. Virtual weight
+`W_vw[tgt, src] = W_enc_tgt[tgt, :] · W_dec_src[src, :]` approximates the linear
+pathway from source feature src through the residual stream to target feature tgt.
+Directly addresses the "star graph" limitation identified in the Phase 2 plan.
+
+### Changes
+| Component | v2 | v3 |
+|---|---|---|
+| Feature extraction (step 04) | last_5, 240 samples | unchanged |
+| Graph (step 06) | star topology | DAG + VW edges (threshold 0.01) |
+| Interventions (step 07) | unchanged | unchanged (re-run after graph update) |
+| UI prep (step 09) | unchanged | re-run after step 06 |
+
+### Expected key metrics
+| Metric | v2 | v3 (expected) |
+|---|---|---|
+| Feature nodes | 95 | 95 (same features) |
+| Star edges (3 per feature) | 285 | 285 |
+| VW inter-feature edges | 0 | >> 285 (threshold-dependent) |
+| Total edges | 285 | >> 570 |
+| Graph diameter | 2 (star) | ≥ 3 (multi-hop paths exist) |
+| Louvain communities | 1–2 (flat) | ≥ 2 (layer-structured) |
+
+### Status: PENDING
+Run `jobs/multilingual_circuits_v3_vw_06.sbatch` on CSD3, then update this entry.
 
 ---

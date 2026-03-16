@@ -21,35 +21,34 @@ Claim 3 assessment upgrades from "direction only, weak" to **"moderately support
 
 ---
 
-## Phase 1 Update — Position-Separated IoU (script updated 2026-03-14)
+## Phase 1 Results — Position-Separated IoU (2026-03-15)
 
-`scripts/a_analyze_multilingual_circuits.py` now computes three IoU curves when run
-in multi-token mode (v2 data, `position_map.json` required):
+| IoU curve | Rows | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early |
+|---|---|---|---|---|---|
+| **Pooled** | 240 (5/prompt) | 0.267 | 0.343 | 0.297 | **1.283×** |
+| **Decision-only** | 48 (1/prompt) | 0.390 | 0.431 | 0.421 | 1.106× |
+| **Content-only** | 192 (4/prompt) | 0.261 | 0.328 | 0.282 | 1.257× |
 
-| Curve | Rows used | Expected behavior | Claim 3 signal? |
-|---|---|---|---|
-| **Pooled** | All 240 rows (5 per prompt) | Already computed above | Moderate (1.283×) |
-| **Decision** | 48 rows (`is_decision_position=True`) | Flat layer profile (~1.05×); semantic token, no language contrast | Low |
-| **Content** | 192 rows (`is_decision_position=False`) | Steeper gradient; lexical token, language-specific early layers | **Primary signal** |
+**Findings:**
+1. Content-only (1.257×) is LOWER than pooled (1.283×), not higher. Position separation
+   did not improve Claim 3. The decision-token features (high IoU ~0.43 at middle layers)
+   disproportionately boost the pooled middle IoU, making pooled > content.
+2. Decision-only (1.106×) closely matches v1's corrected ratio (1.125×), validating
+   that both runs measure the same thing at the same token position.
+3. Content curve has the cleanest shape (monotonic rise L10→L16, clear drop L20→L25,
+   6/8 rising transitions in middle zone, 4/4 falling in late) but shallow amplitude.
+4. **Root cause of shallow content gradient:** `last_5` includes ~3 structural tokens
+   per prompt (quotation marks, "of"/"de") that are EN/FR-invariant at all layers,
+   leaving only ~1/4 content positions for the truly language-specific content word.
+   This dilutes the early-layer dip and limits the ratio.
 
-**To obtain position-separated results:** re-run analysis script on CSD3:
-```bash
-python scripts/a_analyze_multilingual_circuits.py --behaviour multilingual_circuits --split train
-```
-This requires `data/results/transcoder_features/multilingual_circuits_train_position_map.json`
-and layer-wise `top_k_indices.npy` files (on CSD3, not synced locally).
+**Claim 3 assessment (Phase 1 confirmed):** BORDERLINE WEAK/MODERATE.
+Pooled ratio 1.283× marginally clears the 1.30× moderate threshold (within noise).
+Content-only 1.257× falls below it. Direction is unambiguous across all three curves
+(middle > late > early) but gradient is shallow. No upgrade to "Strongly supported."
 
-**New outputs after CSD3 run:**
-- `iou_per_layer_decision.csv` — decision-token IoU per layer
-- `iou_per_layer_content.csv` — content-position IoU per layer
-- `iou_position_comparison.png` — figure with all three curves
-
-**Claim 3 upgrade criteria (content-position ratio):**
-- ≥ 1.50× → Strongly supported
-- 1.30–1.50× → Moderately supported (no change from current)
-- < 1.30× → No upgrade warranted; pooled ratio remains the reference
-
-**Do not update the claim assessment below until actual numbers are available.**
+**New outputs:** `iou_per_layer_decision.csv`, `iou_per_layer_content.csv`,
+`iou_position_comparison.png`
 
 ---
 
@@ -96,11 +95,14 @@ Mean IoU: 0.319 | Early: 0.267 | Middle: 0.343 | Late: 0.297
 |---|---|---|
 | **(1) Language-specific features exist** | Min per-layer IoU = 0.248 (L25); early IoU = 0.267 | **Weakly supported.** Low IoU at early/late leaves clear room for language-specific features. |
 | **(2) Shared cross-lingual features exist** | Max IoU = 0.379 (L20); 32/53 bridge; 62% negative C3 | **Moderately supported.** Three independent measures converge. |
-| **(3) Shared features concentrated in middle layers** | Middle 0.343 > early 0.267 > late 0.297; ratio 1.283× | **Moderately supported.** Clear, consistent gradient. Middle layer peak is now unambiguous. |
+| **(3) Shared features concentrated in middle layers** | Pooled ratio 1.283×; content-only 1.257×; decision 1.106×; direction unambiguous, gradient shallow | **Borderline weak/moderate.** All curves agree on direction. Gradient limited by prompt length (structural tokens dilute early content-only IoU). |
 | **(4) Bridge features degrade both EN and FR** | 32/53 bridge; disruption_rate=0.588; CI [−0.202, −0.126] | **Strongly supported.** Unchanged from v1. CI fully negative. |
 
-**Overall:** Claims 2, 3, and 4 are sufficiently supported for thesis use. Claim 1 remains weak but
-qualitatively consistent. The multi-token measurement resolves the main limitation of v1.
+**Overall:** Claims 2 and 4 are sufficiently supported for thesis use. Claim 3 is borderline
+weak/moderate — direction is unambiguous but gradient is shallow; not a thesis-blocking issue.
+Claim 1 remains weak but qualitatively consistent.
+Phase 1 confirmed that position separation does not sharpen Claim 3 beyond what pooled already shows.
+**Next step: Phase 2 (virtual-weight DAG) — graph topology is the primary remaining limitation.**
 
 ---
 

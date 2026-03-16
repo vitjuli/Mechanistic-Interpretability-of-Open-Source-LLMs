@@ -71,15 +71,23 @@ The absolute IoU values are lower in v2 because the feature set for each languag
 
 ## IoU Summary (Early / Middle / Late)
 
-| Region | Layers | v1 | v2 | Change |
+| Region | Layers | v1 | v2 (pooled) | Change |
 |--------|--------|----|----|--------|
 | Early  | 10–11  | 0.390 | 0.267 | −0.123 |
-| Middle | 12–20  | 0.431 | 0.343 | −0.088 |
-| Late   | 21–25  | 0.421 | 0.297 | −0.124 |
-| **Middle / Early ratio** | — | **1.047×** | **1.283×** | +0.236 |
-| Middle > Late? | — | barely (0.010) | yes (0.046) | stronger |
+| Middle | 12–20  | 0.439 | 0.343 | −0.096 |
+| Late   | 21–25  | 0.422 | 0.297 | −0.125 |
+| **Middle / Early ratio** | — | **1.125×** | **1.283×** | +0.158 |
+| Middle > Late? | — | yes (0.017) | yes (0.046) | stronger |
 
-The v2 profile shows a clear gradient: early < late < middle. In v1, early ≈ late ≈ middle (flat profile). The 1.283× middle/early ratio in v2 is a meaningful effect that supports Claim 3.
+**Formula correction (2026-03-15):** The v1 ratio was previously recorded as 1.047×.
+That figure used a non-standard formula: middle / mean(early∪late layers), i.e.
+0.431 / 0.412 = 1.046×. The correct and consistent formula is middle / early:
+0.439 / 0.390 = **1.125×**. The v2 ratio 1.283× was always computed with the
+correct formula. The v1 middle mean also corrects from 0.431 to 0.439 (the prior
+figure used rounded per-region means rather than per-layer averages).
+
+The v2 pooled profile shows a clearer gradient (early < late < middle) than v1.
+Genuine improvement with consistent formula: 1.125× → 1.283× (+0.158×).
 
 ---
 
@@ -109,21 +117,40 @@ Identical — C3 uses the same graph features and intervention CSVs.
 
 ## Claim 3 Upgrade
 
-| | v1 | v2 |
-|---|---|---|
-| IoU ratio (middle/early) | 1.047× | **1.283×** |
-| Middle > late? | barely (0.431 vs 0.421) | clearly (0.343 vs 0.297) |
-| Assessment | Weakly supported (direction only) | **Moderately supported** |
-| Root cause (v1) | Decision-token IoU loses layer gradient | Fixed by multi-token extraction |
+| | v1 | v2 (pooled) | v2 content-only | v2 decision-only |
+|---|---|---|---|---|
+| IoU ratio (middle/early) | 1.125× | **1.283×** | 1.257× | 1.106× |
+| Middle > late? | yes (0.017) | yes (0.046) | yes (0.046) | yes (0.011) |
+| Assessment | Weak | Borderline moderate | Weak | Flat (structural token) |
+
+The decision-only curve (1.106×) closely reproduces v1 (1.125×) — validating that both
+measure the same thing. The pooled curve (1.283×) remains the best available Claim 3 signal.
+Content-only (1.257×) does not improve on pooled because the last_5 window includes
+structural tokens (" , of/de) that have high EN↔FR IoU at all layers, diluting the
+early-layer dip. Only ~1 of 4 non-decision positions is the content word itself.
+
+---
+
+## Phase 1 Position-Separated IoU (2026-03-15)
+
+| IoU curve | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early |
+|---|---|---|---|---|
+| Pooled (all 5 positions) | 0.267 | 0.343 | 0.297 | **1.283×** |
+| Decision token only      | 0.390 | 0.431 | 0.421 | 1.106× |
+| Content positions (×4)   | 0.261 | 0.328 | 0.282 | 1.257× |
+
+New outputs in `data/analysis/multilingual_circuits/`:
+`iou_per_layer_decision.csv`, `iou_per_layer_content.csv`, `iou_position_comparison.png`
 
 ---
 
 ## Conclusion
 
-v2 resolves the primary weakness of v1 (Claim 3). The multi-token IoU provides a
-clear, monotonic increase from early to middle layers and a drop in late layers, matching
-the direction of the Anthropic finding. The absolute values remain lower than Anthropic's
-(expected: different architecture, shorter prompts, transcoder vs SAE), but the pattern
-is now unambiguous.
+v2 improves on v1's Claim 3 ratio from 1.125× to 1.283× (using a consistent formula).
+The pooled IoU provides the strongest gradient; position-separation confirms the direction
+but does not sharpen it, because prompt length (8 tokens) limits content-word isolation.
+Claim 3 is **borderline moderate/weak** — the direction is unambiguous (middle > late > early
+in all three curves) but the gradient is shallow.
 
-Claims 2, 3, and 4 are now all at least moderately supported. **Use v2 as the thesis reference.**
+The graph (star topology, 95 nodes, 285 edges) is unchanged and remains the primary
+limitation for mechanistic interpretation. **Phase 2 (virtual-weight DAG) is the next step.**
