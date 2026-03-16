@@ -866,6 +866,471 @@ class TranscoderAttributionBuilder:
 
         return G
 
+    # ─── Phase 3: Role-Aware Methods ────────────────────────────────────────
+
+    def _find_content_word_samples(self, prompt_idx: int) -> Tuple[List[int], str]:
+        """
+        Find position_map sample indices for content-word tokens in this prompt.
+
+        Primary: regex r'"([^"]+)"' to find quoted span in prompt text.
+        Fallback: text.find using prompt["word"].
+
+        Returns:
+            (content_sample_indices, method)
+            method: "regex" | "find" | "none"
+        """
+        import re as _re
+
+        if prompt_idx not in self.prompt_to_samples:
+            return [], "none"
+
+        prompt = self.prompts[prompt_idx]
+        text = prompt.get("text", "")
+
+        # Primary: regex quoted span
+        m = _re.search(r'"([^"]+)"', text)
+        if m:
+            span_start = m.start(1)
+            span_end = m.end(1)
+            method = "regex"
+        else:
+            # Fallback: text.find using 'word' key
+            cw = prompt.get("word", "")
+            if cw:
+                idx = text.find(cw)
+                if idx >= 0:
+                    span_start = idx
+                    span_end = idx + len(cw)
+                    method = "find"
+                else:
+                    return [], "none"
+            else:
+                return [], "none"
+
+        # Tokenize with offset_mapping to find content token IDs
+        try:
+            enc = self.model.tokenizer(
+                text,
+                return_offsets_mapping=True,
+                add_special_tokens=False,
+            )
+        except Exception as e:
+            logger.warning(f"offset_mapping failed for prompt {prompt_idx}: {e}")
+            return [], "none"
+
+        content_token_ids: set = set()
+        for i, (cs, ce) in enumerate(enc["offset_mapping"]):
+            if ce > span_start and cs < span_end:
+                content_token_ids.add(enc["input_ids"][i])
+
+        if not content_token_ids:
+            return [], "none"
+
+        # Match against non-decision samples in position_map
+        content_samples = [
+            s for s in self.prompt_to_samples[prompt_idx]
+            if (
+                not self.position_map[s].get("is_decision_position", False)
+                and self.position_map[s].get("token_id") in content_token_ids
+            )
+        ]
+        return content_samples, method
+
+    def collect_content_activations(
+        self,
+        prompt_idx: int,
+        content_sample_indices: List[int],
+    ) -> Dict[int, Dict[int, float]]:
+        """
+        Returns max activation over content-word subtokens for each feature.
+        {layer: {feature_idx: max_activation}}
+        Multiple subtokens for same feature: take max.
+        """
+        if not content_sample_indices:
+            return {}
+
+        activations: Dict[int, Dict[int, float]] = {}
+        for layer in self.layers:
+            layer_data = self.extracted_features[layer]
+            layer_act: Dict[int, float] = {}
+            for s in content_sample_indices:
+                topk_idx = layer_data["top_k_indices"][s]
+                topk_val = layer_data["top_k_values"][s]
+                idx_arr = topk_idx.cpu().numpy() if topk_idx.is_cuda else topk_idx.numpy()
+                val_arr = topk_val.cpu().numpy() if topk_val.is_cuda else topk_val.numpy()
+                for fi, fv in zip(idx_arr, val_arr):
+                    fi, fv = int(fi), float(fv)
+                    if fi not in layer_act or fv > layer_act[fi]:
+                        layer_act[fi] = fv
+            activations[layer] = layer_act
+        return activations
+
+    def aggregate_graphs_role_aware(
+        self,
+        n_prompts: int = 20,
+        k_per_prompt: int = 20,
+        min_prompts: Optional[int] = None,
+        max_frequency: float = 0.90,
+        seed: int = 0,
+        vw_threshold: Optional[float] = None,
+        k_content: int = 10,
+        min_lang_asym: float = 0.0,
+    ) -> nx.DiGraph:
+        """
+        Build role-aware attribution graph: decision nodes + content-word nodes.
+
+        Decision nodes: same selection as aggregate_graphs_per_prompt_union.
+        Content nodes: features active at content-word token positions, selected by:
+          Stage 1: activation existence (>=2 prompts; fallback >=1 if too few candidates)
+          Stage 2: rank by |en_freq - fr_freq|; diversity constraint max 2 per layer
+          VW connectivity check: must have >=1 VW edge above threshold to adjacent-layer
+            decision node (connectivity_threshold = vw_threshold or 0.01).
+
+        "Both" nodes (same (layer, feat) in decision and content sets) get flat-prefixed
+        dual attributes: decision_*, content_*. Backward-compatible flat attrs use
+        decision values.
+
+        Content-only nodes have no output edges (upstream_candidate role only).
+        """
+        import re as _re
+
+        # ── 0. Prompt selection ──────────────────────────────────────────────
+        rng = np.random.default_rng(seed)
+        available_prompts = sorted(list(self.prompt_to_samples.keys()))
+        rng.shuffle(available_prompts)
+        prompt_indices = available_prompts[:min(n_prompts, len(available_prompts))]
+        N = len(prompt_indices)
+        if N < 2:
+            raise ValueError(f"Need at least 2 prompts, got {N}")
+
+        if min_prompts is None:
+            min_prompts = 1 if N <= 5 else max(1, int(np.ceil(0.1 * N)))
+
+        logger.info(
+            f"Role-aware graph: N={N}, k_per_prompt={k_per_prompt}, "
+            f"min_prompts={min_prompts}, k_content={k_content}, "
+            f"vw_threshold={vw_threshold}"
+        )
+
+        # ── 1. Language assignment ───────────────────────────────────────────
+        en_prompt_set = [p for p in prompt_indices
+                         if self.prompts[p].get("language", "en") == "en"]
+        fr_prompt_set = [p for p in prompt_indices
+                         if self.prompts[p].get("language", "fr") == "fr"]
+        n_en = len(en_prompt_set)
+        n_fr = len(fr_prompt_set)
+        logger.info(f"Language split: EN={n_en}, FR={n_fr}")
+
+        # ── 2. Decision graph ────────────────────────────────────────────────
+        beta = self.compute_beta(prompt_indices)
+
+        # Per-prompt top-k; track per-language counts for "both" node attrs
+        feature_scores: Dict[Tuple[int, int], list] = defaultdict(list)
+        feature_en_count: Dict[Tuple[int, int], int] = defaultdict(int)
+        feature_fr_count: Dict[Tuple[int, int], int] = defaultdict(int)
+
+        for p in tqdm(prompt_indices, desc="Decision: per-prompt top-k"):
+            lang = self.prompts[p].get("language", "en")
+            topk = self.top_features_for_prompt(p, beta, k=k_per_prompt)
+            for (layer, feat), score in topk:
+                feature_scores[(layer, feat)].append(float(score))
+                if lang == "en":
+                    feature_en_count[(layer, feat)] += 1
+                else:
+                    feature_fr_count[(layer, feat)] += 1
+
+        G = nx.DiGraph()
+        G.add_node("input", type="input")
+        G.add_node("output_correct", type="output")
+        G.add_node("output_incorrect", type="output")
+
+        decision_added = 0
+        skipped_rare = 0
+        skipped_always_on = 0
+        included_features: set = set()
+        decision_attrs: Dict[Tuple[int, int], dict] = {}
+
+        for (layer, feat), scores in feature_scores.items():
+            n_seen = len(scores)
+            freq = n_seen / N
+            if n_seen < min_prompts:
+                skipped_rare += 1
+                continue
+            if freq >= max_frequency:
+                skipped_always_on += 1
+                continue
+
+            mean_score_given = float(np.mean(scores))
+            mean_abs_given = float(np.mean([abs(s) for s in scores]))
+            std_score = float(np.std(scores))
+            mean_score_missing0 = float(np.sum(scores) / N)
+            mean_abs_missing0 = float(np.sum([abs(s) for s in scores]) / N)
+            specific_score = mean_abs_given * (1.0 - freq)
+
+            b = beta.get((layer, feat), 0.0)
+            attrs = dict(
+                type="feature",
+                layer=int(layer),
+                feature_idx=int(feat),
+                n_prompts=int(n_seen),
+                frequency=float(freq),
+                mean_score_conditional=mean_score_given,
+                mean_abs_score_conditional=mean_abs_given,
+                std_score=std_score,
+                mean_score_missing0=mean_score_missing0,
+                mean_abs_missing0=mean_abs_missing0,
+                specific_score=float(specific_score),
+                beta=float(b),
+                beta_sign=int(1 if b > 0 else (-1 if b < 0 else 0)),
+                position_role="decision",
+                causal_status="output_attributed",
+            )
+            decision_attrs[(layer, feat)] = attrs
+            feat_id = f"L{layer}_F{feat}"
+            G.add_node(feat_id, **attrs)
+            w = mean_score_given
+            G.add_edge("input", feat_id, weight=w)
+            G.add_edge(feat_id, "output_correct", weight=w)
+            G.add_edge(feat_id, "output_incorrect", weight=-w)
+            decision_added += 1
+            included_features.add((layer, feat))
+
+        logger.info(
+            f"Decision nodes: {decision_added} added "
+            f"(skipped_rare={skipped_rare}, skipped_always_on={skipped_always_on})"
+        )
+
+        # ── 3. VW edges for decision nodes ───────────────────────────────────
+        n_vw = 0
+        if vw_threshold is not None:
+            graph_layers = sorted(set(layer for (layer, _) in included_features))
+            for i in range(len(graph_layers) - 1):
+                src_layer = graph_layers[i]
+                tgt_layer = graph_layers[i + 1]
+                src_feats = sorted(f for (l, f) in included_features if l == src_layer)
+                tgt_feats = sorted(f for (l, f) in included_features if l == tgt_layer)
+                if not src_feats or not tgt_feats:
+                    continue
+                source_tc = self.transcoder_set[src_layer]
+                target_tc = self.transcoder_set[tgt_layer]
+                with torch.no_grad():
+                    W_dec_src = source_tc.W_dec[src_feats, :].float()
+                    W_enc_tgt = target_tc.W_enc[tgt_feats, :].float()
+                    vw_sub = (W_enc_tgt @ W_dec_src.T).cpu()
+                for ti, tgt_feat in enumerate(tgt_feats):
+                    for si, src_feat in enumerate(src_feats):
+                        w = float(vw_sub[ti, si])
+                        if abs(w) >= vw_threshold:
+                            G.add_edge(
+                                f"L{src_layer}_F{src_feat}",
+                                f"L{tgt_layer}_F{tgt_feat}",
+                                weight=w,
+                                edge_type="virtual_weight",
+                            )
+                            n_vw += 1
+            logger.info(f"Decision VW edges: {n_vw} added (threshold={vw_threshold})")
+
+        # ── 4. Content-word node analysis ────────────────────────────────────
+        connectivity_threshold = vw_threshold if vw_threshold is not None else 0.01
+
+        # 4a. Collect content activations per prompt
+        content_feature_en: Dict[Tuple[int, int], int] = defaultdict(int)
+        content_feature_fr: Dict[Tuple[int, int], int] = defaultdict(int)
+        content_feature_acts: Dict[Tuple[int, int], list] = defaultdict(list)
+        n_content_found = 0
+        n_fallback_find = 0
+
+        for p in tqdm(prompt_indices, desc="Content: per-prompt word detection"):
+            content_samples, method = self._find_content_word_samples(p)
+            if not content_samples:
+                continue
+            if method == "find":
+                n_fallback_find += 1
+            n_content_found += 1
+            lang = self.prompts[p].get("language", "en")
+            content_acts = self.collect_content_activations(p, content_samples)
+            for layer, layer_act in content_acts.items():
+                for feat, act in layer_act.items():
+                    key = (layer, feat)
+                    if lang == "en":
+                        content_feature_en[key] += 1
+                    else:
+                        content_feature_fr[key] += 1
+                    content_feature_acts[key].append(abs(act))
+
+        logger.info(
+            f"Content-word detection: {n_content_found}/{N} prompts found content samples "
+            f"({n_fallback_find} used text.find fallback)"
+        )
+
+        # 4b. Stage 1 filter: activation existence (>=2 prompts; fallback >=1)
+        min_content_prompts = 2
+        stage1 = {
+            k: v for k, v in content_feature_acts.items()
+            if content_feature_en[k] + content_feature_fr[k] >= min_content_prompts
+        }
+        if len(stage1) < max(1, k_content // 2):
+            min_content_prompts = 1
+            stage1 = {
+                k: v for k, v in content_feature_acts.items()
+                if content_feature_en[k] + content_feature_fr[k] >= 1
+            }
+            logger.info(
+                f"Stage 1 fallback: relaxed to min_content_prompts=1 "
+                f"(candidates after fallback: {len(stage1)})"
+            )
+        else:
+            logger.info(f"Stage 1: {len(stage1)} candidates (min_content_prompts={min_content_prompts})")
+
+        # 4c. Stage 2: rank by lang_asym, diversity (max 2 per layer), VW check
+        content_candidates = []
+        for key, acts in stage1.items():
+            layer, feat = key
+            n_en_c = content_feature_en[key]
+            n_fr_c = content_feature_fr[key]
+            en_freq = n_en_c / n_en if n_en > 0 else 0.0
+            fr_freq = n_fr_c / n_fr if n_fr > 0 else 0.0
+            lang_asym = abs(en_freq - fr_freq)
+            content_candidates.append({
+                "key": key,
+                "layer": layer,
+                "feat": feat,
+                "n_en": n_en_c,
+                "n_fr": n_fr_c,
+                "en_freq": en_freq,
+                "fr_freq": fr_freq,
+                "lang_asym": lang_asym,
+                "mean_abs_act": float(np.mean(acts)),
+            })
+
+        content_candidates = [c for c in content_candidates if c["lang_asym"] >= min_lang_asym]
+        content_candidates.sort(key=lambda x: x["lang_asym"], reverse=True)
+
+        layer_content_count: Dict[int, int] = defaultdict(int)
+        selected_content = []
+
+        for c in content_candidates:
+            if len(selected_content) >= k_content:
+                break
+            if layer_content_count[c["layer"]] >= 2:
+                continue
+
+            # VW connectivity check: must connect to adjacent-layer decision node
+            layer, feat = c["layer"], c["feat"]
+            connected = False
+            for adj_layer in [layer - 1, layer + 1]:
+                adj_dec_feats = [f for (l, f) in included_features if l == adj_layer]
+                if not adj_dec_feats:
+                    continue
+                adj_tc = self.transcoder_set[adj_layer]
+                curr_tc = self.transcoder_set[layer]
+                with torch.no_grad():
+                    if adj_layer < layer:
+                        # adj is src, current is tgt
+                        W_dec_adj = adj_tc.W_dec[adj_dec_feats, :].float()
+                        W_enc_curr = curr_tc.W_enc[[feat], :].float()
+                        vw_row = (W_enc_curr @ W_dec_adj.T).cpu()   # (1, n_adj)
+                    else:
+                        # current is src, adj is tgt
+                        W_dec_curr = curr_tc.W_dec[[feat], :].float()
+                        W_enc_adj = adj_tc.W_enc[adj_dec_feats, :].float()
+                        vw_row = (W_enc_adj @ W_dec_curr.T).cpu()   # (n_adj, 1)
+                if float(vw_row.abs().max()) >= connectivity_threshold:
+                    connected = True
+                    break
+
+            if not connected:
+                continue
+
+            selected_content.append(c)
+            layer_content_count[c["layer"]] += 1
+
+        logger.info(
+            f"Content nodes selected: {len(selected_content)} "
+            f"(after Stage 2 + VW connectivity check)"
+        )
+
+        # 4d. Add content nodes to graph
+        content_added = 0
+        both_upgraded = 0
+
+        for c in selected_content:
+            layer, feat = c["layer"], c["feat"]
+            feat_id = f"L{layer}_F{feat}"
+            key = (layer, feat)
+
+            if key in decision_attrs:
+                # "Both" node: upgrade with flat-prefixed dual attrs
+                d_en_freq = feature_en_count[key] / n_en if n_en > 0 else 0.0
+                d_fr_freq = feature_fr_count[key] / n_fr if n_fr > 0 else 0.0
+                upgrades = {
+                    "position_role": "both",
+                    "causal_status": "both",
+                    "decision_n_prompts": decision_attrs[key]["n_prompts"],
+                    "decision_en_freq": d_en_freq,
+                    "decision_fr_freq": d_fr_freq,
+                    "content_n_en_prompts": c["n_en"],
+                    "content_n_fr_prompts": c["n_fr"],
+                    "content_en_freq": c["en_freq"],
+                    "content_fr_freq": c["fr_freq"],
+                    "content_lang_asym": c["lang_asym"],
+                    "content_mean_abs_act": c["mean_abs_act"],
+                }
+                for k_attr, v_attr in upgrades.items():
+                    G.nodes[feat_id][k_attr] = v_attr
+                both_upgraded += 1
+            else:
+                # Pure content node — no output edges
+                G.add_node(
+                    feat_id,
+                    type="feature",
+                    layer=int(layer),
+                    feature_idx=int(feat),
+                    position_role="content",
+                    causal_status="upstream_candidate",
+                    content_n_en_prompts=c["n_en"],
+                    content_n_fr_prompts=c["n_fr"],
+                    content_en_freq=c["en_freq"],
+                    content_fr_freq=c["fr_freq"],
+                    content_lang_asym=c["lang_asym"],
+                    content_mean_abs_act=c["mean_abs_act"],
+                )
+                G.add_edge("input", feat_id, weight=c["lang_asym"])
+                content_added += 1
+
+        logger.info(
+            f"Content nodes added: {content_added} new + {both_upgraded} upgraded to 'both'. "
+            f"Total feature nodes: {sum(1 for _, d in G.nodes(data=True) if d.get('type')=='feature')}"
+        )
+
+        # ── 5. Store params in graph ─────────────────────────────────────────
+        G.graph["union_params"] = {
+            "prompt_indices": [int(p) for p in prompt_indices],
+            "N": int(N),
+            "k_per_prompt": int(k_per_prompt),
+            "min_prompts": int(min_prompts),
+            "max_frequency": float(max_frequency),
+            "seed": int(seed),
+            "graph_node_mode": "role_aware",
+            "k_content": int(k_content),
+            "min_lang_asym": float(min_lang_asym),
+            "n_en_prompts": int(n_en),
+            "n_fr_prompts": int(n_fr),
+            "n_content_found": int(n_content_found),
+            "n_fallback_find": int(n_fallback_find),
+            "min_content_prompts_used": int(min_content_prompts),
+            "vw_threshold": float(vw_threshold) if vw_threshold is not None else None,
+            "n_vw_edges": int(n_vw),
+            "connectivity_threshold": float(connectivity_threshold),
+        }
+
+        logger.info(
+            f"Role-aware graph complete: nodes={G.number_of_nodes()}, "
+            f"edges={G.number_of_edges()}, "
+            f"decision={decision_added}, content={content_added}, both={both_upgraded}"
+        )
+        return G
+
     def compute_virtual_weights(
         self,
         source_layer: int,
@@ -987,6 +1452,38 @@ def main():
             "Only edges with |weight| >= vw_threshold are kept. "
             "Use 0.0 to add all edges; None (default) disables virtual weights (star topology)."
         ),
+    )
+    parser.add_argument(
+        "--graph_node_mode",
+        type=str,
+        default="decision_only",
+        choices=["decision_only", "role_aware"],
+        help=(
+            "Node selection mode. 'decision_only' (default): same as before — "
+            "features from decision token position only. "
+            "'role_aware': adds content-word position features (Phase 3)."
+        ),
+    )
+    parser.add_argument(
+        "--k_content",
+        type=int,
+        default=10,
+        help="(role_aware only) Max content-word nodes to add globally (default: 10).",
+    )
+    parser.add_argument(
+        "--min_lang_asym",
+        type=float,
+        default=0.0,
+        help=(
+            "(role_aware only) Minimum |en_freq - fr_freq| for content node inclusion "
+            "(default: 0.0 = no filter beyond Stage 1/2)."
+        ),
+    )
+    parser.add_argument(
+        "--output_suffix",
+        type=str,
+        default="",
+        help="Suffix appended to output filename (e.g. '_roleaware').",
     )
     args = parser.parse_args()
 
@@ -1209,17 +1706,30 @@ def main():
         available_prompts = sorted(list(builder.prompt_to_samples.keys()))
         print(f"Prompts loaded: {len(prompts)} | prompts with extracted samples: {len(available_prompts)}")
 
-        # Build aggregated graph using PER-PROMPT UNION (not global correlation)
-        print(f"\nBuilding per-prompt union attribution graph...")
+        # Build attribution graph
         k_per_prompt = tc_config.get("features", {}).get("top_k_per_prompt", 20)
         max_frequency = tc_config.get("features", {}).get("max_frequency", 0.90)
-        G = builder.aggregate_graphs_per_prompt_union(
-            n_prompts=args.n_prompts,
-            k_per_prompt=k_per_prompt,
-            min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
-            max_frequency=max_frequency,
-            vw_threshold=args.vw_threshold,
-        )
+
+        if args.graph_node_mode == "role_aware":
+            print(f"\nBuilding role-aware attribution graph (Phase 3)...")
+            G = builder.aggregate_graphs_role_aware(
+                n_prompts=args.n_prompts,
+                k_per_prompt=k_per_prompt,
+                min_prompts=None,
+                max_frequency=max_frequency,
+                vw_threshold=args.vw_threshold,
+                k_content=args.k_content,
+                min_lang_asym=args.min_lang_asym,
+            )
+        else:
+            print(f"\nBuilding per-prompt union attribution graph...")
+            G = builder.aggregate_graphs_per_prompt_union(
+                n_prompts=args.n_prompts,
+                k_per_prompt=k_per_prompt,
+                min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
+                max_frequency=max_frequency,
+                vw_threshold=args.vw_threshold,
+            )
 
         # Save graph
         output_path = output_base / behaviour
@@ -1231,7 +1741,8 @@ def main():
         available_prompts = sorted(list(builder.prompt_to_samples.keys()))
         n_fallback = min(args.n_prompts, len(available_prompts)) if args.n_prompts else len(available_prompts)
         n_used = int(union_params.get("N", n_fallback))
-        name = f"attribution_graph_{args.split}_n{n_used}"
+        suffix = args.output_suffix if args.output_suffix else ""
+        name = f"attribution_graph_{args.split}_n{n_used}{suffix}"
         
         # Get topk size from extracted_features for metadata
         first_layer = list(extracted_features.keys())[0]
@@ -1266,6 +1777,8 @@ def main():
             "topk_per_token": int(topk_size),
             "vw_threshold": args.vw_threshold,
             "n_vw_edges": int(G.graph.get("union_params", {}).get("n_vw_edges", 0)),
+            "graph_node_mode": args.graph_node_mode,
+            "output_suffix": suffix,
         }
         save_graph(G, output_path, name, metadata)  # Use variable name with _nN suffix
 

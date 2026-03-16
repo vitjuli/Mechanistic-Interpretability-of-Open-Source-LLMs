@@ -1088,6 +1088,334 @@ def write_report(gate: dict, iou_result, bridge_df: pd.DataFrame,
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 3.1 — Node language profiles (diagnostic only)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def compute_node_language_labels(
+    graph_json: Path,
+    features_dir: Path,
+    behaviour: str,
+    split: str,
+    train_jsonl: Path,
+    out_dir: Path,
+) -> pd.DataFrame:
+    """
+    Diagnostic language profile for each graph node.
+
+    For every (layer, feature) in the graph, counts the number of EN and FR prompts
+    where the feature appears in the top-k at ANY token position (pooled over positions).
+    This is a diagnostic: decision-token features are expected to be cross-lingual
+    ("insufficient_data" or "balanced" is NOT a failure — it characterises them).
+
+    lang_profile labels:
+      en_leaning       : n_en >= 4 AND n_fr <= 1
+      fr_leaning       : n_fr >= 4 AND n_en <= 1
+      balanced         : n_en >= 4 AND n_fr >= 4
+      insufficient_data: otherwise
+
+    Outputs:
+      node_language_labels.csv  columns:
+        node_id, layer, feature_idx, n_en_active, n_fr_active,
+        en_freq, fr_freq, lang_asym, lang_profile
+    """
+    print("\n" + "=" * 60)
+    print("PHASE 3.1 — NODE LANGUAGE PROFILES (DIAGNOSTIC)")
+    print("=" * 60)
+
+    if not graph_json.exists():
+        print(f"  ERROR: graph JSON not found: {graph_json}")
+        return pd.DataFrame()
+
+    graph_data = json.load(open(graph_json))
+    feature_nodes = [
+        (n["id"], int(n["layer"]), int(n["feature_idx"]))
+        for n in graph_data["nodes"]
+        if n.get("type") == "feature"
+    ]
+    if not feature_nodes:
+        print("  No feature nodes found in graph.")
+        return pd.DataFrame()
+
+    print(f"  Graph nodes: {len(feature_nodes)} feature nodes")
+
+    # Load prompts → EN/FR sets
+    prompts_df = load_prompts(train_jsonl)
+    en_prompt_set = set(prompts_df.loc[prompts_df["language"] == "en", "prompt_idx"].tolist())
+    fr_prompt_set = set(prompts_df.loc[prompts_df["language"] == "fr", "prompt_idx"].tolist())
+    n_en = len(en_prompt_set)
+    n_fr = len(fr_prompt_set)
+    print(f"  EN prompts: {n_en}  FR prompts: {n_fr}")
+
+    # Load position_map (multi-token mode)
+    pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
+    if pm_path.exists():
+        position_map_data = json.load(open(pm_path))
+        prompt_to_rows: dict = {}
+        for row_idx, entry in enumerate(position_map_data):
+            p = entry["prompt_idx"]
+            if p not in prompt_to_rows:
+                prompt_to_rows[p] = []
+            prompt_to_rows[p].append(row_idx)
+        print(f"  Position map: {len(position_map_data)} rows, {len(prompt_to_rows)} prompts")
+    else:
+        # Single-token mode: row index == prompt index
+        prompt_to_rows = {p: [p] for p in range(n_en + n_fr)}
+        print("  No position_map found — using single-token (row=prompt_idx) mode")
+
+    # Group nodes by layer
+    nodes_by_layer: dict = {}
+    for node_id, layer, feat in feature_nodes:
+        nodes_by_layer.setdefault(layer, {})[feat] = node_id
+
+    results = []
+    for layer, feat_to_node in sorted(nodes_by_layer.items()):
+        npy_path = (features_dir / f"layer_{layer}"
+                    / f"{behaviour}_{split}_top_k_indices.npy")
+        if not npy_path.exists():
+            print(f"  WARNING: {npy_path} not found — skipping layer {layer}")
+            continue
+        topk_idx = np.load(npy_path)  # (n_samples, K) or (n_samples, 1, K)
+        if topk_idx.ndim == 3:
+            topk_idx = topk_idx[:, 0, :]
+
+        feat_list = list(feat_to_node.keys())
+        feat_set = set(feat_list)
+
+        # For each prompt, get set of active features (any position)
+        # Then count per-language presence
+        en_counts = {f: 0 for f in feat_list}
+        fr_counts = {f: 0 for f in feat_list}
+
+        for p in en_prompt_set:
+            rows = prompt_to_rows.get(p, [])
+            if not rows:
+                continue
+            active = set(topk_idx[rows, :].flatten().tolist())
+            for f in feat_list:
+                if f in active:
+                    en_counts[f] += 1
+
+        for p in fr_prompt_set:
+            rows = prompt_to_rows.get(p, [])
+            if not rows:
+                continue
+            active = set(topk_idx[rows, :].flatten().tolist())
+            for f in feat_list:
+                if f in active:
+                    fr_counts[f] += 1
+
+        for f, node_id in feat_to_node.items():
+            n_en_act = en_counts[f]
+            n_fr_act = fr_counts[f]
+            en_freq = n_en_act / n_en if n_en > 0 else 0.0
+            fr_freq = n_fr_act / n_fr if n_fr > 0 else 0.0
+            lang_asym = abs(en_freq - fr_freq)
+
+            if n_en_act >= 4 and n_fr_act <= 1:
+                lang_profile = "en_leaning"
+            elif n_fr_act >= 4 and n_en_act <= 1:
+                lang_profile = "fr_leaning"
+            elif n_en_act >= 4 and n_fr_act >= 4:
+                lang_profile = "balanced"
+            else:
+                lang_profile = "insufficient_data"
+
+            results.append({
+                "node_id": node_id,
+                "layer": layer,
+                "feature_idx": f,
+                "n_en_active": n_en_act,
+                "n_fr_active": n_fr_act,
+                "en_freq": round(en_freq, 4),
+                "fr_freq": round(fr_freq, 4),
+                "lang_asym": round(lang_asym, 4),
+                "lang_profile": lang_profile,
+            })
+
+    df = pd.DataFrame(results)
+    if df.empty:
+        print("  No results — check that features_dir and graph_json are aligned.")
+        return df
+
+    out_path = out_dir / "node_language_labels.csv"
+    df.to_csv(out_path, index=False)
+    print(f"  Saved: {out_path}")
+
+    # Summary
+    profile_counts = df["lang_profile"].value_counts()
+    print(f"\n  lang_profile summary ({len(df)} nodes):")
+    for label, cnt in profile_counts.items():
+        print(f"    {label:20s}: {cnt:3d} ({100*cnt/len(df):.1f}%)")
+    print(
+        f"\n  NOTE: 'insufficient_data' / 'balanced' is EXPECTED for decision-token features."
+        f"\n  Language-specific content-word features live at content positions (Phase 3 graph)."
+    )
+
+    return df
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 3.2 — Community interpretability (VW-subgraph Louvain)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def compute_community_summary(
+    graph_json: Path,
+    node_labels_csv: Path,
+    out_dir: Path,
+) -> dict:
+    """
+    Run Louvain community detection on the VW-only feature subgraph.
+
+    Excludes star edges (input→feature, feature→output) and I/O nodes.
+    Communities reflect feature-feature VW relationships, not hub connectivity.
+
+    Requires python-louvain (pip install python-louvain) and networkx.
+
+    Outputs:
+      community_summary.json  — per-community stats + lang_profile composition
+      community_summary.md    — human-readable table
+    """
+    import re as _re
+
+    print("\n" + "=" * 60)
+    print("PHASE 3.2 — COMMUNITY INTERPRETABILITY (VW-SUBGRAPH LOUVAIN)")
+    print("=" * 60)
+
+    if not graph_json.exists():
+        print(f"  ERROR: graph JSON not found: {graph_json}")
+        return {}
+
+    try:
+        import networkx as nx
+    except ImportError:
+        print("  ERROR: networkx not installed.")
+        return {}
+
+    try:
+        import community as community_louvain
+    except ImportError:
+        print("  ERROR: python-louvain not installed (pip install python-louvain).")
+        return {}
+
+    graph_data = json.load(open(graph_json))
+    all_nodes = {n["id"]: n for n in graph_data["nodes"]}
+    all_edges = graph_data["edges"]
+
+    # Build VW-only feature subgraph
+    G_vw = nx.Graph()
+    feature_node_ids = {nid for nid, n in all_nodes.items() if n.get("type") == "feature"}
+
+    for n in graph_data["nodes"]:
+        if n.get("type") == "feature":
+            G_vw.add_node(n["id"], **{k: v for k, v in n.items() if k != "id"})
+
+    n_vw_added = 0
+    for e in all_edges:
+        if e.get("edge_type") != "virtual_weight":
+            continue
+        src, tgt = e["source"], e["target"]
+        if src in feature_node_ids and tgt in feature_node_ids:
+            w = abs(float(e.get("weight", 1.0)))
+            G_vw.add_edge(src, tgt, weight=w)
+            n_vw_added += 1
+
+    print(f"  VW-subgraph: {G_vw.number_of_nodes()} nodes, {n_vw_added} edges")
+
+    if G_vw.number_of_edges() == 0:
+        print("  WARNING: No VW edges found in graph. Run with --vw_threshold to add them.")
+        return {}
+
+    # Louvain
+    G_und = G_vw
+    for u, v, d in G_und.edges(data=True):
+        d["weight"] = abs(d.get("weight", 1.0))
+    partition = community_louvain.best_partition(G_und, weight="weight")
+    print(f"  Louvain communities: {len(set(partition.values()))}")
+
+    # Load node labels if available
+    node_labels: dict = {}
+    if node_labels_csv.exists():
+        nl_df = pd.read_csv(node_labels_csv)
+        node_labels = {row["node_id"]: row["lang_profile"] for _, row in nl_df.iterrows()}
+
+    # Build community stats
+    from collections import Counter
+    community_stats = {}
+    for node_id, comm_id in partition.items():
+        comm_key = str(comm_id)
+        if comm_key not in community_stats:
+            community_stats[comm_key] = {
+                "community_id": comm_id,
+                "members": [],
+                "layers": [],
+                "lang_profiles": [],
+            }
+        community_stats[comm_key]["members"].append(node_id)
+        node_data = all_nodes.get(node_id, {})
+        if "layer" in node_data:
+            community_stats[comm_key]["layers"].append(int(node_data["layer"]))
+        if node_id in node_labels:
+            community_stats[comm_key]["lang_profiles"].append(node_labels[node_id])
+
+    summary_list = []
+    for comm_key, stats in sorted(community_stats.items(), key=lambda x: int(x[0])):
+        layers = sorted(set(stats["layers"]))
+        profiles = Counter(stats["lang_profiles"])
+        summary_list.append({
+            "community_id": stats["community_id"],
+            "n_features": len(stats["members"]),
+            "layer_min": min(layers) if layers else None,
+            "layer_max": max(layers) if layers else None,
+            "layer_range": f"L{min(layers)}–L{max(layers)}" if layers else "N/A",
+            "members": sorted(stats["members"]),
+            "lang_profile_counts": dict(profiles),
+            "dominant_profile": profiles.most_common(1)[0][0] if profiles else "N/A",
+        })
+
+    out_json = out_dir / "community_summary.json"
+    with open(out_json, "w") as f:
+        json.dump(summary_list, f, indent=2)
+    print(f"  Saved: {out_json}")
+
+    # Markdown table
+    md_lines = [
+        "# Community Summary — VW-subgraph Louvain",
+        "",
+        f"Graph: `{graph_json.name}`",
+        f"VW edges in subgraph: {n_vw_added}",
+        f"Communities: {len(summary_list)}",
+        "",
+        "| Community | N features | Layer range | Dominant profile | Profile counts |",
+        "|---|---|---|---|---|",
+    ]
+    for s in summary_list:
+        profile_str = ", ".join(f"{k}:{v}" for k, v in sorted(s["lang_profile_counts"].items()))
+        md_lines.append(
+            f"| C{s['community_id']} | {s['n_features']} | {s['layer_range']} "
+            f"| {s['dominant_profile']} | {profile_str or 'N/A'} |"
+        )
+
+    md_lines += [
+        "",
+        "## Community Members",
+        "",
+    ]
+    for s in summary_list:
+        md_lines.append(f"### C{s['community_id']} ({s['n_features']} features, {s['layer_range']})")
+        md_lines.append("")
+        for m in s["members"]:
+            prof = node_labels.get(m, "")
+            md_lines.append(f"- `{m}`" + (f"  [{prof}]" if prof else ""))
+        md_lines.append("")
+
+    out_md = out_dir / "community_summary.md"
+    out_md.write_text("\n".join(md_lines))
+    print(f"  Saved: {out_md}")
+
+    return {"communities": summary_list, "n_vw_edges": n_vw_added}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="Multilingual circuits analysis")
@@ -1096,15 +1424,30 @@ def main():
     parser.add_argument("--layers",    nargs="+", type=int,
                         default=list(range(10, 26)),
                         help="Layers to compute IoU for (default: 10-25)")
+    parser.add_argument("--node_labels", action="store_true",
+                        help="Run Phase 3.1: diagnostic language profile for each graph node.")
+    parser.add_argument("--community_summary", action="store_true",
+                        help="Run Phase 3.2: VW-subgraph Louvain community interpretability.")
+    parser.add_argument("--graph_json", type=str, default=None,
+                        help=(
+                            "Path to attribution graph JSON for Phase 3.1/3.2. "
+                            "Defaults to get_paths() default (attribution_graph_train_n48.json). "
+                            "Use to point at role-aware graph (_roleaware suffix)."
+                        ))
     args = parser.parse_args()
 
     P = get_paths(args.behaviour, args.split)
     out_dir = P["out_dir"]
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Allow override of graph_json (e.g. role_aware graph)
+    graph_json_path = Path(args.graph_json) if args.graph_json else P["graph_json"]
+
     print(f"Multilingual Circuits Analysis")
     print(f"  Behaviour: {args.behaviour}  Split: {args.split}")
     print(f"  Output:    {out_dir}")
+    if args.node_labels or args.community_summary:
+        print(f"  Graph JSON: {graph_json_path}")
 
     # 1. Baseline gate
     gate = check_baseline_gate(P["baseline_csv"], out_dir)
@@ -1128,6 +1471,26 @@ def main():
 
     # Final report
     write_report(gate, iou_result, bridge_df, c3_stats, args.behaviour, out_dir)
+
+    # Phase 3.1: Node language profiles (diagnostic)
+    node_labels_csv = out_dir / "node_language_labels.csv"
+    if args.node_labels:
+        compute_node_language_labels(
+            graph_json=graph_json_path,
+            features_dir=P["features_dir"],
+            behaviour=args.behaviour,
+            split=args.split,
+            train_jsonl=P["train_jsonl"],
+            out_dir=out_dir,
+        )
+
+    # Phase 3.2: Community interpretability
+    if args.community_summary:
+        compute_community_summary(
+            graph_json=graph_json_path,
+            node_labels_csv=node_labels_csv,
+            out_dir=out_dir,
+        )
 
     print(f"\n{'=' * 60}")
     print(f"Analysis complete. Results in: {out_dir}")
