@@ -75,13 +75,14 @@ LAYERS="10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25"
 VW_THRESHOLD=0.01
 
 # Verify features are present (v2 run must be complete)
-FEAT_DIR="data/results/transcoder_features/${BEHAVIOUR}_${SPLIT}"
-if [ ! -d "$FEAT_DIR" ]; then
-    echo "ERROR: Feature directory not found: $FEAT_DIR"
+# Features live flat in data/results/transcoder_features/layer_N/<behaviour>_<split>_*.npy
+FEAT_PROBE="data/results/transcoder_features/layer_10/${BEHAVIOUR}_${SPLIT}_top_k_indices.npy"
+if [ ! -f "$FEAT_PROBE" ]; then
+    echo "ERROR: Feature file not found: $FEAT_PROBE"
     echo "  Run multilingual_circuits_v2_last5_02_09.sbatch first (SLURM 25058380)."
     exit 1
 fi
-echo "Feature directory: $FEAT_DIR (OK)"
+echo "Feature probe: $FEAT_PROBE (OK)"
 
 # ══════════════════════════════════════════════════════════════
 # Step 06: Build attribution graph with virtual-weight edges
