@@ -231,7 +231,6 @@ python -u scripts/09_prepare_offline_ui.py \
     --behaviour "$BEHAVIOUR" \
     --split "$SPLIT" \
     --graph_n_prompts "$N_PROMPTS" \
-    --graph_suffix "$OUTPUT_SUFFIX" \
     --community_method louvain
 
 # Sanity check
