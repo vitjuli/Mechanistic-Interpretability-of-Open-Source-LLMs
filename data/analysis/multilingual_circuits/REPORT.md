@@ -16,45 +16,31 @@ Behaviour: `multilingual_circuits` | Split: train | n_prompts: 48 (24 EN + 24 FR
 
 | Metric | Value | Target |
 |---|---|---|
-| disruption_rate (effect < 0) | 0.5877 | ≥ 0.40 |
-| flip_rate (sign_flipped) | 0.0719 | report only |
-| mean_effect_size ± SEM | -0.1657 ± 0.0194 | report only |
-| 95% bootstrap CI | [-0.2023, -0.1262] | — |
+| disruption_rate (effect < 0) | 0.5597 | ≥ 0.40 |
+| flip_rate (sign_flipped) | 0.0741 | report only |
+| mean_effect_size ± SEM | -0.1048 ± 0.0186 | report only |
+| 95% bootstrap CI | [-0.1442, -0.0700] | — |
 
 **C3 target met: YES**
 
 ## Per-Layer IoU — Position Breakdown
 
-Mean IoU (pooled): 0.3191
-Max IoU layer (pooled): 20 (IoU = 0.3793)
-Min IoU layer (pooled): 25 (IoU = 0.2475)
+Mean IoU (pooled): nan
+Max IoU layer (pooled): N/A (IoU = nan)
+Min IoU layer (pooled): N/A (IoU = nan)
 
 | IoU curve | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early ratio |
 |---|---|---|---|---|
-| Pooled (all positions) | 0.2673 | 0.3431 | 0.2966 | 1.283× |
-| Decision token only | 0.3902 | 0.4314 | 0.4208 | 1.106× |
-| Content positions (non-decision) | 0.2612 | 0.3282 | 0.2822 | 1.257× |
+| Pooled (all positions) | nan | nan | nan | nan× |
 
-**Note on curves:**
-- *Pooled*: all 5 token positions per prompt combined (v2 default).
-- *Decision*: final token only (one per prompt). Expected flat layer profile —
-  this token is already semantic; EN and FR share the same features here.
-- *Content*: non-decision positions (content word + context). Expected steep
-  early→middle gradient — early layers process language-specific lexical features;
-  middle layers show cross-lingual convergence on shared antonym semantics.
-
-See `iou_per_layer.csv`, `iou_per_layer_decision.csv`, `iou_per_layer_content.csv`.
-See `iou_position_comparison.png` for the comparison figure.
+See `iou_per_layer.csv` for full per-layer breakdown.
 
 ## Claim 3 Assessment — Middle-Layer Concentration
 
-**Status: WEAKLY SUPPORTED**
+**Status: INSUFFICIENT DATA**
 
 ```
-Primary signal: content-position middle/early ratio = 1.257× (threshold ≥ 1.10). Direction is correct but gradient is small. Cannot firmly distinguish from noise.
-  Pooled ratio:   1.283×
-  Decision ratio: 1.106× (expected flat — semantic token, no language contrast)
-  Content ratio:  1.257× (expected steep — lexical token, language-specific early layers)
+Single-token mode — only pooled ratio available: Middle/early ratio could not be computed for pooled curve.
 ```
 
 **Interpretation note:** Do not conflate Claim 3 support with overall
@@ -67,7 +53,7 @@ invalidate Claims 1, 2, or 4 — it only means the layer gradient is shallow.
 Bridge = feature where mean ablation effect < 0 in BOTH EN and FR.
 
 Total graph features: N/A (see bridge_features.csv)
-Bridge features:      32
+Bridge features:      29
 
 See `bridge_features_only.csv` for details.
 
@@ -96,10 +82,10 @@ See `bridge_features_only.csv` for details.
 
 | Anthropic Claim | Our evidence | Assessment |
 |---|---|---|
-| **(1) Language-specific features exist** | Min IoU = 0.2475. Weakly supported — room for language-specific features at early/late layers. | Weakly supported. |
-| **(2) Shared cross-lingual features exist** | Max IoU = 0.3793 (layer 20). Moderately supported — three independent measures converge (IoU, bridge, C3). | Moderately supported. |
-| **(3) Shared features concentrated in middle layers** | Content-position middle/early = 1.257× (if available) | **WEAKLY SUPPORTED** |
-| **(4) Bridge features degrade both EN and FR** | 32 bridges; C3 disrupt=0.588; CI [-0.202, -0.126] | Strongly supported. CI fully negative. |
+| **(1) Language-specific features exist** | Min IoU = nan. N/A | Weakly supported. |
+| **(2) Shared cross-lingual features exist** | Max IoU = nan (layer N/A). N/A | Moderately supported. |
+| **(3) Shared features concentrated in middle layers** | Content-position middle/early = nan× (if available) | **INSUFFICIENT DATA** |
+| **(4) Bridge features degrade both EN and FR** | 29 bridges; C3 disrupt=0.560; CI [-0.144, -0.070] | Strongly supported. CI fully negative. |
 
 ## Notes
 

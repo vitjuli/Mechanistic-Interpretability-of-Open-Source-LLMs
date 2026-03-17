@@ -171,3 +171,100 @@ The 4 communities reveal functional decomposition absent in the star graph:
 - The sparse middle zone (L13–L19) aligns with the IoU rise from L10→L20 in v2 analysis
 
 ---
+
+## v4 — multilingual_circuits_v4_roleaware
+
+**Analysis date:** 2026-03-17
+**SLURM job:** 25266717 (step 06 only; features from SLURM 25058380)
+**SBATCH:** `jobs/multilingual_circuits_v4_roleaware_06.sbatch`
+**Change vs v3:** Step 06 uses `--graph_node_mode role_aware` → adds content-word-position nodes. Same `--vw_threshold 0.01` and features as v3. Output file: `attribution_graph_train_n48_roleaware.json`.
+
+### Graph metrics
+| Metric | v3 (decision-only) | v4 (role-aware) |
+|---|---|---|
+| Feature nodes | 95 | **99** (+4 content) |
+| Decision nodes | 95 | 95 (unchanged) |
+| Pure content nodes | 0 | **4** |
+| "Both" nodes (decision + content) | 0 | **6** (upgraded) |
+| Star + input edges | 285 | 289 (+4 input→content) |
+| VW inter-feature edges | 539 | 539 (unchanged) |
+| Total edges | 824 | **828** |
+
+### Content-word detection
+- 22/48 prompts (46%) detected content-word samples
+- Missing 26: templates like `"word" is the antonym of` place word outside `last_5` window
+- Stage 1 candidates (≥2 prompts): 2930 features
+- Selected after Stage 2 (lang_asym rank, max 2/layer) + VW connectivity check: **10**
+
+### Phase 3.1 — Node language profiles (diagnostic)
+| lang_profile | Count | % | Meaning |
+|---|---|---|---|
+| balanced | 56 | 56.6% | Active in both EN and FR (cross-lingual) |
+| fr_leaning | 33 | 33.3% | Active in FR only/mainly |
+| insufficient_data | 7 | 7.1% | Too sparse to classify |
+| en_leaning | 3 | 3.0% | Active in EN only/mainly |
+
+**FR-leaning asymmetry:** 33 FR-leaning vs 3 EN-leaning. Concentrated in late layers L20–L25 where many features have n_en=0, n_fr=24 (active in 100% FR, 0% EN prompts). The top 2 features by specific_score (L25_F103245, L23_F37214) are both FR-leaning. This is an empirical finding — the model's late-layer output preparation zone is heavily French-specialized for the antonym task, consistent with FR being the harder language (FR baseline 66.7% vs EN 100%).
+
+**Note:** Counts are pooled over all 5 token positions. A feature can be cross-lingual at the decision position while being FR-specific at other positions.
+
+### Phase 3.2 — VW-subgraph Louvain communities (9)
+
+| Community | N | Layer range | Dom. profile | Note |
+|---|---|---|---|---|
+| **C1** | 27 | L10–L13 | balanced | Early input processing; mostly cross-lingual |
+| **C0** | 10 | L13–L18 | balanced | Middle transition zone |
+| **C4** | 21 | L18–L22 | balanced | Semantic transformation zone; 6 fr_leaning |
+| **C8** | 18 | L22–L25 | balanced | **Cross-lingual output circuit**; 16/18 balanced |
+| **C5** | 19 | L22–L25 | fr_leaning | **FR output-preparation circuit**; 16/19 fr_leaning |
+| C2, C3, C6, C7 | 1 each | various | fr_leaning | Isolated FR-specific singletons |
+
+**Key finding — late-layer split (C5 vs C8):** Both communities span L22–L25 but have opposite profiles:
+- **C8** (16/18 balanced): cross-lingual output circuit, active in both languages
+- **C5** (16/19 fr_leaning): FR-specific output-preparation circuit, active only in FR
+
+This directly supports Anthropic's claim that language-specific and cross-lingual features co-exist in the same late-layer range — here visible as two parallel circuits (C5 and C8) at L22–L25.
+
+**Comparison to v3 (4 communities, full-graph Louvain):** v3's monolithic late-layer C3 resolves into C5 + C8 when I/O hub nodes are removed. The VW-only subgraph Louvain reveals structure hidden by hub-dominated community detection.
+
+### Analysis outputs (in `data/analysis/multilingual_circuits/`)
+| File | Description |
+|---|---|
+| `node_language_labels.csv` | 99 nodes × {n_en_active, n_fr_active, lang_profile} |
+| `community_summary.json` | 9 communities with member lists and lang_profile counts |
+| `community_summary.md` | Human-readable community table + member lists |
+
+---
+
+## v5 — multilingual_circuits_v5_concept_paired
+
+**Analysis date:** PENDING (CSD3 SBATCH not yet submitted)
+**SLURM job:** TBD (analysis only — no model; uses features from SLURM 25058380)
+**SBATCH:** `jobs/multilingual_circuits_v5_analysis.sbatch`
+**Change vs v4:** Analysis script only. Two new analyses:
+  1. `--concept_paired`: per-concept EN vs FR IoU (matched by concept_index); removes cross-concept coincidental overlaps
+  2. `--decision_only_labels`: Phase 3.1 re-run at decision-token positions only (validates late-layer fr_leaning)
+
+### Motivation
+All-vs-all pooled IoU includes features firing in EN-concept-0 AND FR-concept-3 (different concepts). These inflate early-layer EN∩FR, flattening the Claim 3 gradient. Concept-paired IoU requires overlap within the **same** concept — removing coincidental cross-concept noise.
+
+### Expected outcomes
+| Metric | Current (v2 pooled) | Expected (v5 concept-paired decision) |
+|---|---|---|
+| Early IoU (L10–11) | 0.267 | lower (~0.15–0.22) |
+| Middle IoU (L12–20) | 0.343 | similar (~0.30–0.38) |
+| Middle/early ratio | 1.283× | > 1.60× (target) |
+| Claim 3 status | Borderline weak/moderate | Moderately supported (if > 1.60×) |
+
+### Success criterion
+- ratio **> 1.60×** → Claim 3 "Moderately supported"
+- ratio **> 2.00×** → Claim 3 "Strongly supported"
+
+### New outputs (in `data/analysis/multilingual_circuits/`)
+| File | Description |
+|---|---|
+| `iou_per_layer_concept_paired_decision.csv` | Per-layer concept-paired IoU, decision token |
+| `iou_per_layer_concept_paired_pooled.csv` | Per-layer concept-paired IoU, all positions |
+| `node_language_labels_decision.csv` | Node lang profiles at decision-position only |
+
+---

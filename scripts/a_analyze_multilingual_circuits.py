@@ -441,6 +441,189 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 2b. Concept-paired IoU (removes cross-concept coincidental overlaps)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def compute_concept_paired_iou(
+    features_dir: Path, behaviour: str, split: str,
+    train_jsonl: Path, layers: list, out_dir: Path,
+) -> dict:
+    """
+    Compute per-layer IoU matched by concept.
+
+    For each concept c: IoU_c(L) = |EN_feats_c ∩ FR_feats_c| / |EN_feats_c ∪ FR_feats_c|
+    where EN_feats_c = union of top-K features over the 3 EN prompts for concept c.
+    Final IoU(L) = mean over all concepts.
+
+    This removes cross-concept coincidental overlaps: a feature firing in EN-concept-0
+    AND FR-concept-3 would inflate the all-vs-all intersection but is NOT counted here
+    because it is not in EN_set_0 ∩ FR_set_0 nor in EN_set_3 ∩ FR_set_3.
+
+    Expected vs pooled:
+    - Early layers: lower IoU (word-form features are concept+language specific;
+      no cross-concept coincidental overlaps)
+    - Middle layers: similar or higher (concept-specific semantic features match
+      EN and FR for the same concept → appear in intersection)
+    - Sharper middle/early gradient → stronger Claim 3 evidence
+
+    In multi-token mode: computes pooled-per-concept and decision-per-concept
+    variants (analogous to compute_iou).
+
+    Returns dict with:
+      decision:      pd.DataFrame   (always available if decision rows exist)
+      pooled:        pd.DataFrame   (all positions pooled per concept)
+      is_multi_token: bool
+      stats_decision: dict
+      stats_pooled:   dict
+    """
+    print("\n" + "=" * 60)
+    print("2b. CONCEPT-PAIRED IoU (concept-matched EN vs FR)")
+    print("=" * 60)
+
+    # Load prompts with concept_index
+    prompts_df = load_prompts(train_jsonl)
+    if "concept_index" not in prompts_df.columns:
+        print("  ERROR: 'concept_index' column missing from JSONL. Cannot compute concept-paired IoU.")
+        return {}
+
+    concepts = sorted(prompts_df["concept_index"].unique())
+    print(f"  Concepts ({len(concepts)}): {concepts}")
+
+    # Build per-concept prompt index sets
+    concept_en: dict = {}  # concept_index → list of prompt_idx (EN)
+    concept_fr: dict = {}  # concept_index → list of prompt_idx (FR)
+    for c in concepts:
+        mask_c = prompts_df["concept_index"] == c
+        concept_en[c] = sorted(prompts_df.loc[mask_c & (prompts_df["language"] == "en"), "prompt_idx"].tolist())
+        concept_fr[c] = sorted(prompts_df.loc[mask_c & (prompts_df["language"] == "fr"), "prompt_idx"].tolist())
+
+    n_prompts = len(prompts_df)
+
+    prompt_to_rows: dict | None = None
+    position_map: list | None = None
+    is_multi_token = False
+
+    rows_pooled: list = []
+    rows_decision: list = []
+
+    for layer in layers:
+        npy_path = (features_dir / f"layer_{layer}"
+                    / f"{behaviour}_{split}_top_k_indices.npy")
+        if not npy_path.exists():
+            print(f"  WARNING: {npy_path} not found, skipping layer {layer}")
+            continue
+
+        idx = np.load(npy_path)
+        if idx.ndim == 3:
+            idx = idx[:, 0, :]
+        elif idx.ndim == 1:
+            continue
+
+        n_total = idx.shape[0]
+        multi = (n_total != n_prompts)
+
+        if multi:
+            is_multi_token = True
+            if prompt_to_rows is None:
+                pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
+                if pm_path.exists():
+                    position_map = json.load(open(pm_path))
+                    prompt_to_rows = {}
+                    for row_i, entry in enumerate(position_map):
+                        p = entry["prompt_idx"]
+                        prompt_to_rows.setdefault(p, []).append(row_i)
+                    n_pos = n_total // n_prompts if n_prompts else 0
+                    print(f"  Multi-token mode: {n_total} rows / {n_prompts} prompts "
+                          f"({n_pos} pos/prompt)")
+                else:
+                    print(f"  WARNING: position_map not found, skipping layer {layer}")
+                    continue
+            if position_map is None:
+                continue
+        else:
+            # Single-token: row == prompt_idx
+            prompt_to_rows = {p: [p] for p in range(n_prompts)}
+            position_map = None
+
+        def _feats(prompt_list, decision_only: bool = False) -> set:
+            rows = []
+            for p in prompt_list:
+                for r in prompt_to_rows.get(p, []):
+                    if decision_only:
+                        if position_map is not None and position_map[r].get("is_decision_position"):
+                            rows.append(r)
+                        elif position_map is None:
+                            rows.append(r)  # single-token: the only row is the decision row
+                    else:
+                        rows.append(r)
+            if not rows:
+                return set()
+            return set(idx[np.array(rows, dtype=np.intp), :].flatten().tolist())
+
+        def _concept_iou(decision_only: bool = False):
+            per_concept_ious = []
+            for c in concepts:
+                en_feats = _feats(concept_en[c], decision_only=decision_only)
+                fr_feats = _feats(concept_fr[c], decision_only=decision_only)
+                if not en_feats or not fr_feats:
+                    continue
+                inter = en_feats & fr_feats
+                union = en_feats | fr_feats
+                per_concept_ious.append(len(inter) / len(union) if union else 0.0)
+            if not per_concept_ious:
+                return None
+            return {
+                "layer": layer,
+                "iou": round(float(np.mean(per_concept_ious)), 4),
+                "iou_std": round(float(np.std(per_concept_ious)), 4),
+                "n_concepts": len(per_concept_ious),
+            }
+
+        r_d = _concept_iou(decision_only=True)
+        r_p = _concept_iou(decision_only=False)
+        if r_d:
+            rows_decision.append(r_d)
+        if r_p:
+            rows_pooled.append(r_p)
+
+        d_iou = r_d["iou"] if r_d else float("nan")
+        p_iou = r_p["iou"] if r_p else float("nan")
+        if multi:
+            print(f"  Layer {layer:2d}: concept_paired decision={d_iou:.4f}  pooled={p_iou:.4f}")
+        else:
+            print(f"  Layer {layer:2d}: concept_paired decision={d_iou:.4f}  "
+                  f"(n_concepts={r_d['n_concepts'] if r_d else 0})")
+
+    df_decision = pd.DataFrame(rows_decision)
+    df_pooled   = pd.DataFrame(rows_pooled)
+
+    if df_decision.empty and df_pooled.empty:
+        print("  No concept-paired IoU data.")
+        return {}
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    stats_decision, stats_pooled = {}, {}
+    print(f"\n  Region statistics (concept-paired):")
+    if not df_decision.empty:
+        df_decision.to_csv(out_dir / "iou_per_layer_concept_paired_decision.csv", index=False)
+        print(f"  Saved: iou_per_layer_concept_paired_decision.csv")
+        stats_decision = _iou_region_stats(df_decision, label="concept-paired decision")
+    if not df_pooled.empty and is_multi_token:
+        df_pooled.to_csv(out_dir / "iou_per_layer_concept_paired_pooled.csv", index=False)
+        print(f"  Saved: iou_per_layer_concept_paired_pooled.csv")
+        stats_pooled = _iou_region_stats(df_pooled, label="concept-paired pooled ")
+
+    return {
+        "decision": df_decision,
+        "pooled": df_pooled,
+        "is_multi_token": is_multi_token,
+        "stats_decision": stats_decision,
+        "stats_pooled": stats_pooled,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # IoU comparison figure
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1098,12 +1281,19 @@ def compute_node_language_labels(
     split: str,
     train_jsonl: Path,
     out_dir: Path,
+    decision_only: bool = False,
 ) -> pd.DataFrame:
     """
     Diagnostic language profile for each graph node.
 
     For every (layer, feature) in the graph, counts the number of EN and FR prompts
-    where the feature appears in the top-k at ANY token position (pooled over positions).
+    where the feature appears in the top-k.
+
+    decision_only=False (default): pooled over ALL token positions.
+    decision_only=True:            only rows where is_decision_position=True.
+      Use this to confirm that late-layer fr_leaning features are genuinely
+      active at the output-prediction step (not just content-word positions).
+
     This is a diagnostic: decision-token features are expected to be cross-lingual
     ("insufficient_data" or "balanced" is NOT a failure — it characterises them).
 
@@ -1116,7 +1306,7 @@ def compute_node_language_labels(
     Outputs:
       node_language_labels.csv  columns:
         node_id, layer, feature_idx, n_en_active, n_fr_active,
-        en_freq, fr_freq, lang_asym, lang_profile
+        en_freq, fr_freq, lang_asym, lang_profile[, lang_profile_decision]
     """
     print("\n" + "=" * 60)
     print("PHASE 3.1 — NODE LANGUAGE PROFILES (DIAGNOSTIC)")
@@ -1136,7 +1326,8 @@ def compute_node_language_labels(
         print("  No feature nodes found in graph.")
         return pd.DataFrame()
 
-    print(f"  Graph nodes: {len(feature_nodes)} feature nodes")
+    mode_label = "decision-only" if decision_only else "pooled (all positions)"
+    print(f"  Graph nodes: {len(feature_nodes)} feature nodes  |  mode: {mode_label}")
 
     # Load prompts → EN/FR sets
     prompts_df = load_prompts(train_jsonl)
@@ -1148,17 +1339,20 @@ def compute_node_language_labels(
 
     # Load position_map (multi-token mode)
     pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
+    position_map_data = None
     if pm_path.exists():
         position_map_data = json.load(open(pm_path))
-        prompt_to_rows: dict = {}
+        prompt_to_rows_all: dict = {}
+        prompt_to_rows_dec: dict = {}
         for row_idx, entry in enumerate(position_map_data):
             p = entry["prompt_idx"]
-            if p not in prompt_to_rows:
-                prompt_to_rows[p] = []
-            prompt_to_rows[p].append(row_idx)
-        print(f"  Position map: {len(position_map_data)} rows, {len(prompt_to_rows)} prompts")
+            prompt_to_rows_all.setdefault(p, []).append(row_idx)
+            if entry.get("is_decision_position", False):
+                prompt_to_rows_dec.setdefault(p, []).append(row_idx)
+        print(f"  Position map: {len(position_map_data)} rows, {len(prompt_to_rows_all)} prompts")
+        prompt_to_rows = prompt_to_rows_dec if decision_only else prompt_to_rows_all
     else:
-        # Single-token mode: row index == prompt index
+        # Single-token mode: row index == prompt index (that row IS the decision token)
         prompt_to_rows = {p: [p] for p in range(n_en + n_fr)}
         print("  No position_map found — using single-token (row=prompt_idx) mode")
 
@@ -1237,19 +1431,28 @@ def compute_node_language_labels(
         print("  No results — check that features_dir and graph_json are aligned.")
         return df
 
-    out_path = out_dir / "node_language_labels.csv"
+    suffix = "_decision" if decision_only else ""
+    out_path = out_dir / f"node_language_labels{suffix}.csv"
     df.to_csv(out_path, index=False)
     print(f"  Saved: {out_path}")
 
     # Summary
     profile_counts = df["lang_profile"].value_counts()
-    print(f"\n  lang_profile summary ({len(df)} nodes):")
+    print(f"\n  lang_profile summary ({len(df)} nodes, {mode_label}):")
     for label, cnt in profile_counts.items():
         print(f"    {label:20s}: {cnt:3d} ({100*cnt/len(df):.1f}%)")
-    print(
-        f"\n  NOTE: 'insufficient_data' / 'balanced' is EXPECTED for decision-token features."
-        f"\n  Language-specific content-word features live at content positions (Phase 3 graph)."
-    )
+
+    if decision_only:
+        print(
+            f"\n  NOTE: decision-only labels show which features are language-specific"
+            f"\n  at the OUTPUT PREDICTION step (is_decision_position=True rows only)."
+            f"\n  fr_leaning at late layers = genuine FR output-preparation features."
+        )
+    else:
+        print(
+            f"\n  NOTE: 'insufficient_data' / 'balanced' is EXPECTED for decision-token features."
+            f"\n  Language-specific content-word features live at content positions (Phase 3 graph)."
+        )
 
     return df
 
@@ -1426,6 +1629,9 @@ def main():
                         help="Layers to compute IoU for (default: 10-25)")
     parser.add_argument("--node_labels", action="store_true",
                         help="Run Phase 3.1: diagnostic language profile for each graph node.")
+    parser.add_argument("--decision_only_labels", action="store_true",
+                        help="In Phase 3.1: count features only at decision token positions "
+                             "(is_decision_position=True). Saves node_language_labels_decision.csv.")
     parser.add_argument("--community_summary", action="store_true",
                         help="Run Phase 3.2: VW-subgraph Louvain community interpretability.")
     parser.add_argument("--graph_json", type=str, default=None,
@@ -1434,6 +1640,9 @@ def main():
                             "Defaults to get_paths() default (attribution_graph_train_n48.json). "
                             "Use to point at role-aware graph (_roleaware suffix)."
                         ))
+    parser.add_argument("--concept_paired", action="store_true",
+                        help="Compute concept-paired IoU (Claim 3 improvement). "
+                             "Saves iou_per_layer_concept_paired_decision.csv.")
     args = parser.parse_args()
 
     P = get_paths(args.behaviour, args.split)
@@ -1462,6 +1671,25 @@ def main():
     # IoU comparison figure (multi-token mode only)
     plot_iou_curves(iou_result, out_dir)
 
+    # 2b. Concept-paired IoU
+    if args.concept_paired:
+        cp_result = compute_concept_paired_iou(
+            P["features_dir"], args.behaviour, args.split,
+            train_jsonl=P["train_jsonl"],
+            layers=args.layers, out_dir=out_dir,
+        )
+        # Print comparison summary
+        if cp_result:
+            sp_cp = cp_result.get("stats_decision", cp_result.get("stats_pooled", {}))
+            sp_all = iou_result.get("stats_pooled", {})
+            print(f"\n  ── Claim 3 comparison ──")
+            print(f"  All-vs-all pooled:           middle/early = "
+                  f"{sp_all.get('ratio_mid_early', float('nan')):.3f}×")
+            print(f"  Concept-paired decision:     middle/early = "
+                  f"{sp_cp.get('ratio_mid_early', float('nan')):.3f}×")
+            if not cp_result.get("is_multi_token", False):
+                print("  (single-token mode: only decision curve computed)")
+
     # 4. Bridge features
     bridge_df = find_bridge_features(P["ablation_csv"], P["train_jsonl"],
                                      out_dir=out_dir)
@@ -1482,6 +1710,17 @@ def main():
             split=args.split,
             train_jsonl=P["train_jsonl"],
             out_dir=out_dir,
+            decision_only=False,
+        )
+    if args.decision_only_labels:
+        compute_node_language_labels(
+            graph_json=graph_json_path,
+            features_dir=P["features_dir"],
+            behaviour=args.behaviour,
+            split=args.split,
+            train_jsonl=P["train_jsonl"],
+            out_dir=out_dir,
+            decision_only=True,
         )
 
     # Phase 3.2: Community interpretability
