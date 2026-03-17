@@ -68,6 +68,18 @@ behaviours:
     #   overall mean_norm_logprob_diff ≥ 1.0.
     # See scripts/b_tokenize_audit_multilingual.py for FR tokenization audit.
 
+  multilingual_circuits_b1:
+    train_size: 96
+    test_size: 32
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "B1: EN+FR antonym prompts with 8 templates per concept (T0-T7), 96 train + 32 test"
+    # Extends multilingual_circuits (T0-T3) with 4 new surface variants (T4-T7).
+    # Same 8 cross-language concepts (concept_idx=1 excluded).
+    # Stratified split: 2 test_tidxs + 6 train_tidxs per (concept, language) group.
+    # Test_tidxs shared EN/FR per concept for C3 patching alignment.
+    # → train=96 (48 EN + 48 FR), test=32 (16 EN + 16 FR).
+
 # Activation capture
 activations:
   layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)

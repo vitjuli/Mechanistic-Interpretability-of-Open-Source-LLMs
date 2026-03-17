@@ -1390,9 +1390,11 @@ def create_prompt_pairs(
             logger.info(f"C3 pairing result: {matched} pairs "
                         f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)")
 
-    elif behaviour == "multilingual_circuits":
+    elif behaviour in ("multilingual_circuits", "multilingual_circuits_b1"):
         # C3 only: language swap (EN antonym → FR antonym), same concept + template_idx.
         # All prompts are antonym-only in this behaviour; patch_mode is ignored (always C3).
+        # multilingual_circuits_b1: 8 templates per concept (T0-T7) vs 4 in multilingual_circuits.
+        n_templates = 8 if behaviour == "multilingual_circuits_b1" else 4
         en_map: Dict = {}  # (cidx, tidx) → EN prompt
         for p in prompts:
             if p.get("language") == "en":
@@ -1406,7 +1408,7 @@ def create_prompt_pairs(
             src = en_map.get(key)
             if src is None:
                 # Fallback: any template for the same concept
-                for alt in range(4):
+                for alt in range(n_templates):
                     src = en_map.get((t.get("concept_index"), alt))
                     if src:
                         break
@@ -1415,12 +1417,12 @@ def create_prompt_pairs(
                 matched += 1
             else:
                 logger.warning(
-                    f"multilingual_circuits C3: no EN source for FR concept_idx="
+                    f"{behaviour} C3: no EN source for FR concept_idx="
                     f"{t.get('concept_index')} template_idx={t.get('template_idx')}"
                 )
 
         logger.info(
-            f"multilingual_circuits C3 pairing: {matched} pairs "
+            f"{behaviour} C3 pairing: {matched} pairs "
             f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)"
         )
 
@@ -1686,7 +1688,7 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits", "multilingual_circuits_b1"],
         default="grammar_agreement",
         help="Which behaviour to analyze",
     )

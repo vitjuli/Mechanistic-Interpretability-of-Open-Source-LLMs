@@ -7,12 +7,15 @@ Supported behaviours:
   - antonym_operation: Predict the antonym of an adjective (EN only, v0)
   - multilingual_antonym: EN+FR antonym + EN synonym prompts for Anthropic circuits
                           reproduction (operation/operand/language swap experiments)
+  - multilingual_circuits: Antonym-only EN+FR prompts, Anthropic reproduction (4 templates)
+  - multilingual_circuits_b1: B1 extended set — 8 templates per concept (T0-T7), 96 train
 
 Usage:
     python scripts/01_generate_prompts.py
     python scripts/01_generate_prompts.py --behaviour physics_scalar_vector_operator
     python scripts/01_generate_prompts.py --behaviour antonym_operation
     python scripts/01_generate_prompts.py --behaviour multilingual_antonym
+    python scripts/01_generate_prompts.py --behaviour multilingual_circuits_b1
 """
 
 import json
@@ -830,6 +833,115 @@ def generate_multilingual_circuits_prompts(
 
 
 GENERATORS["multilingual_circuits"] = generate_multilingual_circuits_prompts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Behaviour: multilingual_circuits_b1
+#   B1 extended template set: 8 templates per (concept, language) group.
+#   T0-T3 are identical to multilingual_circuits; T4-T7 add new surface variants.
+#   Stratified split: 2 test_tidxs per concept (shared EN/FR), 6 train_tidxs.
+#   → train = 48 EN + 48 FR = 96, test = 16 EN + 16 FR = 32.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_ML_ANT_TEMPLATES_B1: Dict[str, List[str]] = {
+    "en": [
+        'The opposite of "{word}" is',        # T0  (same as MC T0)
+        'The antonym of "{word}" is',         # T1  (same as MC T1)
+        '"{word}" is the opposite of',        # T2  (same as MC T2)
+        '"{word}" is the antonym of',         # T3  (same as MC T3)
+        'The contrary of "{word}" is',        # T4  (new)
+        '"{word}" is the contrary of',        # T5  (new)
+        'The word opposite to "{word}" is',   # T6  (new)
+        '"{word}" is an antonym of',          # T7  (new; "an antonym" vs "the antonym")
+    ],
+    "fr": [
+        'Le contraire de "{word}" est',       # T0  (same as MC T0)
+        "L'antonyme de \"{word}\" est",       # T1  (same as MC T1)
+        '"{word}" est le contraire de',       # T2  (same as MC T2)
+        '"{word}" est l\'antonyme de',        # T3  (same as MC T3)
+        "L'opposé de \"{word}\" est",         # T4  (new)
+        '"{word}" est l\'opposé de',          # T5  (new)
+        'Le mot opposé à "{word}" est',       # T6  (new; uses "à")
+        '"{word}" est un antonyme de',        # T7  (new; "un antonyme" vs "l'antonyme")
+    ],
+}
+
+
+def generate_multilingual_circuits_b1_prompts(
+    n_train: int = 96,
+    n_test: int = 32,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate B1 multilingual antonym prompts: 8 templates per (concept, language) group.
+
+    Extends multilingual_circuits (4 templates, T0-T3) with 4 new surface variants
+    (T4-T7), providing 8 templates total per (concept, language) group.
+
+    8 cross-language concepts (concept_idx=1 excluded: 'froid' = 2 tokens):
+      indices 0, 2, 3, 4, 5, 6, 7, 8.
+    8 templates × 2 languages = 16 prompts per concept → 128 total.
+
+    Stratified split: for each of 16 (concept_index, language) groups, shuffle
+    [0..7] template indices; assign first 2 shuffled indices to test and the
+    remaining 6 to train. Test indices are drawn ONCE per concept (shared EN/FR)
+    to preserve C3 patching alignment (source=EN, target=FR, same template_idx).
+    → train = 48 EN + 48 FR = 96, test = 16 EN + 16 FR = 32.
+
+    Fields: identical schema to multilingual_circuits (prompt, correct_answer,
+    incorrect_answer, word, antonym, language, concept_index, template_idx,
+    cross_lang_valid).
+
+    Intervention axis: C3 (language swap) — same concept_index; test_tidxs are
+    shared between EN and FR per concept so patching pairs are template-matched.
+    """
+    rng = random.Random(seed)
+    train_prompts: List[Dict] = []
+    test_prompts:  List[Dict] = []
+
+    # 8 cross-language concepts (has_fr=True from _ML_CONCEPTS)
+    mc_concepts = [
+        (cidx, ew, ea, fw, fa)
+        for cidx, ew, ea, fw, fa, hf in _ML_CONCEPTS
+        if hf
+    ]
+
+    # Draw 2 test_tidxs ONCE per concept (shared between EN and FR) so that
+    # C3 patching pairs always have matching template_idx in source and target.
+    for cidx, en_word, en_ant, fr_word, fr_ant in mc_concepts:
+        tidxs = list(range(8))
+        rng.shuffle(tidxs)
+        test_tidxs = set(tidxs[:2])  # 2 test templates per concept
+
+        for lang in ["en", "fr"]:
+            templates = _ML_ANT_TEMPLATES_B1[lang]
+            word = en_word if lang == "en" else fr_word
+            ant  = en_ant  if lang == "en" else fr_ant
+
+            for tidx, tmpl in enumerate(templates):
+                p = {
+                    "prompt":           tmpl.format(word=word),
+                    "correct_answer":   f" {ant}",
+                    "incorrect_answer": f" {word}",
+                    "word":             word,
+                    "antonym":          ant,
+                    "language":         lang,
+                    "concept_index":    cidx,
+                    "template_idx":     tidx,
+                    "cross_lang_valid": True,
+                }
+                if tidx in test_tidxs:
+                    test_prompts.append(p)
+                else:
+                    train_prompts.append(p)
+
+    assert len(train_prompts) == 96, f"Expected 96 train, got {len(train_prompts)}"
+    assert len(test_prompts)  == 32, f"Expected 32 test, got {len(test_prompts)}"
+
+    return train_prompts, test_prompts
+
+
+GENERATORS["multilingual_circuits_b1"] = generate_multilingual_circuits_b1_prompts
 
 
 def main():

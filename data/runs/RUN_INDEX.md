@@ -238,27 +238,35 @@ This directly supports Anthropic's claim that language-specific and cross-lingua
 
 ## v5 — multilingual_circuits_v5_concept_paired
 
-**Analysis date:** PENDING (CSD3 SBATCH not yet submitted)
-**SLURM job:** TBD (analysis only — no model; uses features from SLURM 25058380)
+**Analysis date:** 2026-03-17
+**SLURM job:** 25287798 (analysis only — CPU node; uses features from SLURM 25058380)
 **SBATCH:** `jobs/multilingual_circuits_v5_analysis.sbatch`
 **Change vs v4:** Analysis script only. Two new analyses:
-  1. `--concept_paired`: per-concept EN vs FR IoU (matched by concept_index); removes cross-concept coincidental overlaps
-  2. `--decision_only_labels`: Phase 3.1 re-run at decision-token positions only (validates late-layer fr_leaning)
+  1. `--concept_paired`: per-concept EN vs FR IoU (matched by concept_index)
+  2. `--decision_only_labels`: Phase 3.1 re-run at decision-token positions only
 
-### Motivation
-All-vs-all pooled IoU includes features firing in EN-concept-0 AND FR-concept-3 (different concepts). These inflate early-layer EN∩FR, flattening the Claim 3 gradient. Concept-paired IoU requires overlap within the **same** concept — removing coincidental cross-concept noise.
+### Results — Concept-Paired IoU: NEGATIVE RESULT
 
-### Expected outcomes
-| Metric | Current (v2 pooled) | Expected (v5 concept-paired decision) |
-|---|---|---|
-| Early IoU (L10–11) | 0.267 | lower (~0.15–0.22) |
-| Middle IoU (L12–20) | 0.343 | similar (~0.30–0.38) |
-| Middle/early ratio | 1.283× | > 1.60× (target) |
-| Claim 3 status | Borderline weak/moderate | Moderately supported (if > 1.60×) |
+**Concept-paired decision middle/early = 1.162×** — worse than all-vs-all pooled 1.283×.
 
-### Success criterion
-- ratio **> 1.60×** → Claim 3 "Moderately supported"
-- ratio **> 2.00×** → Claim 3 "Strongly supported"
+| Curve | Early (10–11) | Middle (12–20) | Late (21–25) | Ratio |
+|---|---|---|---|---|
+| All-vs-all pooled (v2 reference) | 0.267 | 0.343 | 0.297 | **1.283×** |
+| All-vs-all decision-only | 0.390 | 0.431 | 0.421 | 1.106× |
+| Concept-paired decision (v5) | 0.404 | 0.469 | 0.433 | 1.162× |
+
+**Why worse:** With only 3 prompts/concept, concept-level feature sets are small and dominated by structural template features active in all 3 prompts, inflating IoU uniformly at ALL layers (not just middle). High variance: iou_std mean = 0.042, L16 spike = 0.651. **Would require ≥10 prompts/concept to outperform all-vs-all.**
+
+**Final conclusion:** The 1.283× pooled ratio is the true signal, not a measurement artifact reducible by methodology. All three optimization attempts (content-only, concept-paired, decision-only) produced worse gradients than pooled. **All-vs-all pooled 1.283× is the authoritative Claim 3 metric and is not further improvable with current data.**
+
+### Results — Decision-Only Node Labels
+
+8 features changed profile. Key changes:
+- **3 new en_leaning** (L10_F135728, L10_F148569, L10_F104215): EN-specific at decision token; hidden in pooled because FR content positions diluted them
+- **3 fr_leaning → insufficient_data** (L16_F60195, L20_F23519, L24_F150520): these are **content-position FR features** — fire on FR content words but barely at decision token; NOT output-preparation features → C5 circuit is slightly smaller (net fr_leaning 33→32)
+- **2 upgrades to fr_leaning** (L13_F122772, L18_F109099): more specifically FR at decision token than pooled suggested
+
+Decision-only summary: balanced=54 (54.5%), fr_leaning=32 (32.3%), insufficient=7, en_leaning=6. Late-layer C5 FR circuit validated at decision-token level.
 
 ### New outputs (in `data/analysis/multilingual_circuits/`)
 | File | Description |

@@ -557,7 +557,7 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits", "multilingual_circuits_b1"],
         default="grammar_agreement",
         help="Which behaviour to evaluate",
     )
@@ -666,8 +666,8 @@ def main():
             success_threshold,
         )
 
-        # Enforce baseline gate for multilingual_circuits
-        if behaviour == "multilingual_circuits" and "language" in results_df.columns:
+        # Enforce baseline gate for multilingual_circuits / multilingual_circuits_b1
+        if behaviour in ("multilingual_circuits", "multilingual_circuits_b1") and "language" in results_df.columns:
             lang_acc = (
                 results_df.groupby("language")["logprob_diff_normalized"]
                 .apply(lambda s: (s > 0).mean())
