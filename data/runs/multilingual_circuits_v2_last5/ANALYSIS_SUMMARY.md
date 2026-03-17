@@ -8,7 +8,7 @@
 
 ---
 
-## Key Result: Claim 3 Substantially Improved (pooled IoU)
+## Key Result: Claim 3 Direction Confirmed (pooled IoU)
 
 **IoU early (L10–11) = 0.267 → middle (L12–20) = 0.343 → late (L21–25) = 0.297**
 
@@ -103,6 +103,12 @@ weak/moderate — direction is unambiguous but gradient is shallow; not a thesis
 Claim 1 remains weak but qualitatively consistent.
 Phase 1 confirmed that position separation does not sharpen Claim 3 beyond what pooled already shows.
 **Next step: Phase 2 (virtual-weight DAG) — graph topology is the primary remaining limitation.**
+
+---
+## my notes
+
+
+Position-separated IoU analysis confirmed that decision-token and non-decision-token feature sets behave differently, validating the token-role split as a meaningful diagnostic. However, isolating non-decision positions did not strengthen the middle-layer concentration effect beyond the pooled last_5 analysis. This suggests that the remaining gap with Anthropic is not primarily due to token-position mixing, but to more structural limitations of the current setup: short prompts, diluted content windows, and decision-token-only graph construction.
 
 ---
 

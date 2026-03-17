@@ -118,39 +118,56 @@ See `COMPARISON_v1_v2.md` for full comparison.
 
 ---
 
-## v3 — multilingual_circuits_v3_vw (PENDING CSD3)
+## v3 — multilingual_circuits_v3_vw
 
-**Analysis date:** pending
-**SLURM job:** pending
+**Analysis date:** 2026-03-16
+**SLURM job:** 25236913 (step 06 only; features from SLURM 25058380)
 **SBATCH:** `jobs/multilingual_circuits_v3_vw_06.sbatch`
-**Change vs v2:** Step 06 uses `--vw_threshold 0.01` → adds virtual-weight inter-feature edges between adjacent layer pairs. All other steps identical to v2 (features from SLURM 25058380).
+**UI run:** `data/ui_offline/20260316-203723_multilingual_circuits_train_n48/`
+**Change vs v2:** Step 06 uses `--vw_threshold 0.01` → adds virtual-weight inter-feature edges between adjacent layer pairs. All other steps identical to v2.
 
-### Purpose
-Replace star topology (95 nodes, 285 edges, no feature→feature connections) with a
-DAG where features can influence features at the next layer. Virtual weight
-`W_vw[tgt, src] = W_enc_tgt[tgt, :] · W_dec_src[src, :]` approximates the linear
-pathway from source feature src through the residual stream to target feature tgt.
-Directly addresses the "star graph" limitation identified in the Phase 2 plan.
-
-### Changes
-| Component | v2 | v3 |
+### Graph metrics
+| Metric | v2 (star) | v3 (DAG) |
 |---|---|---|
-| Feature extraction (step 04) | last_5, 240 samples | unchanged |
-| Graph (step 06) | star topology | DAG + VW edges (threshold 0.01) |
-| Interventions (step 07) | unchanged | unchanged (re-run after graph update) |
-| UI prep (step 09) | unchanged | re-run after step 06 |
+| Feature nodes | 95 | 95 (unchanged) |
+| Star edges | 285 | 285 |
+| VW inter-feature edges | 0 | **539** |
+| Total edges | 285 | **824** |
+| Louvain communities | 1–2 (flat) | **4** (layer-structured) |
+| VW threshold | — | 0.01 |
+| VW |weight| range | — | 0.0102 – 2.1356 |
+| VW |weight| mean/median | — | 0.117 / 0.071 |
 
-### Expected key metrics
-| Metric | v2 | v3 (expected) |
-|---|---|---|
-| Feature nodes | 95 | 95 (same features) |
-| Star edges (3 per feature) | 285 | 285 |
-| VW inter-feature edges | 0 | >> 285 (threshold-dependent) |
-| Total edges | 285 | >> 570 |
-| Graph diameter | 2 (star) | ≥ 3 (multi-hop paths exist) |
-| Louvain communities | 1–2 (flat) | ≥ 2 (layer-structured) |
+### VW edge density by layer pair
+| Pair | VW edges | | Pair | VW edges |
+|---|---|-|---|---|
+| L10→L11 | 51 | | L19→L20 | 23 |
+| L11→L12 | 32 | | L20→L21 | 45 |
+| L12→L13 | 33 | | L21→L22 | 43 |
+| L13→L14 | 6  | | L22→L23 | 79 |
+| L14→L15 | 4  | | L23→L24 | 110 |
+| L15→L16 | 4  | | L24→L25 | 97 |
+| L16→L17 | 2  | | — | — |
+| L17→L18 | 4  | | — | — |
+| L18→L19 | 6  | | — | — |
 
-### Status: PENDING
-Run `jobs/multilingual_circuits_v3_vw_06.sbatch` on CSD3, then update this entry.
+**Pattern:** Early (L10–L13) and late (L20–L25) zones are densely connected; middle (L13–L19) is sparse bottleneck (2–6 edges per pair).
+
+### Louvain communities (4)
+| Community | Features | Layer range | I/O node | Interpretation |
+|---|---|---|---|---|
+| C0 | 3 | L24–L25 | — | Late outlier cluster |
+| C1 | 28 | L10–L13 | output_correct | Early features → correct output |
+| C2 | 29 | L14–L22 | output_incorrect | Middle features → incorrect output |
+| C3 | 35 | L22–L25 | input | Late features ← input |
+
+L22 is split between C2 and C3, marking the transition zone.
+
+### Interpretation
+The 4 communities reveal functional decomposition absent in the star graph:
+- C1 (early): processes input tokens, feeds correct-answer direction
+- C2 (middle): executes antonym transformation, connected to output_incorrect direction
+- C3 (late): strongly input-driven late features; peak cross-lingual IoU (L20) sits at the C2/C3 boundary
+- The sparse middle zone (L13–L19) aligns with the IoU rise from L10→L20 in v2 analysis
 
 ---

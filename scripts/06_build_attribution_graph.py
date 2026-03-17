@@ -885,7 +885,8 @@ class TranscoderAttributionBuilder:
             return [], "none"
 
         prompt = self.prompts[prompt_idx]
-        text = prompt.get("text", "")
+        # Support both 'prompt' key (multilingual_circuits) and 'text' key (other behaviours)
+        text = prompt.get("prompt", prompt.get("text", ""))
 
         # Primary: regex quoted span
         m = _re.search(r'"([^"]+)"', text)
@@ -908,20 +909,27 @@ class TranscoderAttributionBuilder:
                 return [], "none"
 
         # Tokenize with offset_mapping to find content token IDs
+        content_token_ids: set = set()
+        cw = prompt.get("word", "")
         try:
             enc = self.model.tokenizer(
                 text,
                 return_offsets_mapping=True,
                 add_special_tokens=False,
             )
-        except Exception as e:
-            logger.warning(f"offset_mapping failed for prompt {prompt_idx}: {e}")
-            return [], "none"
-
-        content_token_ids: set = set()
-        for i, (cs, ce) in enumerate(enc["offset_mapping"]):
-            if ce > span_start and cs < span_end:
-                content_token_ids.add(enc["input_ids"][i])
+            for i, (cs, ce) in enumerate(enc["offset_mapping"]):
+                if ce > span_start and cs < span_end:
+                    content_token_ids.add(enc["input_ids"][i])
+        except Exception:
+            # Fallback: encode the content word directly (less precise but robust)
+            if cw:
+                try:
+                    for variant in [cw, " " + cw]:
+                        ids = self.model.tokenizer.encode(variant, add_special_tokens=False)
+                        content_token_ids.update(ids)
+                except Exception as e2:
+                    logger.warning(f"Tokenizer fallback failed for prompt {prompt_idx}: {e2}")
+                    return [], "none"
 
         if not content_token_ids:
             return [], "none"
