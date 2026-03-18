@@ -60,11 +60,17 @@ def get_paths(behaviour: str, split: str) -> dict:
     base = Path("data")
     interv_dir = base / "results" / "interventions" / behaviour
     n_prompts = 96 if behaviour == "multilingual_circuits_b1" else 48
+    # B1: default graph is the role-aware version (has VW edges for community detection)
+    if behaviour == "multilingual_circuits_b1":
+        graph_json = (base / "results" / "attribution_graphs" / behaviour
+                      / f"attribution_graph_{split}_n{n_prompts}_roleaware.json")
+    else:
+        graph_json = (base / "results" / "attribution_graphs" / behaviour
+                      / f"attribution_graph_{split}_n{n_prompts}.json")
     return {
         "train_jsonl":  base / "prompts" / f"{behaviour}_{split}.jsonl",
         "baseline_csv": base / "results" / f"baseline_{behaviour}_{split}.csv",
-        "graph_json":   base / "results" / "attribution_graphs" / behaviour
-                              / f"attribution_graph_{split}_n{n_prompts}.json",
+        "graph_json":   graph_json,
         "features_dir": base / "results" / "transcoder_features",
         "ablation_csv": interv_dir / f"intervention_ablation_{behaviour}.csv",
         "c3_csv":       interv_dir / f"intervention_patching_C3_{behaviour}.csv",
