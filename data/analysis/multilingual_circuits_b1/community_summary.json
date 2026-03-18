@@ -1,0 +1,236 @@
+[
+  {
+    "community_id": 0,
+    "n_features": 19,
+    "layer_min": 23,
+    "layer_max": 25,
+    "layer_range": "L23\u2013L25",
+    "members": [
+      "L23_F3316",
+      "L23_F56267",
+      "L24_F118673",
+      "L24_F119196",
+      "L24_F131457",
+      "L24_F29680",
+      "L24_F58564",
+      "L24_F60321",
+      "L24_F76837",
+      "L25_F142914",
+      "L25_F159196",
+      "L25_F15948",
+      "L25_F163068",
+      "L25_F19816",
+      "L25_F41381",
+      "L25_F63207",
+      "L25_F64049",
+      "L25_F70978",
+      "L25_F90133"
+    ],
+    "lang_profile_counts": {
+      "balanced": 9,
+      "fr_leaning": 10
+    },
+    "dominant_profile": "fr_leaning"
+  },
+  {
+    "community_id": 1,
+    "n_features": 15,
+    "layer_min": 18,
+    "layer_max": 21,
+    "layer_range": "L18\u2013L21",
+    "members": [
+      "L18_F152973",
+      "L19_F123748",
+      "L19_F135640",
+      "L19_F27199",
+      "L19_F29102",
+      "L19_F6873",
+      "L20_F101236",
+      "L20_F111853",
+      "L20_F11606",
+      "L20_F145235",
+      "L20_F149117",
+      "L20_F158746",
+      "L20_F71357",
+      "L20_F98282",
+      "L21_F145615"
+    ],
+    "lang_profile_counts": {
+      "balanced": 7,
+      "insufficient_data": 1,
+      "fr_leaning": 7
+    },
+    "dominant_profile": "balanced"
+  },
+  {
+    "community_id": 2,
+    "n_features": 5,
+    "layer_min": 23,
+    "layer_max": 25,
+    "layer_range": "L23\u2013L25",
+    "members": [
+      "L23_F8645",
+      "L24_F36045",
+      "L24_F48363",
+      "L25_F111603",
+      "L25_F43384"
+    ],
+    "lang_profile_counts": {
+      "balanced": 3,
+      "fr_leaning": 2
+    },
+    "dominant_profile": "balanced"
+  },
+  {
+    "community_id": 3,
+    "n_features": 1,
+    "layer_min": 24,
+    "layer_max": 24,
+    "layer_range": "L24\u2013L24",
+    "members": [
+      "L24_F150520"
+    ],
+    "lang_profile_counts": {
+      "fr_leaning": 1
+    },
+    "dominant_profile": "fr_leaning"
+  },
+  {
+    "community_id": 4,
+    "n_features": 9,
+    "layer_min": 23,
+    "layer_max": 25,
+    "layer_range": "L23\u2013L25",
+    "members": [
+      "L23_F64429",
+      "L24_F134204",
+      "L24_F136810",
+      "L24_F76363",
+      "L24_F81698",
+      "L25_F104408",
+      "L25_F138698",
+      "L25_F34754",
+      "L25_F59053"
+    ],
+    "lang_profile_counts": {
+      "fr_leaning": 9
+    },
+    "dominant_profile": "fr_leaning"
+  },
+  {
+    "community_id": 5,
+    "n_features": 4,
+    "layer_min": 14,
+    "layer_max": 17,
+    "layer_range": "L14\u2013L17",
+    "members": [
+      "L14_F57525",
+      "L15_F127839",
+      "L16_F45664",
+      "L17_F110833"
+    ],
+    "lang_profile_counts": {
+      "balanced": 3,
+      "fr_leaning": 1
+    },
+    "dominant_profile": "balanced"
+  },
+  {
+    "community_id": 6,
+    "n_features": 24,
+    "layer_min": 10,
+    "layer_max": 14,
+    "layer_range": "L10\u2013L14",
+    "members": [
+      "L10_F104215",
+      "L10_F126447",
+      "L10_F131503",
+      "L10_F141643",
+      "L10_F148569",
+      "L10_F40520",
+      "L10_F59805",
+      "L10_F68612",
+      "L11_F126143",
+      "L11_F33438",
+      "L11_F56459",
+      "L11_F59878",
+      "L11_F77813",
+      "L11_F89663",
+      "L12_F146578",
+      "L12_F22710",
+      "L12_F28960",
+      "L12_F40178",
+      "L12_F71563",
+      "L12_F83869",
+      "L13_F5837",
+      "L13_F70603",
+      "L13_F72758",
+      "L14_F41052"
+    ],
+    "lang_profile_counts": {
+      "balanced": 14,
+      "en_leaning": 2,
+      "insufficient_data": 1,
+      "fr_leaning": 7
+    },
+    "dominant_profile": "balanced"
+  },
+  {
+    "community_id": 7,
+    "n_features": 1,
+    "layer_min": 20,
+    "layer_max": 20,
+    "layer_range": "L20\u2013L20",
+    "members": [
+      "L20_F23519"
+    ],
+    "lang_profile_counts": {
+      "fr_leaning": 1
+    },
+    "dominant_profile": "fr_leaning"
+  },
+  {
+    "community_id": 8,
+    "n_features": 1,
+    "layer_min": 25,
+    "layer_max": 25,
+    "layer_range": "L25\u2013L25",
+    "members": [
+      "L25_F2891"
+    ],
+    "lang_profile_counts": {
+      "fr_leaning": 1
+    },
+    "dominant_profile": "fr_leaning"
+  },
+  {
+    "community_id": 9,
+    "n_features": 15,
+    "layer_min": 21,
+    "layer_max": 24,
+    "layer_range": "L21\u2013L24",
+    "members": [
+      "L21_F129759",
+      "L22_F108295",
+      "L22_F145377",
+      "L22_F160273",
+      "L22_F32734",
+      "L22_F41906",
+      "L22_F99330",
+      "L23_F111979",
+      "L23_F153393",
+      "L23_F40170",
+      "L23_F53700",
+      "L23_F5853",
+      "L23_F83865",
+      "L24_F5768",
+      "L24_F79080"
+    ],
+    "lang_profile_counts": {
+      "balanced": 7,
+      "en_leaning": 3,
+      "fr_leaning": 5
+    },
+    "dominant_profile": "balanced"
+  }
+]
