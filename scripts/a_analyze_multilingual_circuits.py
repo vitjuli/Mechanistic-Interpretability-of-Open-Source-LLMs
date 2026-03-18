@@ -59,11 +59,12 @@ except ImportError:
 def get_paths(behaviour: str, split: str) -> dict:
     base = Path("data")
     interv_dir = base / "results" / "interventions" / behaviour
+    n_prompts = 96 if behaviour == "multilingual_circuits_b1" else 48
     return {
         "train_jsonl":  base / "prompts" / f"{behaviour}_{split}.jsonl",
         "baseline_csv": base / "results" / f"baseline_{behaviour}_{split}.csv",
         "graph_json":   base / "results" / "attribution_graphs" / behaviour
-                              / f"attribution_graph_{split}_n48.json",
+                              / f"attribution_graph_{split}_n{n_prompts}.json",
         "features_dir": base / "results" / "transcoder_features",
         "ablation_csv": interv_dir / f"intervention_ablation_{behaviour}.csv",
         "c3_csv":       interv_dir / f"intervention_patching_C3_{behaviour}.csv",
