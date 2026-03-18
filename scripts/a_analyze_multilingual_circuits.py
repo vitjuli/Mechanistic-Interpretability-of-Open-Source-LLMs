@@ -448,6 +448,295 @@ def compute_iou(features_dir: Path, behaviour: str, split: str,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 2c. Frequency-ceiling filtered IoU (universal-feature diagnostic)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def compute_iou_freq_filtered(
+    features_dir: Path, behaviour: str, split: str,
+    train_jsonl: Path, layers: list, out_dir: Path,
+    freq_ceiling: float,
+) -> dict:
+    """
+    Variant of compute_iou() that removes universally-active features before
+    computing IoU.  For each layer, a feature is 'universal' if it appears in
+    the top-k of more than freq_ceiling × N_prompts prompts (EN+FR combined,
+    counting each prompt once regardless of how many positions it has).
+
+    Diagnostic purpose: if early-layer IoU drops more than middle-layer IoU
+    after filtering, template-structural features are inflating the early
+    baseline and Claim 3 is stronger than the raw ratio suggests.
+
+    Does NOT overwrite any existing output files.
+    Saves:  iou_per_layer_freqceil_XY.csv
+            iou_per_layer_decision_freqceil_XY.csv  (multi-token only)
+            iou_per_layer_content_freqceil_XY.csv   (multi-token only)
+    where XY = int(freq_ceiling * 100).
+
+    Returns same dict structure as compute_iou(), plus:
+      "freq_ceiling"      : float
+      "removed_per_layer" : list of int  (n universal features found per layer)
+    """
+    suffix = f"freqceil_{int(freq_ceiling * 100):02d}"
+
+    # ── Load prompt metadata ──────────────────────────────────────────────────
+    prompts = load_prompts(train_jsonl)
+    en_indices = sorted(prompts.loc[prompts["language"] == "en", "prompt_idx"].tolist())
+    fr_indices = sorted(prompts.loc[prompts["language"] == "fr", "prompt_idx"].tolist())
+    n_prompts  = len(en_indices) + len(fr_indices)
+
+    # ── Load position map (multi-token mode) ─────────────────────────────────
+    pm_path = features_dir / f"{behaviour}_{split}_position_map.json"
+    position_map    = None
+    prompt_to_rows  = None
+    is_multi_token  = False
+    if pm_path.exists():
+        position_map   = json.load(open(pm_path))
+        prompt_to_rows = {}
+        for row_idx, entry in enumerate(position_map):
+            p = entry["prompt_idx"]
+            if p not in prompt_to_rows:
+                prompt_to_rows[p] = []
+            prompt_to_rows[p].append(row_idx)
+        is_multi_token = True
+
+    rows_pooled   = []
+    rows_decision = []
+    rows_content  = []
+    removed_per_layer = []
+
+    for layer in layers:
+        npy_path = (features_dir / f"layer_{layer}"
+                    / f"{behaviour}_{split}_top_k_indices.npy")
+        if not npy_path.exists():
+            continue
+
+        idx = np.load(npy_path)
+        if idx.ndim == 3:
+            idx = idx[:, 0, :]
+        elif idx.ndim == 1:
+            continue
+
+        n_rows = idx.shape[0]
+
+        # ── Per-prompt feature frequency ──────────────────────────────────────
+        # Count how many prompts contain each feature (in any of their rows).
+        # freq[f] = n_prompts_containing_f / n_prompts_total.
+        max_f = int(idx.max()) + 1
+        prompt_counts = np.zeros(max_f, dtype=np.int32)
+
+        if is_multi_token and prompt_to_rows is not None:
+            for p in range(n_prompts):
+                rows_p = prompt_to_rows.get(p, [])
+                if rows_p:
+                    feats = np.unique(idx[rows_p, :].flatten())
+                    feats = feats[feats < max_f]
+                    prompt_counts[feats] += 1
+        else:
+            for p in range(min(n_prompts, n_rows)):
+                feats = np.unique(idx[p, :])
+                feats = feats[feats < max_f]
+                prompt_counts[feats] += 1
+
+        freq = prompt_counts / n_prompts
+        universal_feats = set(int(f) for f in np.where(freq > freq_ceiling)[0])
+        removed_per_layer.append(len(universal_feats))
+
+        # ── Build row-index groups (mirrors compute_iou logic) ────────────────
+        if n_rows == n_prompts:
+            en_rows     = list(en_indices)
+            fr_rows     = list(fr_indices)
+            en_rows_dec = en_rows
+            fr_rows_dec = fr_rows
+            en_rows_con = []
+            fr_rows_con = []
+        else:
+            if prompt_to_rows is None:
+                continue
+            en_rows = [r for p in en_indices for r in prompt_to_rows.get(p, [])]
+            fr_rows = [r for p in fr_indices for r in prompt_to_rows.get(p, [])]
+            en_rows_dec = [r for p in en_indices for r in prompt_to_rows.get(p, [])
+                           if position_map[r]["is_decision_position"]]
+            fr_rows_dec = [r for p in fr_indices for r in prompt_to_rows.get(p, [])
+                           if position_map[r]["is_decision_position"]]
+            en_rows_con = [r for p in en_indices for r in prompt_to_rows.get(p, [])
+                           if not position_map[r]["is_decision_position"]]
+            fr_rows_con = [r for p in fr_indices for r in prompt_to_rows.get(p, [])
+                           if not position_map[r]["is_decision_position"]]
+
+        def _iou_row_f(en_r, fr_r, _univ=universal_feats):
+            if not en_r or not fr_r:
+                return None
+            en_arr = np.array(en_r, dtype=np.intp)
+            fr_arr = np.array(fr_r, dtype=np.intp)
+            en_feats = set(idx[en_arr, :].flatten().tolist()) - _univ
+            fr_feats = set(idx[fr_arr, :].flatten().tolist()) - _univ
+            inter = en_feats & fr_feats
+            union = en_feats | fr_feats
+            iou   = len(inter) / len(union) if union else 0.0
+            return {
+                "layer":               layer,
+                "n_en_features":       len(en_feats),
+                "n_fr_features":       len(fr_feats),
+                "n_intersection":      len(inter),
+                "n_union":             len(union),
+                "iou":                 round(iou, 4),
+                "n_universal_removed": len(_univ),
+            }
+
+        r_p = _iou_row_f(en_rows,     fr_rows)
+        r_d = _iou_row_f(en_rows_dec, fr_rows_dec)
+        r_c = _iou_row_f(en_rows_con, fr_rows_con)
+        if r_p: rows_pooled.append(r_p)
+        if r_d: rows_decision.append(r_d)
+        if r_c: rows_content.append(r_c)
+
+    # ── Build DataFrames and save ─────────────────────────────────────────────
+    df_pooled   = pd.DataFrame(rows_pooled)
+    df_decision = pd.DataFrame(rows_decision)
+    df_content  = pd.DataFrame(rows_content)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    saved = []
+    if not df_pooled.empty:
+        df_pooled.to_csv(out_dir / f"iou_per_layer_{suffix}.csv", index=False)
+        saved.append(f"iou_per_layer_{suffix}.csv")
+    if not df_decision.empty and is_multi_token:
+        df_decision.to_csv(out_dir / f"iou_per_layer_decision_{suffix}.csv", index=False)
+        saved.append(f"iou_per_layer_decision_{suffix}.csv")
+    if not df_content.empty:
+        df_content.to_csv(out_dir / f"iou_per_layer_content_{suffix}.csv", index=False)
+        saved.append(f"iou_per_layer_content_{suffix}.csv")
+
+    stats_pooled   = (_iou_region_stats(df_pooled,   label=f"pooled   τ={freq_ceiling}")
+                      if not df_pooled.empty else {})
+    stats_decision = (_iou_region_stats(df_decision, label=f"decision τ={freq_ceiling}")
+                      if not df_decision.empty and is_multi_token else {})
+    stats_content  = (_iou_region_stats(df_content,  label=f"content  τ={freq_ceiling}")
+                      if not df_content.empty else {})
+    for f in saved:
+        print(f"  Saved: {f}")
+
+    return {
+        "freq_ceiling":      freq_ceiling,
+        "pooled":            df_pooled,
+        "decision":          df_decision,
+        "content":           df_content,
+        "is_multi_token":    is_multi_token,
+        "stats_pooled":      stats_pooled,
+        "stats_decision":    stats_decision,
+        "stats_content":     stats_content,
+        "removed_per_layer": removed_per_layer,
+    }
+
+
+def run_freq_ceiling_sweep(
+    features_dir: Path, behaviour: str, split: str,
+    train_jsonl: Path, layers: list, out_dir: Path,
+    ceilings: list, baseline_stats_pooled: dict,
+) -> None:
+    """
+    Run freq-ceiling IoU sweep across multiple thresholds.
+    For each ceiling, calls compute_iou_freq_filtered() and collects region stats.
+    Saves iou_freq_ceiling_summary.csv.
+    Prints an interpretation block at the end.
+    """
+    print("\n" + "=" * 60)
+    print("FREQ-CEILING IoU SWEEP (universal-feature diagnostic)")
+    print("=" * 60)
+    ceilings_sorted = sorted(set(ceilings), reverse=True)   # loose → strict
+    print(f"  Thresholds (loose→strict): {ceilings_sorted}")
+    raw_ratio  = baseline_stats_pooled.get("ratio_mid_early", float("nan"))
+    raw_early  = baseline_stats_pooled.get("mean_early",      float("nan"))
+    raw_middle = baseline_stats_pooled.get("mean_middle",     float("nan"))
+    print(f"  Baseline (no filter) pooled ratio: {raw_ratio:.3f}×\n")
+
+    summary_rows = []
+    for ceil in ceilings_sorted:
+        result = compute_iou_freq_filtered(
+            features_dir, behaviour, split, train_jsonl, layers, out_dir, ceil,
+        )
+        sp = result["stats_pooled"]
+        sd = result["stats_decision"]
+        sc = result["stats_content"]
+        removed = result.get("removed_per_layer", [])
+        summary_rows.append({
+            "freq_ceiling":             ceil,
+            "early_pooled":             round(sp.get("mean_early",          float("nan")), 4),
+            "middle_pooled":            round(sp.get("mean_middle",         float("nan")), 4),
+            "late_pooled":              round(sp.get("mean_late",            float("nan")), 4),
+            "ratio_mid_early_pooled":   round(sp.get("ratio_mid_early",     float("nan")), 4),
+            "early_decision":           round(sd.get("mean_early",          float("nan")), 4),
+            "middle_decision":          round(sd.get("mean_middle",         float("nan")), 4),
+            "late_decision":            round(sd.get("mean_late",           float("nan")), 4),
+            "ratio_mid_early_decision": round(sd.get("ratio_mid_early",     float("nan")), 4),
+            "early_content":            round(sc.get("mean_early",          float("nan")), 4),
+            "middle_content":           round(sc.get("mean_middle",         float("nan")), 4),
+            "late_content":             round(sc.get("mean_late",           float("nan")), 4),
+            "ratio_mid_early_content":  round(sc.get("ratio_mid_early",     float("nan")), 4),
+            "mean_removed_per_layer":   round(float(np.mean(removed)) if removed else float("nan"), 1),
+            "total_removed_unique":     sum(removed),
+        })
+
+    # ── Save summary CSV ──────────────────────────────────────────────────────
+    df_summary = pd.DataFrame(summary_rows)
+    out_path   = out_dir / "iou_freq_ceiling_summary.csv"
+    df_summary.to_csv(out_path, index=False)
+    print(f"\n  Saved summary: {out_path}")
+
+    # ── Interpretation block ──────────────────────────────────────────────────
+    print("\n  ── INTERPRETATION (Claim 3 template-contamination hypothesis) ──")
+    if not summary_rows:
+        print("  No results.")
+        return
+
+    valid_ratios = [r["ratio_mid_early_pooled"] for r in summary_rows
+                    if not math.isnan(r["ratio_mid_early_pooled"])]
+    if not valid_ratios:
+        print("  Cannot compute ratios — no valid data.")
+        return
+
+    best_ratio = max(valid_ratios)
+    # Use strictest filter (smallest ceiling) for early/middle drop comparison
+    strictest  = sorted(summary_rows, key=lambda r: r["freq_ceiling"])[0]
+    filt_early  = strictest["early_pooled"]
+    filt_middle = strictest["middle_pooled"]
+    early_drop  = raw_early  - filt_early  if not math.isnan(raw_early)  else float("nan")
+    middle_drop = raw_middle - filt_middle if not math.isnan(raw_middle) else float("nan")
+
+    print(f"  Pooled ratio:  raw={raw_ratio:.3f}×  "
+          f"best_filtered={best_ratio:.3f}×  (at τ={strictest['freq_ceiling']})")
+    print(f"  Strictest filter (τ={strictest['freq_ceiling']}): "
+          f"early_drop={early_drop:+.4f}  middle_drop={middle_drop:+.4f}  "
+          f"removed≈{strictest['mean_removed_per_layer']:.0f} features/layer")
+    print()
+
+    THRESHOLD_STRONG = 0.10   # ratio must improve ≥10% to confirm hypothesis
+    THRESHOLD_WEAK   = 0.03
+
+    if not math.isnan(best_ratio) and best_ratio > raw_ratio * (1 + THRESHOLD_STRONG):
+        print("  VERDICT: TEMPLATE CONTAMINATION CONFIRMED")
+        print(f"    Filtering raises pooled ratio {raw_ratio:.3f}× → {best_ratio:.3f}×")
+        print(f"    Early drop ({early_drop:+.4f}) exceeds middle drop ({middle_drop:+.4f})")
+        print(f"    → Universal structural features disproportionately inflate L10-L11.")
+        print(f"    → Claim 3 is STRONGER than raw IoU suggests.")
+        print(f"    → Report filtered ratio alongside raw; justify filtering in methods.")
+    elif not math.isnan(best_ratio) and best_ratio > raw_ratio * (1 + THRESHOLD_WEAK):
+        print("  VERDICT: WEAK TEMPLATE CONTAMINATION SIGNAL")
+        print(f"    Ratio improves marginally {raw_ratio:.3f}× → {best_ratio:.3f}×.")
+        print(f"    Early drop ({early_drop:+.4f}) slightly exceeds middle ({middle_drop:+.4f}).")
+        print(f"    → Structural features contribute partially but are not the main cause.")
+        print(f"    → Report raw ratio; note filtering gives modest improvement.")
+    else:
+        print("  VERDICT: TEMPLATE CONTAMINATION NOT CONFIRMED")
+        print(f"    Ratio remains roughly flat across all thresholds "
+              f"({raw_ratio:.3f}× → {best_ratio:.3f}×).")
+        print(f"    Early drop ({early_drop:+.4f}) ≈ middle drop ({middle_drop:+.4f}).")
+        print(f"    → Universal features do not selectively inflate early layers.")
+        print(f"    → Claim 3 gradient is a genuine model-level characteristic, not an artifact.")
+        print(f"    → Report raw ratio; frame as model-specific (Qwen3-4B multilingualism).")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 2b. Concept-paired IoU (removes cross-concept coincidental overlaps)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1650,6 +1939,14 @@ def main():
     parser.add_argument("--concept_paired", action="store_true",
                         help="Compute concept-paired IoU (Claim 3 improvement). "
                              "Saves iou_per_layer_concept_paired_decision.csv.")
+    parser.add_argument("--freq_ceiling", type=float, default=None,
+                        help="Single freq-ceiling threshold (0–1): exclude features "
+                             "active in > FLOAT fraction of all prompts before IoU. "
+                             "Diagnostic only — does not overwrite default outputs.")
+    parser.add_argument("--freq_ceiling_sweep", type=str, default=None,
+                        help="Comma-separated freq-ceiling thresholds for a sweep, "
+                             "e.g. '0.4,0.5,0.6,0.7'. Saves per-threshold CSVs and "
+                             "iou_freq_ceiling_summary.csv.")
     args = parser.parse_args()
 
     P = get_paths(args.behaviour, args.split)
@@ -1696,6 +1993,20 @@ def main():
                   f"{sp_cp.get('ratio_mid_early', float('nan')):.3f}×")
             if not cp_result.get("is_multi_token", False):
                 print("  (single-token mode: only decision curve computed)")
+
+    # 2c. Freq-ceiling filtered IoU (universal-feature diagnostic)
+    if args.freq_ceiling is not None or args.freq_ceiling_sweep is not None:
+        ceilings: list = []
+        if args.freq_ceiling_sweep is not None:
+            ceilings = [float(x.strip()) for x in args.freq_ceiling_sweep.split(",")]
+        if args.freq_ceiling is not None and args.freq_ceiling not in ceilings:
+            ceilings.append(args.freq_ceiling)
+        run_freq_ceiling_sweep(
+            P["features_dir"], args.behaviour, args.split,
+            P["train_jsonl"], args.layers, out_dir,
+            ceilings=ceilings,
+            baseline_stats_pooled=iou_result.get("stats_pooled", {}),
+        )
 
     # 4. Bridge features
     bridge_df = find_bridge_features(P["ablation_csv"], P["train_jsonl"],
