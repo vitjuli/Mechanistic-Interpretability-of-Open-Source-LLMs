@@ -632,16 +632,19 @@ def build_causal_dag(
             src = edge.get("source", "")
             tgt = edge.get("target", "")
             if src and tgt:
+                # Use the actual attribution weight magnitude for path scoring.
+                # placeholder=1.0 caused all features to tie at neg_log≈-1e-10,
+                # breaking ties alphabetically and filling n_paths with the first
+                # K alphabetical features before any causal-edge paths were explored.
+                # Real attribution weights make path scoring meaningful: high-attribution
+                # features are explored first, and 3-hop causal paths compete fairly
+                # against 2-hop attribution-only paths.
+                star_weight = max(abs(edge.get("weight", 1.0)), 1e-6)
                 G.add_edge(
                     src, tgt,
                     edge_type="star",
                     weight=edge.get("weight", 0.0),
-                    # mean_delta_abs=1.0 makes star edges neutral in the product-of-weights
-                    # path score.  Path scores then reflect only causal edge magnitudes;
-                    # star edges serve purely as structural connectors to input/output nodes.
-                    # Using the raw attribution weight here would create a mixed metric
-                    # (attribution × intervention delta) with no causal interpretation.
-                    mean_delta_abs=1.0,
+                    mean_delta_abs=star_weight,
                 )
 
     return G
@@ -655,27 +658,40 @@ def find_top_k_paths(
     weight_key: str = "mean_delta_abs",
     min_weight: float = 1e-8,
     max_path_len: int = 25,
+    require_causal_edge: bool = True,
 ) -> List[Dict]:
     """
     Priority-queue search for top-K paths from any source to any sink
     by product of edge weights.
+
+    require_causal_edge (default True):
+        Only record paths that contain at least one edge with edge_type="causal".
+        2-hop star-only paths (input → feature → output) are explored for heap
+        ordering but NOT counted toward K, so the circuit is guaranteed to contain
+        at least one intervention-confirmed feature-to-feature connection.
+        Set False to allow star-only paths (old behaviour).
 
     Works correctly because the graph is layer-ordered (no cycles).
     """
     found = []
     seen_paths = set()
 
-    # heap: (neg_log_score, path_tuple)
+    # heap: (neg_log_score, path_tuple, has_causal_edge)
+    # has_causal_edge tracks whether any causal-typed edge has been traversed so far.
     heap = []
     for s in source_nodes:
         if s in G:
-            heapq.heappush(heap, (0.0, (s,)))
+            heapq.heappush(heap, (0.0, (s,), False))
 
     while heap:
-        neg_log, path = heapq.heappop(heap)
+        neg_log, path, has_causal = heapq.heappop(heap)
         node = path[-1]
 
         if node in sink_nodes:
+            if require_causal_edge and not has_causal:
+                # Pure-star path: skip recording but do NOT add to seen_paths so a
+                # different path through the same sink can still be recorded.
+                continue
             path_key = path
             if path_key not in seen_paths:
                 seen_paths.add(path_key)
@@ -697,8 +713,10 @@ def find_top_k_paths(
             w = data.get(weight_key, abs(data.get("weight", 0.0)))
             if w < min_weight:
                 continue
+            is_causal = data.get("edge_type") == "causal"
             new_score = neg_log - math.log(w + 1e-10)
-            heapq.heappush(heap, (new_score, path + (nbr,)))
+            new_has_causal = has_causal or is_causal
+            heapq.heappush(heap, (new_score, path + (nbr,), new_has_causal))
 
     return found
 
@@ -1734,8 +1752,8 @@ def main():
                         help="Fraction of VW edges to keep after AGW prefilter (default 0.6)")
     parser.add_argument("--tau_causal", type=float, default=0.10,
                         help="mean_delta_abs threshold for keeping a causal edge (default 0.10)")
-    parser.add_argument("--n_paths", type=int, default=20,
-                        help="Number of top causal paths to trace (default 20)")
+    parser.add_argument("--n_paths", type=int, default=50,
+                        help="Number of top causal paths to trace (default 50)")
     parser.add_argument("--token_pos", type=int, default=-1,
                         help="Token position for feature collection (-1 = last/decision token)")
     parser.add_argument("--allow_sharded", action="store_true",
@@ -1756,6 +1774,22 @@ def main():
                         help="Override graph layers (default: inferred from graph)")
     parser.add_argument("--max_prompts", type=int, default=None,
                         help="Truncate prompt list to N prompts (debug/sanity mode only)")
+    parser.add_argument("--allow_star_only_paths", action="store_true",
+                        help="Allow 2-hop input→feature→output paths in circuit (no causal edge "
+                             "required). Default: off — only paths with ≥1 causal edge are kept.")
+    parser.add_argument("--from_causal_edges", type=str, default=None,
+                        help="Skip Phases 1-5 (no ablation). Load causal edges from this "
+                             "JSON path and jump directly to Phase 6 (path tracing) + "
+                             "Phase 10 (presentation graph). "
+                             "No model needed; does NOT rerun necessity/sufficiency. "
+                             "Use after fixing path tracing without redoing the full ablation.")
+    parser.add_argument("--from_circuit", type=str, default=None,
+                        help="Skip Phases 1-6 (no ablation or path tracing). Load an existing "
+                             "circuits JSON from this path and rerun only Phases 7-9 "
+                             "(necessity + S1/S1.5 sufficiency + S2 injection) for the "
+                             "circuit feature nodes already in that file. "
+                             "Needs model + GPU. Updates the circuits JSON in-place, "
+                             "preserving paths/circuit; also rewrites presentation graph.")
     args = parser.parse_args()
 
     config    = load_config()
@@ -1854,6 +1888,316 @@ def main():
     if args.layers:
         graph_layers = sorted(args.layers)
     logger.info(f"Graph layers: {graph_layers}")
+
+    # ------------------------------------------------------------------
+    # --from_causal_edges fast path: skip Phases 1-9, redo 6+10 only
+    # ------------------------------------------------------------------
+    if args.from_causal_edges:
+        ce_path = Path(args.from_causal_edges)
+        if not ce_path.exists():
+            raise FileNotFoundError(f"--from_causal_edges: file not found: {ce_path}")
+        logger.info(f"--from_causal_edges mode: loading causal edges from {ce_path}")
+        with open(ce_path) as f:
+            ce_data = json.load(f)
+        causal_edges = ce_data["edges"]
+        logger.info(f"Loaded {len(causal_edges)} causal edges; jumping to Phase 6")
+
+        if not causal_edges:
+            logger.warning("No causal edges in provided file; nothing to trace")
+            return
+
+        try:
+            import networkx as nx
+        except ImportError:
+            logger.warning("networkx not available; cannot retrace paths")
+            return
+
+        G = build_causal_dag(causal_edges, graph, include_star_edges=True)
+        input_nodes  = [n["id"] for n in graph["nodes"] if n.get("type") == "input"]
+        output_nodes = [n["id"] for n in graph["nodes"] if n.get("type") == "output"]
+        logger.info(
+            f"DAG: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges; "
+            f"sources={input_nodes}, sinks={output_nodes}"
+        )
+
+        paths = find_top_k_paths(
+            G, input_nodes, output_nodes, K=args.n_paths,
+            weight_key="mean_delta_abs",
+            require_causal_edge=not args.allow_star_only_paths,
+        )
+        if not paths:
+            logger.warning("No paths found")
+            return
+
+        circuit = extract_circuit(paths, G)
+        logger.info(
+            f"Circuit: {circuit['n_features']} features, {circuit['n_edges']} edges, "
+            f"from {circuit['n_paths']} paths"
+        )
+
+        # Phase 10: presentation graph
+        graph_b_path = out_dir / f"presentation_graph_{args.behaviour}_{args.split}.json"
+        graph_b = build_presentation_graph(
+            circuit=circuit,
+            causal_edges=causal_edges,
+            graph=graph,
+            top_n_io_edges=args.top_n_io_edges,
+        )
+        with open(graph_b_path, "w") as f:
+            json.dump(graph_b, f, indent=2)
+        logger.info(f"Saved presentation graph to {graph_b_path}")
+
+        # Save updated circuits JSON (preserve existing validation if present)
+        existing_circuits = {}
+        if circuits_path.exists():
+            with open(circuits_path) as f:
+                existing_circuits = json.load(f)
+
+        circuit_data = {
+            "metadata": {
+                "behaviour":         args.behaviour,
+                "split":             args.split,
+                "n_paths_requested": args.n_paths,
+                "n_paths_found":     len(paths),
+                "presentation_graph": str(graph_b_path),
+                "timestamp":          datetime.now().isoformat(),
+                "retraced_from":      str(ce_path),
+            },
+            "paths":            paths,
+            "circuit":          circuit,
+            # Preserve validation / sufficiency from the previous full run if available
+            "validation":       existing_circuits.get("validation"),
+            "sufficiency_s1":   existing_circuits.get("sufficiency_s1"),
+            "sufficiency_s1_5": existing_circuits.get("sufficiency_s1_5"),
+            "sufficiency_s2":   existing_circuits.get("sufficiency_s2"),
+        }
+        with open(circuits_path, "w") as f:
+            json.dump(circuit_data, f, indent=2)
+        logger.info(f"Saved updated circuits to {circuits_path}")
+
+        print(f"\nCircuit (retraced): {circuit['n_features']} features, "
+              f"{circuit['n_edges']} edges ({circuit['n_paths']} paths)")
+        print(f"Top path (score={paths[0]['score']:.6f}):")
+        print("  " + " → ".join(paths[0]["path"]))
+        print(f"\nNote: validation/sufficiency metrics preserved from prior run.")
+        print(f"      Use --from_circuit <circuits_json> to recompute them for the updated circuit.")
+        print("\nDone.")
+        return
+
+    # ------------------------------------------------------------------
+    # --from_circuit fast path: load existing circuit, rerun Phases 7-9
+    # ------------------------------------------------------------------
+    if args.from_circuit:
+        fc_path = Path(args.from_circuit)
+        if not fc_path.exists():
+            raise FileNotFoundError(f"--from_circuit: file not found: {fc_path}")
+        logger.info(f"--from_circuit mode: loading circuit from {fc_path}")
+        with open(fc_path) as f:
+            existing_circuits = json.load(f)
+
+        # Extract circuit feature nodes (exclude I/O nodes like "input", "output_*")
+        raw_feature_nodes = existing_circuits["circuit"].get("feature_nodes", [])
+        circuit_feature_nodes = [
+            n for n in raw_feature_nodes
+            if not n.startswith("input") and not n.startswith("output")
+        ]
+        if not circuit_feature_nodes:
+            raise ValueError(
+                f"--from_circuit: no feature nodes found in circuit "
+                f"(raw_feature_nodes={raw_feature_nodes})"
+            )
+        logger.info(
+            f"--from_circuit: {len(circuit_feature_nodes)} feature nodes "
+            f"(from {len(raw_feature_nodes)} total circuit nodes)"
+        )
+
+        # ── Phase 2: Load model + transcoders ────────────────────────
+        model_size = args.model_size or tc_config.get("model_size", "4b")
+        logger.info(f"Phase 2: Loading model ({model_size}) and transcoders")
+        model, tc_set, device = load_model_and_transcoders(
+            tc_config, model_size, graph_layers, args.allow_sharded
+        )
+        available_tc_layers = set(tc_set.layers) if hasattr(tc_set, "layers") else set(graph_layers)
+        missing_tc_layers   = [l for l in graph_layers if l not in available_tc_layers]
+        if missing_tc_layers:
+            raise RuntimeError(
+                f"Transcoder missing layers required by graph: {missing_tc_layers}\n"
+                "  Check transcoder_config.yaml layer range vs graph layers."
+            )
+
+        # ── Load prompts ──────────────────────────────────────────────
+        prompts = load_prompts(prompt_dir, args.behaviour, args.split)
+        if len(prompts) == 0:
+            raise RuntimeError(
+                f"Zero prompts loaded from "
+                f"{prompt_dir / (args.behaviour + '_' + args.split + '.jsonl')}"
+            )
+        logger.info(f"Loaded {len(prompts)} prompts from disk")
+        if args.max_prompts and args.max_prompts < len(prompts):
+            prompts = prompts[:args.max_prompts]
+            logger.info(f"DEBUG: truncated to {len(prompts)} prompts (--max_prompts {args.max_prompts})")
+
+        # ── Phase 3: Build baseline cache (needed for S2) ────────────
+        logger.info("Phase 3: Building baseline activation cache (needed for S2 injection)")
+        baseline_mlp_inputs, baseline_feat_acts = build_baseline_cache(
+            model, tc_set, device, prompts, graph_layers, token_pos=args.token_pos
+        )
+
+        # ── Phase 7: Necessity (group ablation) ──────────────────────
+        logger.info("Phase 7: Circuit-level validation (group ablation / necessity)")
+        val = validate_circuit(
+            model=model,
+            tc_set=tc_set,
+            device=device,
+            prompts=prompts,
+            circuit_feature_nodes=circuit_feature_nodes,
+            token_pos=args.token_pos,
+        )
+        logger.info(
+            f"Circuit validation: disruption_rate={val['disruption_rate']}, "
+            f"mean_effect={val['mean_effect']}, n={val['n']}"
+        )
+
+        # ── Phase 8: Sufficiency S1 / S1.5 ───────────────────────────
+        sufficiency_s1   = None
+        sufficiency_s1_5 = None
+        sufficiency_s2   = None
+
+        if not args.skip_sufficiency:
+            if not args.skip_s1_5:
+                logger.info(
+                    "Phase 8: Circuit sufficiency S1 + S1.5 "
+                    "(linear complement ablation + layerwise constrained)"
+                )
+                sufficiency_s1_5 = validate_circuit_sufficiency_s1_5(
+                    model=model,
+                    tc_set=tc_set,
+                    device=device,
+                    prompts=prompts,
+                    circuit_feature_nodes=circuit_feature_nodes,
+                    token_pos=args.token_pos,
+                    debug_sanity=args.debug_sanity,
+                )
+                logger.info(
+                    f"S1 linear:    sign={sufficiency_s1_5['sign_preserved_rate_s1']}, "
+                    f"retention={sufficiency_s1_5['mean_retention_s1']}, "
+                    f"verdict={sufficiency_s1_5['verdict_s1']}"
+                )
+                logger.info(
+                    f"S1.5 layerwise: sign={sufficiency_s1_5['sign_preserved_rate_s15']}, "
+                    f"retention={sufficiency_s1_5['mean_retention_s15']}, "
+                    f"verdict={sufficiency_s1_5['verdict_s15']}, "
+                    f"improvement={sufficiency_s1_5['retention_improvement']}"
+                )
+                sufficiency_s1 = {
+                    "sign_preserved_rate":  sufficiency_s1_5["sign_preserved_rate_s1"],
+                    "mean_retention_ratio": sufficiency_s1_5["mean_retention_s1"],
+                    "verdict":              sufficiency_s1_5["verdict_s1"],
+                    "n":                    sufficiency_s1_5["n"],
+                }
+            else:
+                logger.info("Phase 8: Circuit sufficiency S1 (linear only, --skip_s1_5)")
+                sufficiency_s1 = validate_circuit_sufficiency_s1(
+                    model=model,
+                    tc_set=tc_set,
+                    device=device,
+                    prompts=prompts,
+                    circuit_feature_nodes=circuit_feature_nodes,
+                    token_pos=args.token_pos,
+                )
+                logger.info(
+                    f"S1 Sufficiency: sign_preserved={sufficiency_s1['sign_preserved_rate']}, "
+                    f"retention={sufficiency_s1['mean_retention_ratio']}, "
+                    f"verdict={sufficiency_s1['verdict']}, n={sufficiency_s1['n']}"
+                )
+
+            # ── Phase 9: S2 cross-prompt injection ────────────────────
+            if not args.skip_s2:
+                logger.info("Phase 9: Circuit sufficiency S2 (cross-prompt injection)")
+                sufficiency_s2 = validate_circuit_sufficiency_s2(
+                    model=model,
+                    tc_set=tc_set,
+                    device=device,
+                    prompts=prompts,
+                    circuit_feature_nodes=circuit_feature_nodes,
+                    baseline_feat_acts=baseline_feat_acts,
+                    token_pos=args.token_pos,
+                )
+                logger.info(
+                    f"S2 Sufficiency: n_pairs={sufficiency_s2['n_pairs']}, "
+                    f"transfer_rate={sufficiency_s2['transfer_rate']}, "
+                    f"mean_shift={sufficiency_s2['mean_shift']}"
+                )
+
+        # ── Phase 10: Rebuild presentation graph ─────────────────────
+        logger.info("Phase 10: Rebuilding presentation graph (Graph B) for updated circuit")
+        # Load causal edges (needed by build_presentation_graph)
+        causal_edges_path_fc = out_dir / f"causal_edges_{args.behaviour}_{args.split}.json"
+        if causal_edges_path_fc.exists():
+            with open(causal_edges_path_fc) as f:
+                ce_data = json.load(f)
+            causal_edges_fc = ce_data.get("edges", [])
+        else:
+            logger.warning(
+                f"Causal edges file not found at {causal_edges_path_fc}; "
+                "presentation graph will have no causal edges"
+            )
+            causal_edges_fc = []
+
+        circuit_obj = existing_circuits["circuit"]
+        graph_b = build_presentation_graph(
+            circuit=circuit_obj,
+            causal_edges=causal_edges_fc,
+            graph=graph,
+            top_n_io_edges=args.top_n_io_edges,
+        )
+        logger.info(
+            f"Graph B: {graph_b['n_nodes']} nodes, {graph_b['n_edges']} edges "
+            f"(top_n_io_edges={args.top_n_io_edges})"
+        )
+        graph_b_path = out_dir / f"presentation_graph_{args.behaviour}_{args.split}.json"
+        with open(graph_b_path, "w") as f:
+            json.dump(graph_b, f, indent=2)
+        logger.info(f"Saved updated presentation graph to {graph_b_path}")
+
+        # ── Save updated circuits JSON (overwrite, preserve paths/circuit) ──
+        updated_circuits = dict(existing_circuits)  # shallow copy preserves all existing keys
+        updated_circuits["validation"]       = val
+        updated_circuits["sufficiency_s1"]   = sufficiency_s1
+        updated_circuits["sufficiency_s1_5"] = sufficiency_s1_5
+        updated_circuits["sufficiency_s2"]   = sufficiency_s2
+        updated_circuits.setdefault("metadata", {})["revalidated_from"] = str(fc_path)
+        updated_circuits["metadata"]["revalidated_timestamp"] = datetime.now().isoformat()
+
+        with open(fc_path, "w") as f:
+            json.dump(updated_circuits, f, indent=2)
+        logger.info(f"Saved updated circuits to {fc_path}")
+
+        # ── Print summary ─────────────────────────────────────────────
+        print(f"\nCircuit (revalidated): {circuit_obj['n_features']} features, "
+              f"{circuit_obj['n_edges']} edges ({circuit_obj['n_paths']} paths)")
+        print(f"Phase 7 necessity:    disruption_rate={val['disruption_rate']}, "
+              f"mean_effect={val['mean_effect']:.4f}, n={val['n']}")
+        if sufficiency_s1_5 is not None:
+            print(f"Phase 8 S1  linear:   sign={sufficiency_s1_5['sign_preserved_rate_s1']}, "
+                  f"retention={sufficiency_s1_5['mean_retention_s1']}, "
+                  f"verdict={sufficiency_s1_5['verdict_s1']}")
+            print(f"Phase 8 S1.5 layerwise: sign={sufficiency_s1_5['sign_preserved_rate_s15']}, "
+                  f"retention={sufficiency_s1_5['mean_retention_s15']}, "
+                  f"verdict={sufficiency_s1_5['verdict_s15']}, "
+                  f"improvement={sufficiency_s1_5['retention_improvement']}")
+        elif sufficiency_s1 is not None:
+            print(f"Phase 8 S1 sufficiency: sign_preserved={sufficiency_s1['sign_preserved_rate']}, "
+                  f"retention={sufficiency_s1['mean_retention_ratio']}, "
+                  f"verdict={sufficiency_s1['verdict']}")
+        if sufficiency_s2 is not None:
+            print(f"Phase 9 S2 injection:   n_pairs={sufficiency_s2['n_pairs']}, "
+                  f"transfer_rate={sufficiency_s2['transfer_rate']}, "
+                  f"mean_shift={sufficiency_s2['mean_shift']}")
+        print(f"Phase 10 Graph B:     {graph_b['n_nodes']} nodes, {graph_b['n_edges']} edges "
+              f"→ {graph_b_path}")
+        print("\nDone.")
+        return
 
     # ------------------------------------------------------------------
     # Phase 1 – AGW prefilter
@@ -2120,6 +2464,7 @@ def main():
         paths = find_top_k_paths(
             G, input_nodes, output_nodes, K=args.n_paths,
             weight_key="mean_delta_abs",
+            require_causal_edge=not args.allow_star_only_paths,
         )
 
         if not paths:
