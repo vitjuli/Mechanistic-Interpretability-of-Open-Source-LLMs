@@ -41,6 +41,7 @@ import math
 import argparse
 import sys
 import logging
+import signal
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
@@ -82,6 +83,14 @@ def _check_writable(path: Path) -> None:
         probe.unlink()
     except OSError as e:
         raise RuntimeError(f"Output directory not writable: {path}  ({e})")
+
+
+class _SourceTimeout(Exception):
+    """Raised by SIGALRM handler when a single-source ablation exceeds the per-source wall."""
+
+
+def _sigalrm_handler(signum, frame):
+    raise _SourceTimeout("per-source timeout exceeded")
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +485,14 @@ def run_ablation_for_source(
         a_i, W_dec_i = compute_ablation_params(
             tc_set, device, src_layer, src_feat_idx, bl_feats_src
         )
+
+        # Guard: skip if a_i is zero (nothing to ablate) or non-finite (NaN/Inf
+        # would corrupt the residual and can cause flash-attention to hang on GPU).
+        if not math.isfinite(a_i) or a_i == 0.0:
+            for lj, fj in target_pairs:
+                if lj > src_layer:
+                    delta_records[(lj, fj)].append(0.0)
+            continue
 
         # Run ablated forward pass:
         #   - hook blocks[src_layer].mlp output → subtract a_i * W_dec_i at token_pos
@@ -1971,26 +1988,67 @@ def main():
     # Store: {((sl,sf),(tl,tf)): delta_array}
     all_deltas: Dict[Tuple[Tuple[int,int], Tuple[int,int]], np.ndarray] = {}
 
-    for src_layer, src_feat in tqdm(src_features, desc="Ablating source features"):
+    # Per-source timeout: 10 min per source (96 prompts × ~80s/source = ~1.5 min normal;
+    # 10 min gives 6× headroom before SIGALRM fires and we skip the hung source).
+    # signal.alarm is only available on POSIX (Linux/CSD3); no-op on Windows.
+    _has_sigalrm = hasattr(signal, "SIGALRM")
+    _PER_SOURCE_TIMEOUT_S = 600  # 10 minutes
+    if _has_sigalrm:
+        signal.signal(signal.SIGALRM, _sigalrm_handler)
+
+    skipped_sources: List[Tuple[int, int]] = []
+
+    for src_idx, (src_layer, src_feat) in enumerate(
+        tqdm(src_features, desc="Ablating source features")
+    ):
         tgt_list = src_to_targets.get((src_layer, src_feat), [])
         if not tgt_list:
             continue
 
-        delta_by_tgt = run_ablation_for_source(
-            model=model,
-            tc_set=tc_set,
-            device=device,
-            prompts=prompts,
-            src_layer=src_layer,
-            src_feat_idx=src_feat,
-            target_pairs=tgt_list,
-            baseline_mlp_inputs=baseline_mlp_inputs,
-            baseline_feat_acts=baseline_feat_acts,
-            token_pos=args.token_pos,
+        logger.info(
+            f"  Phase 4 source {src_idx+1}/{len(src_features)}: "
+            f"L{src_layer}_F{src_feat}  ({len(tgt_list)} targets)"
         )
+
+        if _has_sigalrm:
+            signal.alarm(_PER_SOURCE_TIMEOUT_S)
+        try:
+            delta_by_tgt = run_ablation_for_source(
+                model=model,
+                tc_set=tc_set,
+                device=device,
+                prompts=prompts,
+                src_layer=src_layer,
+                src_feat_idx=src_feat,
+                target_pairs=tgt_list,
+                baseline_mlp_inputs=baseline_mlp_inputs,
+                baseline_feat_acts=baseline_feat_acts,
+                token_pos=args.token_pos,
+            )
+        except _SourceTimeout:
+            logger.warning(
+                f"  TIMEOUT: L{src_layer}_F{src_feat} exceeded {_PER_SOURCE_TIMEOUT_S}s — skipping"
+            )
+            skipped_sources.append((src_layer, src_feat))
+            continue
+        except Exception as exc:
+            logger.warning(
+                f"  ERROR: L{src_layer}_F{src_feat} raised {type(exc).__name__}: {exc} — skipping"
+            )
+            skipped_sources.append((src_layer, src_feat))
+            continue
+        finally:
+            if _has_sigalrm:
+                signal.alarm(0)  # cancel pending alarm
 
         for (tl, tf), deltas in delta_by_tgt.items():
             all_deltas[((src_layer, src_feat), (tl, tf))] = deltas
+
+    if skipped_sources:
+        logger.warning(
+            f"Phase 4: {len(skipped_sources)} sources skipped (timeout/error): "
+            + ", ".join(f"L{l}_F{f}" for l, f in skipped_sources)
+        )
 
     # ------------------------------------------------------------------
     # Phase 5 – Aggregate edges
