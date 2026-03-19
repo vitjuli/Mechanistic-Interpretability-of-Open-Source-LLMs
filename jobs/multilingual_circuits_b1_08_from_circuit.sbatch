@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
-#SBATCH --time=01:30:00
+#SBATCH --time=03:00:00
 #SBATCH --output=logs/mc_b1_revalidate-%j.out
 #SBATCH --error=logs/mc_b1_revalidate-%j.err
 #
@@ -28,7 +28,8 @@
 #   Phase 10  Rewrite presentation graph (Graph B)
 #
 # Estimated forward passes: ~480  (vs ~7,300 for full run)
-# Estimated wall time: ~25 min (1.5h slot = safe margin)
+# Timing (from SLURM 25475632): Phase3=10min, Phase7=28min, Phase8=52min, Phase9=<5min
+# Estimated wall time: ~100 min (3h slot = safe margin)
 #
 # BEFORE SUBMITTING:
 #   Verify the circuit file exists:
