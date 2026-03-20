@@ -25,10 +25,12 @@
 # Total forward passes: 18 × (1 baseline + 2 alpha × 2 fwd each) = 90 passes ≈ 5 min.
 #
 # Key diagnostics to check in output:
-#   "Improved:  N/18"       ← for alpha=2.0; expect 12+/18 for causal confirmation
-#   "Flipped:   N/18"       ← expect >0 for Type A
-#   "Type-B worsened: 2/2"  ← expected for causal confirmation
-#   "Q2: CAUSAL — ..."
+#   "Target improved:  N/18"         ← for alpha=2.0
+#   "Control improved: N/18"         ← control comparison (Fix 2)
+#   "L22 vs control Δ: +X"           ← positive = L22 specific, not generic scaling
+#   "Flipped:  N/18"                 ← expect >0 Type A for causal confirmation
+#   "Dose-response: monotone"        ← Fix 1: gradual causal vs extreme forcing
+#   "% active at baseline: XX%"      ← Fix 4: confirm features are non-zero
 #
 # BEFORE SUBMITTING:
 #   cd /rds/user/iv294/hpc-work/thesis/project
@@ -97,7 +99,7 @@ python -u scripts/13_l22_intervention.py \
     --behaviour "$BEHAVIOUR" \
     --split "$SPLIT" \
     --model_size 4b \
-    --alphas 2.0 3.0
+    --alphas 1.5 2.0 3.0
 
 echo ""
 echo "========================================"
