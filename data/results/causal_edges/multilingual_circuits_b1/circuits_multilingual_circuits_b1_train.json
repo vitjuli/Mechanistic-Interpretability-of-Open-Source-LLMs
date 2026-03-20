@@ -6,7 +6,9 @@
     "n_paths_found": 50,
     "presentation_graph": "data/results/causal_edges/multilingual_circuits_b1/presentation_graph_multilingual_circuits_b1_train.json",
     "timestamp": "2026-03-19T16:56:54.122064",
-    "retraced_from": "data/results/causal_edges/multilingual_circuits_b1/causal_edges_multilingual_circuits_b1_train.json"
+    "retraced_from": "data/results/causal_edges/multilingual_circuits_b1/causal_edges_multilingual_circuits_b1_train.json",
+    "revalidated_from": "data/results/causal_edges/multilingual_circuits_b1/circuits_multilingual_circuits_b1_train.json",
+    "revalidated_timestamp": "2026-03-20T05:17:20.516866"
   },
   "paths": [
     {
@@ -1024,30 +1026,30 @@
     "n_edges": 69
   },
   "validation": {
-    "disruption_rate": 0.4479,
-    "mean_effect": -0.0407,
-    "std_effect": 0.2009,
+    "disruption_rate": 0.375,
+    "mean_effect": 0.1779,
+    "std_effect": 0.5784,
     "n": 96
   },
   "sufficiency_s1": {
-    "sign_preserved_rate": 0.9792,
-    "mean_retention_ratio": 1.0198,
-    "verdict": "STRONG",
+    "sign_preserved_rate": 0.6771,
+    "mean_retention_ratio": 0.263,
+    "verdict": "WEAK",
     "n": 96
   },
   "sufficiency_s1_5": {
-    "sign_preserved_rate_s1": 0.9792,
-    "sign_preserved_rate_s15": 0.9688,
-    "mean_retention_s1": 1.0198,
-    "mean_retention_s15": 1.0168,
-    "verdict_s1": "STRONG",
-    "verdict_s15": "STRONG",
-    "retention_improvement": -0.003,
+    "sign_preserved_rate_s1": 0.6771,
+    "sign_preserved_rate_s15": 0.5417,
+    "mean_retention_s1": 0.263,
+    "mean_retention_s15": 0.1569,
+    "verdict_s1": "WEAK",
+    "verdict_s15": "WEAK",
+    "retention_improvement": -0.1061,
     "n": 96
   },
   "sufficiency_s2": {
     "n_pairs": 8,
-    "transfer_rate": 0.5,
-    "mean_shift": 0.0508
+    "transfer_rate": 0.75,
+    "mean_shift": 0.3711
   }
 }
