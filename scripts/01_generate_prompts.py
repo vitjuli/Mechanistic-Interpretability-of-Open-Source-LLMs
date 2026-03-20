@@ -854,15 +854,25 @@ _ML_ANT_TEMPLATES_B1: Dict[str, List[str]] = {
         'The word opposite to "{word}" is',   # T6  (new)
         '"{word}" is an antonym of',          # T7  (new; "an antonym" vs "the antonym")
     ],
+    # B1-v2 (2026-03-20): ALL FR templates rewritten to remove the '"{word}"' pattern.
+    # Root cause: pattern caused model to predict ' "' (closing quote) as argmax on 18/48
+    # FR train prompts instead of the antonym. See: competition_analysis_train.json (SLURM
+    # 25663622), mean logit margin correct-vs-quote = -11.838, median correct rank = 642.
+    # Replacement rules:
+    #   (a) No double-quotes around {word}
+    #   (b) Never end with 'de' (would cause article-attraction: model predicts 'le/la/l'' first)
+    #   (c) Prefer endings with 'est' (safe: predicts content word directly)
+    #   (d) Two colon-ending variants included; baseline gate must confirm no new artifact
+    # EN templates unchanged (EN achieves 100%; quote artifact does not manifest in EN).
     "fr": [
-        'Le contraire de "{word}" est',       # T0  (same as MC T0)
-        "L'antonyme de \"{word}\" est",       # T1  (same as MC T1)
-        '"{word}" est le contraire de',       # T2  (same as MC T2)
-        '"{word}" est l\'antonyme de',        # T3  (same as MC T3)
-        "L'opposé de \"{word}\" est",         # T4  (new)
-        '"{word}" est l\'opposé de',          # T5  (new)
-        'Le mot opposé à "{word}" est',       # T6  (new; uses "à")
-        '"{word}" est un antonyme de',        # T7  (new; "un antonyme" vs "l'antonyme")
+        'Le contraire de {word} est',              # T0  (was: 'Le contraire de "{word}" est')
+        "L'antonyme de {word} est",                # T1  (was: "L'antonyme de \"{word}\" est")
+        "L'opposé de {word} est",                  # T2  (was: '"{word}" est le contraire de')
+        'Le mot opposé à {word} est',              # T3  (was: '"{word}" est l\'antonyme de')
+        'Le terme opposé de {word} est',           # T4  (was: "L'opposé de \"{word}\" est")
+        'En français, le contraire de {word} est', # T5  (was: '"{word}" est l\'opposé de')
+        'Le contraire de {word} :',                # T6  (was: 'Le mot opposé à "{word}" est'; colon ending)
+        "L'antonyme de {word} :",                  # T7  (was: '"{word}" est un antonyme de'; colon ending)
     ],
 }
 

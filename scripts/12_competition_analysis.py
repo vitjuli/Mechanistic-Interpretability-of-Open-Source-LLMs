@@ -2,11 +2,23 @@
 """
 scripts/12_competition_analysis.py
 
-Experiment 1: Competition Analysis
+Competition Analysis
 
-For each of the 18 incorrect FR prompts, extract the full logit distribution
-at the final token position and characterise what signal outcompetes the
-antonym circuit's output.
+For each incorrect FR prompt, extract the full logit distribution at the
+final token position and characterise what signal outcompetes the antonym
+circuit's output.
+
+B1-v2 note: FR templates were rewritten (2026-03-20) to remove the '"{word}"'
+double-quote pattern that caused all 18 failures to predict ' "' (template
+artifact). This script verifies the artifact is gone and characterises the
+new competition pattern (if any).
+
+Key output fields:
+  argmax_is_quote_rate   : MUST be 0.0 after template fix (baseline gate)
+  top_predicted_tokens   : token-frequency dict of competing predictions
+  competition_type       : "template_artifact" | "source_word_copy" |
+                           "frequency_bias" | "semantic" | "mixed"
+  pearson_l22_vs_margin  : positive = L22 fights competition
 
 Reads:
   data/prompts/{behaviour}_{split}.jsonl
@@ -16,7 +28,7 @@ Reads:
 Writes:
   data/results/reasoning_traces/{behaviour}/competition_analysis_{split}.json
 
-Runtime: 18 model forward passes (no transcoder). ~2 min on GPU / ~10 min on CPU.
+Runtime: ~N_incorrect model forward passes (no transcoder). ~2 min on GPU.
 """
 
 import argparse
@@ -43,75 +55,6 @@ DISCRIMINATING_FEATURES = [
     "L22_F108295",  # gateway feature #1 (new)
     "L22_F32734",   # gateway feature #2 (new)
 ]
-
-# Common function words per language (used in competition classification).
-_FR_COMMON = {
-    "le", "la", "les", "un", "une", "des", "de", "du", "est", "et", "en",
-    "dans", "sur", "qui", "que", "pas", "ne", "plus", "très", "aussi",
-    "mais", "ou", "donc", "car", "si", "c", "se", "lui", "ils", "elles",
-}
-_EN_COMMON = {
-    "the", "a", "an", "is", "are", "was", "were", "of", "and", "or",
-    "not", "in", "on", "at", "to", "for", "with", "it", "its", "that",
-}
-
-
-def _edit_distance(a: str, b: str) -> int:
-    """Levenshtein edit distance (character level)."""
-    m, n = len(a), len(b)
-    dp = list(range(n + 1))
-    for i in range(1, m + 1):
-        prev, dp[0] = dp[0], i
-        for j in range(1, n + 1):
-            prev, dp[j] = dp[j], prev if a[i-1] == b[j-1] else 1 + min(prev, dp[j], dp[j-1])
-    return dp[n]
-
-
-def classify_competing_token(
-    predicted_token: str,
-    source_word: str,
-    correct_token: str,
-    language: str,
-) -> str:
-    """
-    Classify the token that outcompetes the correct antonym into one of:
-      "source_word_copy"           — model predicts the source word itself
-      "semantic_neighbor_or_synonym" — semantically close to source/correct (edit dist ≤ 2)
-      "morphological_variant"      — shares a 4-char stem with source or correct
-      "high_frequency_unrelated"   — common function word, no semantic relation
-      "other"                      — punctuation, template artifact, or uncategorised
-    """
-    pred       = predicted_token.strip()
-    pred_lower = pred.lower()
-    src_lower  = source_word.strip().lower()
-    corr_lower = correct_token.strip().lower()
-
-    # Punctuation / formatting / non-alphabetic (e.g., '"', ':', digits)
-    if not any(c.isalpha() for c in pred) or len(pred) == 0:
-        return "other"
-
-    # Exact source word copy
-    if pred_lower == src_lower:
-        return "source_word_copy"
-
-    # High-frequency function word (language-specific)
-    common = _FR_COMMON if language == "fr" else _EN_COMMON
-    if pred_lower in common:
-        return "high_frequency_unrelated"
-
-    # Morphological variant: shares first 4 characters with source or correct
-    if len(pred_lower) >= 4 and len(src_lower) >= 4 and pred_lower[:4] == src_lower[:4]:
-        return "morphological_variant"
-    if len(pred_lower) >= 4 and len(corr_lower) >= 4 and pred_lower[:4] == corr_lower[:4]:
-        return "morphological_variant"
-
-    # Semantic neighbor / synonym: small edit distance to source or correct
-    if len(pred_lower) > 3:
-        if _edit_distance(pred_lower, src_lower) <= 2 or _edit_distance(pred_lower, corr_lower) <= 2:
-            return "semantic_neighbor_or_synonym"
-
-    return "other"
-
 
 # ─── Core forward-pass helper ─────────────────────────────────────────────────
 
@@ -294,14 +237,8 @@ def main():
         is_incorrect_predefined = comp["predicted_token_id"] == model.tokenizer.encode(
             incorrect_token, add_special_tokens=False
         )[0]
-
-        # Fix 3: classify the competing token
-        competition_class = classify_competing_token(
-            comp["predicted_token"],
-            p.get("word", ""),
-            correct_token,
-            language,
-        )
+        # Artifact check: does model still predict the closing double-quote?
+        argmax_is_quote = comp["predicted_token"].strip() == '"'
 
         per_prompt.append({
             "prompt_idx":             pi,
@@ -320,11 +257,11 @@ def main():
             "baseline_ld":            comp["baseline_ld"],
             "is_identity_prediction": is_identity,
             "predicted_is_incorrect_token": is_incorrect_predefined,
+            "argmax_is_quote":        argmax_is_quote,
             "top_k_tokens":           comp["top_k_tokens"],
             "feature_contributions":  feature_contribs,
             "l13_contribution":       l13_contrib,
             "l22_gateway_mean":       l22_mean,
-            "competition_class":      competition_class,
         })
 
         rank_str = f"rank={comp['correct_rank']}"
@@ -358,18 +295,7 @@ def main():
     all_predicted = [r["predicted_token"] for r in per_prompt]
     n_identity    = sum(r["is_identity_prediction"] for r in per_prompt)
     n_is_incorr   = sum(r["predicted_is_incorrect_token"] for r in per_prompt)
-
-    # Fix 3: competition class distribution
-    class_counts: dict = {}
-    for r in per_prompt:
-        cc = r["competition_class"]
-        class_counts[cc] = class_counts.get(cc, 0) + 1
-    dominant_class = max(class_counts, key=class_counts.get) if class_counts else "unknown"
-    # Token frequency for "other" sub-class (detect template artifacts)
-    other_tokens = [r["predicted_token"] for r in per_prompt if r["competition_class"] == "other"]
-    other_token_freq: dict = {}
-    for tok in other_tokens:
-        other_token_freq[tok] = other_token_freq.get(tok, 0) + 1
+    n_quote       = sum(r["argmax_is_quote"] for r in per_prompt)
 
     # Concept-level: which concept has strongest competition (most negative mean margin)?
     concept_margins: dict = {}
@@ -380,118 +306,85 @@ def main():
         ci: round(float(np.mean(v)), 4) for ci, v in concept_margins.items()
     }
 
-    # Determine competition type from class distribution
     n_total = len(per_prompt)
-    dominant_n = class_counts.get(dominant_class, 0)
     # Token frequency for all predicted tokens
     token_freq: dict = {}
     for tok in all_predicted:
         token_freq[tok] = token_freq.get(tok, 0) + 1
-    most_common_token = max(token_freq, key=token_freq.get)
+    most_common_token     = max(token_freq, key=token_freq.get)
+    most_common_token_n   = token_freq[most_common_token]
 
-    if dominant_class == "source_word_copy" and dominant_n >= int(n_total * 0.7):
-        competition_type = "identity_confusion"
+    # Determine competition type (no classification helper needed — inspect token_freq directly)
+    if n_quote >= int(n_total * 0.5):
+        competition_type = "template_artifact"
         competition_description = (
-            f"Source-word copy in {dominant_n}/{n_total} cases. "
-            "Model prefers the source word over its antonym (identity/repetition bias)."
+            f'Closing double-quote in {n_quote}/{n_total} cases — template artifact persists. '
+            "FR templates still contain formatting bias."
         )
-    elif dominant_class == "other" and dominant_n >= int(n_total * 0.7):
-        # Check if it's driven by a single template-artifact token
-        if other_token_freq and max(other_token_freq.values()) >= int(n_total * 0.5):
-            top_other = max(other_token_freq, key=other_token_freq.get)
-            competition_type = "template_artifact"
-            competition_description = (
-                f"Dominant class 'other' in {dominant_n}/{n_total} cases, "
-                f"driven by single token {repr(top_other)} "
-                f"({other_token_freq[top_other]}/{n_total}). "
-                "Model is completing a formatting template rather than predicting a semantic token."
-            )
-        else:
-            competition_type = "other_heterogeneous"
-            competition_description = (
-                f"'Other' class dominates ({dominant_n}/{n_total}) but no single token "
-                "drives it — heterogeneous formatting or rare-word predictions."
-            )
-    elif dominant_class == "high_frequency_unrelated" and dominant_n >= int(n_total * 0.5):
-        competition_type = "frequency_bias"
+    elif n_identity >= int(n_total * 0.5):
+        competition_type = "source_word_copy"
         competition_description = (
-            f"High-frequency function words in {dominant_n}/{n_total} cases. "
-            "Model defaults to common words rather than computing the antonym."
+            f"Model predicts source word in {n_identity}/{n_total} cases — identity/repetition bias."
         )
-    elif dominant_class == "semantic_neighbor_or_synonym" and dominant_n >= int(n_total * 0.4):
-        competition_type = "semantic_confusion"
+    elif most_common_token_n >= int(n_total * 0.5):
+        competition_type = "consistent_competitor"
         competition_description = (
-            f"Semantic neighbors in {dominant_n}/{n_total} cases. "
-            "Model retrieves related words instead of the correct antonym."
+            f"Single token {repr(most_common_token)} in {most_common_token_n}/{n_total} cases."
         )
     else:
         competition_type = "mixed"
         competition_description = (
-            f"No dominant class. Distribution: {class_counts}. "
-            f"Most common token: {repr(most_common_token)} ({token_freq[most_common_token]}/{n_total})."
+            f"No dominant competitor. Top-3: "
+            + ", ".join(
+                f"{repr(t)} ({c})" for t, c in
+                sorted(token_freq.items(), key=lambda x: -x[1])[:3]
+            )
         )
 
     # Does lower L22 correlate with stronger competition (more negative margin)?
     if corr_l22_margin is not None:
         if corr_l22_margin > 0.3:
             l22_corr_interpretation = (
-                f"POSITIVE correlation (r={corr_l22_margin:.3f}): "
-                "higher L22 contribution → less negative margin → L22 gateway reduces competition."
+                f"POSITIVE (r={corr_l22_margin:.3f}): "
+                "higher L22 → less negative margin → L22 reduces competition."
             )
         elif corr_l22_margin < -0.3:
             l22_corr_interpretation = (
-                f"NEGATIVE correlation (r={corr_l22_margin:.3f}): "
-                "higher L22 contribution → more negative margin (unexpected)."
+                f"NEGATIVE (r={corr_l22_margin:.3f}): "
+                "higher L22 → more negative margin (unexpected; re-evaluate)."
             )
         else:
             l22_corr_interpretation = (
-                f"Weak correlation (r={corr_l22_margin:.3f}): "
-                "L22 contribution does not strongly predict competition margin across these 18 prompts."
+                f"WEAK (r={corr_l22_margin:.3f}): L22 does not strongly predict margin."
             )
     else:
         l22_corr_interpretation = "Insufficient data for correlation."
 
-    # Q1: is there a consistent competing token?
-    if token_freq and max(token_freq.values()) >= int(n_total * 0.7):
-        top_tok = most_common_token
-        q1_answer = (
-            f"YES — single consistent token: {repr(top_tok)} in "
-            f"{token_freq[top_tok]}/{n_total} cases."
-        )
-    elif dominant_n >= int(n_total * 0.6):
-        q1_answer = (
-            f"PARTIAL — dominant class '{dominant_class}' in {dominant_n}/{n_total} cases "
-            f"but multiple distinct tokens."
-        )
-    else:
-        q1_answer = f"NO — no consistent pattern. Distribution: {class_counts}."
-
     summary = {
-        "n_incorrect_prompts": n_total,
-        "n_type_a": n_total - len(type_b_idx),
-        "n_type_b": len(type_b_idx),
-        "mean_margin_vs_argmax":          round(float(np.mean(margins)), 4),
-        "std_margin_vs_argmax":           round(float(np.std(margins)), 4),
-        "min_margin":                     round(float(np.min(margins)), 4),
-        "max_margin":                     round(float(np.max(margins)), 4),
-        "n_identity_predictions":         n_identity,
+        "n_incorrect_prompts":             n_total,
+        "n_type_a":                        n_total - len(type_b_idx),
+        "n_type_b":                        len(type_b_idx),
+        # Artifact gate — must be 0.0 after template fix
+        "argmax_is_quote_rate":            round(n_quote / n_total, 4) if n_total else 0.0,
+        "n_argmax_is_quote":               n_quote,
+        "mean_margin_vs_argmax":           round(float(np.mean(margins)), 4),
+        "std_margin_vs_argmax":            round(float(np.std(margins)), 4),
+        "min_margin":                      round(float(np.min(margins)), 4),
+        "max_margin":                      round(float(np.max(margins)), 4),
+        "median_correct_rank":             int(np.median([r["correct_rank"] for r in per_prompt])),
+        "n_identity_predictions":          n_identity,
         "n_predicted_equals_incorrect_token": n_is_incorr,
-        "n_correct_rank_le_5":            sum(r["correct_rank"] <= 5 for r in per_prompt),
-        "n_correct_rank_le_1":            sum(r["correct_rank"] <= 1 for r in per_prompt),
-        "concept_mean_margin":            concept_mean_margin,
-        "pearson_l13_vs_margin":          round(corr_l13_margin, 4) if corr_l13_margin else None,
-        "pearson_l22_vs_margin":          round(corr_l22_margin, 4) if corr_l22_margin else None,
-        # Fix 3: competition class distribution
-        "competition_class_distribution": class_counts,
-        "dominant_competition_class":     dominant_class,
-        "other_token_frequency":          other_token_freq,
-        "most_common_predicted_token":    most_common_token,
-        "most_common_predicted_token_count": token_freq[most_common_token],
-        # Required interpretations
-        "Q1_consistent_competing_token":  q1_answer,
-        "Q2_competition_type":            competition_type,
-        "Q2_competition_description":     competition_description,
-        "Q3_l22_corr_interpretation":     l22_corr_interpretation,
+        "n_correct_rank_le_5":             sum(r["correct_rank"] <= 5 for r in per_prompt),
+        "n_correct_rank_le_1":             sum(r["correct_rank"] <= 1 for r in per_prompt),
+        "top_predicted_tokens":            dict(
+            sorted(token_freq.items(), key=lambda x: -x[1])[:10]
+        ),
+        "concept_mean_margin":             concept_mean_margin,
+        "pearson_l13_vs_margin":           round(corr_l13_margin, 4) if corr_l13_margin is not None else None,
+        "pearson_l22_vs_margin":           round(corr_l22_margin, 4) if corr_l22_margin is not None else None,
+        "competition_type":                competition_type,
+        "competition_description":         competition_description,
+        "l22_corr_interpretation":         l22_corr_interpretation,
     }
 
     # ── Print summary ─────────────────────────────────────────────────────────
@@ -499,21 +392,19 @@ def main():
     print("COMPETITION ANALYSIS SUMMARY")
     print("=" * 60)
     print(f"Incorrect prompts:              {n_total}")
+    print(f"argmax_is_quote_rate:           {summary['argmax_is_quote_rate']:.4f}  "
+          f"(MUST be 0.0 — template artifact check)")
     print(f"Mean margin vs argmax:          {summary['mean_margin_vs_argmax']:.4f}")
+    print(f"Median correct rank:            {summary['median_correct_rank']}")
     print(f"Predictions = source word:      {n_is_incorr}/{n_total}")
     print(f"Competition type:               {competition_type}")
     print(f"L13 vs margin correlation:      {summary['pearson_l13_vs_margin']}")
     print(f"L22 vs margin correlation:      {summary['pearson_l22_vs_margin']}")
-    print(f"\nCompetition class distribution:")
-    for cc, cnt in sorted(class_counts.items(), key=lambda x: -x[1]):
-        print(f"  {cc:35s}: {cnt}/{n_total}")
-    if other_token_freq:
-        print(f"  'other' token breakdown: {other_token_freq}")
-    print(f"\nQ1 — Consistent competing token? {q1_answer}")
-    print(f"Q2 — Competition type:          {competition_description}")
-    print(f"Q3 — L22 vs margin:             {l22_corr_interpretation}")
+    print(f"\nTop predicted tokens: {dict(list(summary['top_predicted_tokens'].items())[:5])}")
+    print(f"\nCompetition: {competition_description}")
+    print(f"L22 vs margin: {l22_corr_interpretation}")
 
-    print("\nConcept-level mean margin:")
+    print("\nConcept-level mean margin (most negative = hardest concept):")
     for ci, m in sorted(concept_mean_margin.items(), key=lambda x: x[1]):
         print(f"  concept {ci}: {m:.4f}")
 
