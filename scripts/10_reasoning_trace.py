@@ -78,6 +78,9 @@ def parse_args():
     p.add_argument("--split", default="train")
     p.add_argument("--run_id", default=None,
                    help="UI offline run ID (auto-detected from data/ui_offline/)")
+    p.add_argument("--supplement_csv", default=None,
+                   help="Path to ablation_supplement_{split}.csv from script 11. "
+                        "Adds ablation_zero coverage for late-hub circuit features.")
     p.add_argument("--top_k_paths", type=int, default=5,
                    help="Top paths per prompt to include in trace (default: 5)")
     p.add_argument("--out_dir", default=None,
@@ -104,11 +107,41 @@ def load_causal_edges(behaviour: str, split: str) -> list:
     return data.get("causal_edges", data)
 
 
-def load_interventions(run_id: str) -> pd.DataFrame:
+def load_interventions(run_id: str, supplement_csv: str = None) -> pd.DataFrame:
+    """
+    Load interventions CSV.  If supplement_csv is provided, merge its ablation_zero
+    rows on top of the base CSV, so that script 11 late-hub measurements are
+    recognised as 'ablation_zero' by build_feature_contributions().
+
+    Merge priority: supplement ablation_zero > original ablation_zero > patching.
+    (In practice they don't overlap — supplement covers different features.)
+    """
     path = Path(f"data/ui_offline/{run_id}/interventions.csv")
     if not path.exists():
         raise FileNotFoundError(f"Interventions CSV not found: {path}")
-    return pd.read_csv(path)
+    df_base = pd.read_csv(path)
+
+    if supplement_csv is None:
+        return df_base
+
+    supp_path = Path(supplement_csv)
+    if not supp_path.exists():
+        raise FileNotFoundError(
+            f"Supplement CSV not found: {supp_path}\n"
+            f"  Run scripts/11_ablation_supplement.py first."
+        )
+    df_supp = pd.read_csv(supp_path)
+    # Keep only ablation_zero rows from supplement (should be all of them)
+    df_supp = df_supp[df_supp["experiment_type"] == "ablation_zero"].copy()
+    print(f"  Supplement: {len(df_supp)} ablation_zero rows "
+          f"({df_supp['feature_id'].nunique()} features × "
+          f"{df_supp['prompt_idx'].nunique()} prompts)")
+
+    # Concat — supplement rows will be picked up by build_feature_contributions
+    # because they have experiment_type='ablation_zero' and the feature_ids that
+    # previously fell through to the patching branch.
+    df_combined = pd.concat([df_base, df_supp], ignore_index=True)
+    return df_combined
 
 
 def load_prompts(behaviour: str, split: str) -> list:
@@ -635,6 +668,131 @@ def _identify_error_patterns(incorrect: list, zone_comparison: dict) -> list:
     return patterns if patterns else ["No strong systematic error patterns identified."]
 
 
+# ─── Coverage diagnostics ─────────────────────────────────────────────────────
+
+def compute_coverage_report(
+    feat_df: pd.DataFrame,
+    circuit_features: list,
+    supplement_csv: str = None,
+) -> dict:
+    """
+    Report how many circuit features now have ablation_zero measurements,
+    and which key late-hub features are covered.  Emitted both to stdout and
+    returned as a dict for inclusion in error_cases JSON.
+    """
+    az_df = feat_df[feat_df["data_source"] == "ablation_zero"]
+    az_covered = set(az_df["feature_id"].unique()) & set(circuit_features)
+    pat_only = set(f for f in circuit_features if f not in az_covered)
+
+    # Which came from supplement vs original (supplement rows have data_source='ablation_zero'
+    # but were loaded from a separate file — we can't distinguish without a marker column,
+    # so we just report totals)
+    key_late = [
+        "L23_F64429", "L24_F136810", "L24_F134204", "L24_F29680",
+        "L24_F131457", "L22_F108295", "L25_F138698",
+    ]
+
+    print("\n" + "─" * 50)
+    print("COVERAGE REPORT")
+    print("─" * 50)
+    print(f"Circuit features:       {len(circuit_features)}")
+    print(f"Ablation-zero covered:  {len(az_covered)}/{len(circuit_features)}"
+          + (" [FULL COVERAGE]" if len(az_covered) == len(circuit_features) else ""))
+    print(f"Patching-only:          {len(pat_only)}")
+    if supplement_csv:
+        print(f"Supplement source:      {supplement_csv}")
+    print("\nKey late-hub features:")
+    for fid in key_late:
+        if fid in az_covered:
+            print(f"  {fid}: ✓ ablation_zero")
+        elif fid in pat_only:
+            print(f"  {fid}: ~ patching-only (approximate)")
+        elif fid in set(circuit_features):
+            print(f"  {fid}: ✗ missing")
+        else:
+            print(f"  {fid}: not in circuit")
+    print("─" * 50)
+
+    return {
+        "n_circuit_features": len(circuit_features),
+        "n_ablation_covered": len(az_covered),
+        "n_patching_only": len(pat_only),
+        "ablation_covered_features": sorted(az_covered),
+        "patching_only_features": sorted(pat_only),
+        "key_late_hub_coverage": {
+            fid: ("ablation_zero" if fid in az_covered
+                  else "patching_only" if fid in pat_only else "missing")
+            for fid in key_late
+        },
+        "supplement_used": supplement_csv is not None,
+    }
+
+
+def classify_failure_types(traces: list, feat_df: pd.DataFrame) -> dict:
+    """
+    Classify incorrect predictions into:
+      Type A: measured trajectory dominant='correct' but prediction wrong.
+              (Circuit measurement says 'should work' but doesn't → late-layer override)
+      Type B: measured trajectory dominant='incorrect'.
+              (Circuit measurement agrees with prediction failure → early/mid breakdown)
+
+    Returns counts and prompt indices for each type, plus reclassification stats
+    (useful for comparing before/after supplement).
+    """
+    incorrect = [t for t in traces if not t["prediction_correct"]]
+    if not incorrect:
+        return {"n_incorrect": 0, "type_A": [], "type_B": []}
+
+    type_A = [t for t in incorrect if t["trajectories"]["dominant"] == "correct"]
+    type_B = [t for t in incorrect if t["trajectories"]["dominant"] == "incorrect"]
+
+    # Per-feature contribution detail for Type A (the interesting failures)
+    type_A_detail = []
+    az_df = feat_df[feat_df["data_source"] == "ablation_zero"]
+    for t in type_A:
+        p_az = az_df[az_df["prompt_idx"] == t["prompt_idx"]]
+        neg_feats = p_az[p_az["contribution_to_correct"] < 0]["feature_id"].tolist()
+        top_neg = (
+            p_az.nsmallest(3, "contribution_to_correct")
+            [["feature_id", "contribution_to_correct"]]
+            .to_dict("records")
+        )
+        type_A_detail.append({
+            "prompt_idx": t["prompt_idx"],
+            "language": t["language"],
+            "concept_index": t["concept_index"],
+            "template_idx": t["template_idx"],
+            "baseline_logit_diff": t["baseline_logit_diff"],
+            "net_trajectory": t["trajectories"]["net"],
+            "n_neg_features": len(neg_feats),
+            "top_neg_features": top_neg,
+        })
+
+    print("\n" + "─" * 50)
+    print("FAILURE TYPE CLASSIFICATION")
+    print("─" * 50)
+    print(f"Total incorrect:  {len(incorrect)}")
+    print(f"  Type A (trajectory=correct, outcome wrong): {len(type_A)}  "
+          f"→ late-hub override")
+    print(f"  Type B (trajectory=incorrect):              {len(type_B)}  "
+          f"→ early/mid breakdown")
+    if type_A:
+        print(f"\nType A prompts (late-hub likely responsible):")
+        for d in type_A_detail:
+            print(f"  p{d['prompt_idx']:>3} [{d['language'].upper()} c{d['concept_index']} t{d['template_idx']}]"
+                  f"  bl={d['baseline_logit_diff']:+.3f}  net_traj={d['net_trajectory']:+.3f}")
+    print("─" * 50)
+
+    return {
+        "n_incorrect": len(incorrect),
+        "type_A_count": len(type_A),
+        "type_B_count": len(type_B),
+        "type_A_prompt_indices": [t["prompt_idx"] for t in type_A],
+        "type_B_prompt_indices": [t["prompt_idx"] for t in type_B],
+        "type_A_detail": type_A_detail,
+    }
+
+
 # ─── Figures ──────────────────────────────────────────────────────────────────
 
 def plot_layerwise_delta(layer_df: pd.DataFrame, out_dir: Path, n_prompts: int):
@@ -794,7 +952,7 @@ def main():
     _causal_edges = load_causal_edges(args.behaviour, args.split)  # loaded for future use
 
     run_id = args.run_id or find_run_id(args.behaviour, args.split)
-    df_interventions = load_interventions(run_id)
+    df_interventions = load_interventions(run_id, supplement_csv=args.supplement_csv)
     prompts = load_prompts(args.behaviour, args.split)
     n_prompts = len(prompts)
 
@@ -808,15 +966,17 @@ def main():
     print(f"  Circuit: {n_circuit_features} features, "
           f"{circuit['circuit']['n_edges']} edges, {len(circuit_paths)} paths")
     print(f"  Prompts: {n_prompts}")
-    print(f"  Interventions: {len(df_interventions)} rows")
+    print(f"  Interventions: {len(df_interventions)} rows"
+          + (" (base + supplement)" if args.supplement_csv else ""))
 
-    # Ablation_zero measured features
+    # Ablation_zero measured features (includes supplement if loaded)
     az = df_interventions[df_interventions["experiment_type"] == "ablation_zero"]
     measured_features = set(az["feature_id"].unique()) & set(feature_nodes)
     n_measured = len(measured_features)
+    n_patching_only = n_circuit_features - n_measured
     print(f"  Ablation-measured circuit features: {n_measured}/{n_circuit_features}")
-    print(f"  Patching-covered features: {n_circuit_features - n_measured} "
-          f"(48 prompts × these features)")
+    print(f"  Patching-only features: {n_patching_only}"
+          + (" ← REDUCED by supplement" if args.supplement_csv and n_patching_only < 17 else ""))
 
     # Baseline logit diff per prompt (unique per prompt in ablation_zero)
     baseline_by_prompt = (
@@ -868,9 +1028,18 @@ def main():
             f.write(json.dumps(t) + "\n")
     print(f"  Saved: {trace_path} ({len(traces)} traces)")
 
-    # ── Step 6: Error analysis ───────────────────────────────────────────────
+    # ── Step 6: Error analysis + coverage + failure classification ───────────
     print("\nStep 6: Error analysis...")
     error_analysis = build_error_analysis(traces, feat_df)
+
+    # Coverage report (new in patched version)
+    coverage = compute_coverage_report(feat_df, feature_nodes, args.supplement_csv)
+    error_analysis["coverage"] = coverage
+
+    # Failure type classification (new in patched version)
+    failure_types = classify_failure_types(traces, feat_df)
+    error_analysis["failure_types"] = failure_types
+
     err_path = out_dir / f"error_cases_{args.split}.json"
     err_path.write_text(json.dumps(error_analysis, indent=2))
     print(f"  Saved: {err_path}")
@@ -891,13 +1060,13 @@ def main():
     print("=" * 60)
     print(f"Prompts: {n_prompts} ({n_correct} correct, {n_incorrect} incorrect)")
     print(f"Circuit: {n_circuit_features} features "
-          f"({n_measured} ablation, {n_circuit_features-n_measured} patching-only)")
+          f"({n_measured} ablation [{coverage['n_ablation_covered']}/{n_circuit_features} covered], "
+          f"{coverage['n_patching_only']} patching-only)")
+    if args.supplement_csv:
+        print(f"  [SUPPLEMENT ACTIVE — late-hub features now ablation_zero]")
 
     for zone in ["early", "mid", "late"]:
-        vals = [
-            t["zone_summary"][zone]["measured_contribution"]
-            for t in traces
-        ]
+        vals = [t["zone_summary"][zone]["measured_contribution"] for t in traces]
         print(f"Zone {zone}: mean ablation contrib = {np.mean(vals):+.4f} ± {np.std(vals):.4f}")
 
     n_correct_dom = sum(1 for t in traces if t["trajectories"]["dominant"] == "correct")
@@ -905,6 +1074,13 @@ def main():
           f"{n_correct_dom}/{n_prompts} ({100*n_correct_dom/n_prompts:.1f}%)")
     print(f"Trajectory prediction accuracy: "
           f"{error_analysis['trajectory_prediction_accuracy']:.4f}")
+
+    ft = error_analysis["failure_types"]
+    print(f"\nFailure type breakdown ({ft['n_incorrect']} incorrect):")
+    print(f"  Type A (trajectory=correct, outcome wrong): {ft['type_A_count']}"
+          f"  ← late-hub override candidates")
+    print(f"  Type B (trajectory=incorrect):              {ft['type_B_count']}"
+          f"  ← early/mid breakdown")
 
     print(f"\nOutputs in: {out_dir}/")
     print("Done.")
