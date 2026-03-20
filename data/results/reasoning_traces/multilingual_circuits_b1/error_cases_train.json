@@ -1,0 +1,174 @@
+{
+  "n_incorrect": 18,
+  "n_correct": 78,
+  "accuracy": 0.8125,
+  "incorrect_prompt_indices": [
+    19,
+    31,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    66,
+    67,
+    69,
+    71,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83
+  ],
+  "zone_comparison": {
+    "early": {
+      "correct_mean": 1.0637019230769231,
+      "incorrect_mean": -0.05381944444444445
+    },
+    "mid": {
+      "correct_mean": 0.25560897435897434,
+      "incorrect_mean": -0.4548611111111111
+    },
+    "late": {
+      "correct_mean": 0.7936698717948718,
+      "incorrect_mean": 0.8472222222222222
+    }
+  },
+  "concept_errors": {
+    "2": [
+      19
+    ],
+    "3": [
+      31
+    ],
+    "4": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "6": [
+      66,
+      67,
+      69,
+      71
+    ],
+    "7": [
+      78,
+      79,
+      80,
+      81,
+      82,
+      83
+    ]
+  },
+  "feature_comparison_ablation_only": [
+    {
+      "feature_id": "L13_F70603",
+      "zone": "early",
+      "correct_mean_contrib": 0.19270833333333334,
+      "incorrect_mean_contrib": -0.4427083333333333,
+      "delta": -0.6354166666666666
+    },
+    {
+      "feature_id": "L12_F83869",
+      "zone": "early",
+      "correct_mean_contrib": 0.6366185897435898,
+      "incorrect_mean_contrib": 0.2534722222222222,
+      "delta": -0.38314636752136755
+    },
+    {
+      "feature_id": "L19_F135640",
+      "zone": "mid",
+      "correct_mean_contrib": -0.07451923076923077,
+      "incorrect_mean_contrib": -0.3559027777777778,
+      "delta": -0.281383547008547
+    },
+    {
+      "feature_id": "L21_F129759",
+      "zone": "mid",
+      "correct_mean_contrib": 0.26282051282051283,
+      "incorrect_mean_contrib": 0.017361111111111112,
+      "delta": -0.24545940170940173
+    },
+    {
+      "feature_id": "L18_F152973",
+      "zone": "mid",
+      "correct_mean_contrib": 0.0673076923076923,
+      "incorrect_mean_contrib": -0.11631944444444445,
+      "delta": -0.18362713675213677
+    },
+    {
+      "feature_id": "L16_F45664",
+      "zone": "early",
+      "correct_mean_contrib": 0.10296474358974358,
+      "incorrect_mean_contrib": -0.013888888888888888,
+      "delta": -0.11685363247863248
+    },
+    {
+      "feature_id": "L25_F41381",
+      "zone": "late",
+      "correct_mean_contrib": 0.5540865384615384,
+      "incorrect_mean_contrib": 0.6527777777777778,
+      "delta": 0.09869123931623935
+    },
+    {
+      "feature_id": "L14_F57525",
+      "zone": "early",
+      "correct_mean_contrib": 0.07291666666666667,
+      "incorrect_mean_contrib": 0.1579861111111111,
+      "delta": 0.08506944444444443
+    },
+    {
+      "feature_id": "L15_F127839",
+      "zone": "early",
+      "correct_mean_contrib": 0.058493589743589744,
+      "incorrect_mean_contrib": -0.008680555555555556,
+      "delta": -0.0671741452991453
+    },
+    {
+      "feature_id": "L24_F119196",
+      "zone": "late",
+      "correct_mean_contrib": 0.23958333333333334,
+      "incorrect_mean_contrib": 0.19444444444444445,
+      "delta": -0.045138888888888895
+    }
+  ],
+  "flip_layer_distribution": {
+    "incorrect_prompts": {
+      "values": [
+        14,
+        12,
+        25,
+        14,
+        12,
+        24
+      ],
+      "mean": 16.833333333333332
+    },
+    "correct_prompts": {
+      "values": [
+        15,
+        25,
+        19,
+        14,
+        19,
+        16,
+        14,
+        24
+      ],
+      "mean": 18.25
+    }
+  },
+  "trajectory_prediction_accuracy": 0.6979,
+  "error_patterns": [
+    "All errors are French prompts \u2014 EN performance is perfect.",
+    "Early-zone ablation contribution is lower for incorrect prompts (-0.054 vs +1.064, \u0394=-1.118)",
+    "Mid-zone ablation contribution is lower for incorrect prompts (-0.455 vs +0.256, \u0394=-0.710)",
+    "10/18 incorrect prompts have dominant trajectory = 'correct' (late-layer effect not captured by ablation features)"
+  ]
+}
