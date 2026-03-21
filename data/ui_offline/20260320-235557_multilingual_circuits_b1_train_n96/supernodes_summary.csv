@@ -1,0 +1,2 @@
+community_id,n_nodes,top_nodes_by_degree,method
+0,87,"['input', 'output_correct', 'output_incorrect', 'L22_F78043', 'L19_F135640']",louvain

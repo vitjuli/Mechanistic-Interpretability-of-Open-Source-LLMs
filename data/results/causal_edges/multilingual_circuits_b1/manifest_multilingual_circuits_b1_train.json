@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-03-19T13:07:40.064153",
-  "git_commit": "762cb3fd4508d0ad592b271b154a230f0f0a90da",
-  "host": "gpu-q-30",
+  "timestamp": "2026-03-21T10:44:44.770789",
+  "git_commit": "9aa3c8bcb32fdcd7b486c46851f45f4b2886fdd5",
+  "host": "gpu-q-15",
   "device": "cuda:0",
   "behaviour": "multilingual_circuits_b1",
   "split": "train",
@@ -28,11 +28,11 @@
     24,
     25
   ],
-  "n_feature_nodes": 94,
-  "n_vw_edges": 575,
+  "n_feature_nodes": 86,
+  "n_vw_edges": 379,
   "agw_top_frac": 0.6,
   "tau_causal": 0.1,
-  "n_paths": 20,
+  "n_paths": 50,
   "token_pos": -1,
   "skip_path_tracing": false,
   "skip_sufficiency": false,
@@ -47,5 +47,5 @@
     "s1_linear",
     "s1_5_layerwise"
   ],
-  "estimated_passes": 7296
+  "estimated_passes": 7104
 }
