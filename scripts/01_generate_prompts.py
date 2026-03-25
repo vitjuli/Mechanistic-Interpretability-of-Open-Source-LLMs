@@ -9,6 +9,7 @@ Supported behaviours:
                           reproduction (operation/operand/language swap experiments)
   - multilingual_circuits: Antonym-only EN+FR prompts, Anthropic reproduction (4 templates)
   - multilingual_circuits_b1: B1 extended set — 8 templates per concept (T0-T7), 96 train
+  - physics_conservation: Path independence of work (conservative vs non-conservative forces)
 
 Usage:
     python scripts/01_generate_prompts.py
@@ -16,6 +17,7 @@ Usage:
     python scripts/01_generate_prompts.py --behaviour antonym_operation
     python scripts/01_generate_prompts.py --behaviour multilingual_antonym
     python scripts/01_generate_prompts.py --behaviour multilingual_circuits_b1
+    python scripts/01_generate_prompts.py --behaviour physics_conservation
 """
 
 import json
@@ -952,6 +954,287 @@ def generate_multilingual_circuits_b1_prompts(
 
 
 GENERATORS["multilingual_circuits_b1"] = generate_multilingual_circuits_b1_prompts
+
+
+# =============================================================================
+# physics_conservation — path-independent work / conservative forces
+# =============================================================================
+
+def generate_physics_conservation_prompts(
+    n_train: int = 150,
+    n_test: int = 50,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate prompts for the physics_conservation behaviour.
+
+    Core question: Is the work done by [force/field] path-independent?
+    Binary: ' True' (path-independent / conservative) vs ' False' (path-dependent).
+
+    Structure:
+        25 concept groups × 8 templates = 200 prompts total.
+        Stratified split: templates T0-T5 → train (150), T6-T7 → test (50).
+
+    Concept families:
+        conservative_named    (C00–C03, C07–C08, C12): well-known named forces
+        conservative_abstract (C04–C06, C09–C11, C13): defined by mathematical property
+        nonconservative_named (C14–C16, C20):           well-known non-conservative forces
+        nonconservative_abstract (C17–C19, C21):        defined by abstract property
+        adversarial_divergence  (C22):  ∇·F=0 ≠ ∇×F=0  — sounds conservative, isn't
+        adversarial_magnitude   (C23):  |F|=|∇V| but direction unconstrained
+        adversarial_pathdep     (C24):  explicitly non-Markovian
+
+    Patching pairs (script 07): same concept_index, T_even ↔ T_odd (paraphrase mode).
+    """
+    random.seed(seed)
+
+    # -------------------------------------------------------------------------
+    # Concept groups: (concept_index, description, label, family, force_name, difficulty)
+    # description is filled into each template as [X]; must read naturally in all 8.
+    # -------------------------------------------------------------------------
+    CONCEPT_GROUPS = [
+        # Conservative — named forces (label = True)
+        (0,  "a uniform gravitational field",
+             True,  "conservative_named",     "gravity_uniform",       "easy"),
+        (1,  "a spring force obeying Hooke's law",
+             True,  "conservative_named",     "spring_hooke",          "easy"),
+        (2,  "the Coulomb electrostatic force",
+             True,  "conservative_named",     "coulomb",               "easy"),
+        (3,  "the Newtonian gravitational force between two massive bodies",
+             True,  "conservative_named",     "gravity_general",       "easy"),
+        (7,  "an elastic restoring force proportional to displacement from equilibrium",
+             True,  "conservative_named",     "elastic_hooke",         "easy"),
+        (8,  "the restoring force in a simple harmonic oscillator",
+             True,  "conservative_named",     "harmonic_oscillator",   "easy"),
+        (12, "the electrostatic force from a fixed static charge distribution",
+             True,  "conservative_named",     "electrostatic_static",  "easy"),
+        # Conservative — abstract / mathematical (label = True)
+        (4,  "a force field equal to the negative gradient of a scalar function",
+             True,  "conservative_abstract",  "gradient_field",        "medium"),
+        (5,  "a static force field with zero curl everywhere",
+             True,  "conservative_abstract",  "curl_free_field",       "medium"),
+        (6,  "a central force depending only on distance from a fixed center",
+             True,  "conservative_abstract",  "central_force",         "medium"),
+        (9,  "a force field derived from a scalar potential energy function V(r)",
+             True,  "conservative_abstract",  "potential_derived",     "easy"),
+        (10, "an inverse-square attractive force",
+             True,  "conservative_abstract",  "inverse_square",        "medium"),
+        (11, "a time-independent force field in which work depends only on endpoints",
+             True,  "conservative_abstract",  "time_independent_consv","medium"),
+        (13, "a force directed toward the minimum of a smooth potential energy landscape",
+             True,  "conservative_abstract",  "potential_well",        "medium"),
+        # Non-conservative — named forces (label = False)
+        (14, "kinetic friction",
+             False, "nonconservative_named",  "friction_kinetic",      "easy"),
+        (15, "air resistance",
+             False, "nonconservative_named",  "air_resistance",        "easy"),
+        (16, "viscous drag in a fluid",
+             False, "nonconservative_named",  "viscous_drag",          "easy"),
+        (20, "turbulent aerodynamic drag",
+             False, "nonconservative_named",  "turbulent_drag",        "easy"),
+        # Non-conservative — abstract (label = False)
+        (17, "a velocity-dependent damping force",
+             False, "nonconservative_abstract","velocity_damping",     "medium"),
+        (18, "a force field with nonzero curl",
+             False, "nonconservative_abstract","curl_nonzero",         "medium"),
+        (19, "a force that changes explicitly with time",
+             False, "nonconservative_abstract","time_dependent",       "medium"),
+        (21, "a hysteretic restoring force",
+             False, "nonconservative_abstract","hysteresis",           "hard"),
+        # Adversarial near-miss (label = False, surface-misleading)
+        (22, "a force field with zero divergence everywhere",
+             False, "adversarial_divergence", "divergence_free",       "hard"),
+        (23, "a force whose magnitude, but not direction, comes from a scalar potential",
+             False, "adversarial_magnitude",  "magnitude_only",        "hard"),
+        (24, "a force whose value at any point depends on the entire path taken to reach it",
+             False, "adversarial_pathdep",    "path_history",          "hard"),
+    ]
+
+    # -------------------------------------------------------------------------
+    # 8 templates.  [DESC] is substituted with concept description.
+    # Capital first letter of [DESC] used where sentence-initial (T3, T4).
+    # All templates end with ":" so correct_answer has a natural leading space.
+    # -------------------------------------------------------------------------
+    def _cap(s: str) -> str:
+        """Capitalise first character only."""
+        return s[0].upper() + s[1:] if s else s
+
+    def make_prompt(desc: str, tidx: int) -> str:
+        if tidx == 0:
+            return f"The work done by {desc} is path-independent:"
+        elif tidx == 1:
+            return (f"The work performed by {desc} is the same regardless "
+                    f"of the path taken between two fixed endpoints:")
+        elif tidx == 2:
+            return f"The net work done by {desc} along any closed path is zero:"
+        elif tidx == 3:
+            return f"{_cap(desc)} can be expressed as the negative gradient of a scalar function:"
+        elif tidx == 4:
+            return f"{_cap(desc)} is a conservative force:"
+        elif tidx == 5:
+            return f"The circulation integral of {desc} around any closed loop is zero:"
+        elif tidx == 6:
+            return f"A particle subject only to {desc} conserves its total mechanical energy:"
+        elif tidx == 7:
+            return (f"The work done by {desc} between two fixed points "
+                    f"does not depend on which path connects them:")
+        else:
+            raise ValueError(f"Unknown template index {tidx}")
+
+    # -------------------------------------------------------------------------
+    # Build all 200 prompts
+    # -------------------------------------------------------------------------
+    all_prompts: List[Dict] = []
+    for (cidx, desc, label, family, force_name, difficulty) in CONCEPT_GROUPS:
+        correct   = " True"  if label else " False"
+        incorrect = " False" if label else " True"
+        for tidx in range(8):
+            all_prompts.append({
+                "prompt":           make_prompt(desc, tidx),
+                "correct_answer":   correct,
+                "incorrect_answer": incorrect,
+                "label":            label,
+                "concept_index":    cidx,
+                "template_idx":     tidx,
+                "concept_family":   family,
+                "force_name":       force_name,
+                "difficulty":       difficulty,
+                "near_miss_type":   (family if family.startswith("adversarial") else None),
+                "description":      desc,
+            })
+
+    # -------------------------------------------------------------------------
+    # Stratified split: T0-T5 → train, T6-T7 → test
+    # -------------------------------------------------------------------------
+    train_prompts = [p for p in all_prompts if p["template_idx"] <= 5]
+    test_prompts  = [p for p in all_prompts if p["template_idx"] >= 6]
+
+    # Shuffle within each split (preserves concept_index diversity per batch)
+    random.shuffle(train_prompts)
+    random.shuffle(test_prompts)
+
+    # Honour n_train / n_test if caller requests a subset
+    train_prompts = train_prompts[:n_train]
+    test_prompts  = test_prompts[:n_test]
+
+    logger.info(
+        f"physics_conservation: {len(train_prompts)} train, {len(test_prompts)} test "
+        f"({sum(1 for p in train_prompts if p['label'])} TRUE / "
+        f"{sum(1 for p in train_prompts if not p['label'])} FALSE in train)"
+    )
+    return train_prompts, test_prompts
+
+
+GENERATORS["physics_conservation"] = generate_physics_conservation_prompts
+
+
+# =============================================================================
+# physics_conservation_pilot — 9 maximally diagnostic concepts, 4 templates
+# =============================================================================
+
+def generate_physics_conservation_pilot_prompts(
+    n_train: int = 36,
+    n_test: int = 0,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Pilot dataset: 9 maximally diagnostic concept groups × 4 templates = 36 prompts.
+
+    Purpose: validate that Qwen3-4B can do the physics_conservation task at all,
+    and that adversarial near-miss cases are genuinely challenging.
+
+    Concept selection rationale:
+      - 2 conservative_named:     gravity, spring  (easy baseline)
+      - 2 conservative_abstract:  gradient field, curl-free field (medium; tests math vocab)
+      - 2 nonconservative_named:  kinetic friction, air resistance (easy baseline)
+      - 3 adversarial:            divergence-free, magnitude-only, path-history (hard)
+
+    Template selection (4 of 8 — most diagnostic):
+      T0: "The work done by [X] is path-independent:"  — direct
+      T3: "[X] can be expressed as the negative gradient of a scalar function:" — potential existence
+      T4: "[X] is a conservative force:"                — label vocabulary
+      T5: "The circulation integral of [X] around any closed loop is zero:" — integral characterization
+
+    T3 is the most adversarial-diagnostic: C22 (divergence-free) should give FALSE on T3
+    because ∇·F=0 does NOT imply F=-∇V. If the model confuses ∇· with ∇×, it fails here.
+
+    Contrast groups (critical pairs for analysis):
+      "curl_vs_divergence"    : C5 (TRUE) vs C22 (FALSE) — same surface structure, different operator
+      "gradient_vs_magnitude" : C4 (TRUE) vs C23 (FALSE) — full F=-∇V vs just |F|=|∇V|
+      "named_force_contrast"  : C0 (TRUE) vs C14 (FALSE) — both well-known physics forces
+      "velocity_vs_position"  : C1 (TRUE) vs C15 (FALSE) — Hooke vs air resistance
+      "markovian_contrast"    : C0 (TRUE) vs C24 (FALSE) — position-only vs path-history
+    """
+    PILOT_CONCEPTS = [
+        # (concept_index, description, label, family, force_name, difficulty, contrast_group)
+        (0,  "a uniform gravitational field",
+             True,  "conservative_named",    "gravity_uniform",  "easy",   "named_force_contrast"),
+        (1,  "a spring force obeying Hooke's law",
+             True,  "conservative_named",    "spring_hooke",     "easy",   "velocity_vs_position"),
+        (4,  "a force field equal to the negative gradient of a scalar function",
+             True,  "conservative_abstract", "gradient_field",   "medium", "gradient_vs_magnitude"),
+        (5,  "a static force field with zero curl everywhere",
+             True,  "conservative_abstract", "curl_free_field",  "medium", "curl_vs_divergence"),
+        (14, "kinetic friction",
+             False, "nonconservative_named", "friction_kinetic", "easy",   "named_force_contrast"),
+        (15, "air resistance",
+             False, "nonconservative_named", "air_resistance",   "easy",   "velocity_vs_position"),
+        (22, "a force field with zero divergence everywhere",
+             False, "adversarial_divergence","divergence_free",  "hard",   "curl_vs_divergence"),
+        (23, "a force whose magnitude, but not direction, comes from a scalar potential",
+             False, "adversarial_magnitude", "magnitude_only",   "hard",   "gradient_vs_magnitude"),
+        (24, "a force whose value at any point depends on the entire path taken to reach it",
+             False, "adversarial_pathdep",   "path_history",     "hard",   "markovian_contrast"),
+    ]
+
+    # 4 pilot templates (indices 0, 3, 4, 5 of the full set)
+    PILOT_TEMPLATE_INDICES = [0, 3, 4, 5]
+
+    def _cap(s: str) -> str:
+        return s[0].upper() + s[1:] if s else s
+
+    def make_prompt(desc: str, tidx: int) -> str:
+        if tidx == 0:
+            return f"The work done by {desc} is path-independent:"
+        elif tidx == 3:
+            return f"{_cap(desc)} can be expressed as the negative gradient of a scalar function:"
+        elif tidx == 4:
+            return f"{_cap(desc)} is a conservative force:"
+        elif tidx == 5:
+            return f"The circulation integral of {desc} around any closed loop is zero:"
+        else:
+            raise ValueError(f"Unexpected pilot template index {tidx}")
+
+    all_prompts: List[Dict] = []
+    for (cidx, desc, label, family, force_name, difficulty, contrast_group) in PILOT_CONCEPTS:
+        correct   = " True"  if label else " False"
+        incorrect = " False" if label else " True"
+        for tidx in PILOT_TEMPLATE_INDICES:
+            all_prompts.append({
+                "prompt":            make_prompt(desc, tidx),
+                "correct_answer":    correct,
+                "incorrect_answer":  incorrect,
+                "label":             label,
+                "concept_index":     cidx,
+                "template_idx":      tidx,
+                "concept_family":    family,
+                "force_name":        force_name,
+                "difficulty":        difficulty,
+                "contrast_group":    contrast_group,
+                "near_miss_type":    (family if family.startswith("adversarial") else None),
+                "description":       desc,
+            })
+
+    # Pilot: all prompts as train, empty test
+    logger.info(
+        f"physics_conservation_pilot: {len(all_prompts)} prompts "
+        f"({sum(1 for p in all_prompts if p['label'])} TRUE / "
+        f"{sum(1 for p in all_prompts if not p['label'])} FALSE)"
+    )
+    return all_prompts, []
+
+
+GENERATORS["physics_conservation_pilot"] = generate_physics_conservation_pilot_prompts
 
 
 def main():

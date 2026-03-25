@@ -80,6 +80,29 @@ behaviours:
     # Test_tidxs shared EN/FR per concept for C3 patching alignment.
     # → train=96 (48 EN + 48 FR), test=32 (16 EN + 16 FR).
 
+  physics_conservation_pilot:
+    train_size: 36
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.75
+    description: "Pilot: 9 diagnostic concepts × 4 templates = 36 prompts (validation only)"
+    # Run before full physics_conservation to validate format + model behaviour.
+    # Gate: overall accuracy >= 0.75; adversarial results reported separately.
+
+  physics_conservation:
+    train_size: 150
+    test_size: 50
+    min_logit_diff: 0.5
+    success_threshold: 0.80
+    description: "Path independence of work: conservative vs non-conservative forces (Type 2: Candidate Set)"
+    # 25 concept groups × 8 templates = 200 prompts total.
+    # Binary: predict ' True' (path-independent) or ' False' (path-dependent).
+    # Stratified split: T0-T5 → train (6 per concept = 150), T6-T7 → test (2 per concept = 50).
+    # Concept families: conservative_named (14), nonconservative_named/abstract (8), adversarial (3).
+    # Adversarial: C22=divergence_free (∇·F=0 ≠ ∇×F=0), C23=magnitude_only, C24=path_history.
+    # Patching mode: paraphrase pairs (same concept_index, T_even ↔ T_odd).
+    # Baseline gate: overall accuracy ≥ 0.80, mean_norm_logprob_diff ≥ 0.5.
+
 # Activation capture
 activations:
   layer_range: [15, 21]   # Middle layers: 15-20 (6 layers, matches transcoder_config middle range)

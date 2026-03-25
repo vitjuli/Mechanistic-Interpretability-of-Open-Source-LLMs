@@ -254,7 +254,7 @@ def build_layerwise_trace(
     """
     # Use only ablation_zero for reliable full-coverage dynamics
     az_df = feat_df[feat_df["data_source"] == "ablation_zero"].copy()
-    layers = sorted(az_df["layer"].unique())
+    layers = list(range(10, 26))  # All circuit layers; 0-contribution for layers with no ablation_zero features
 
     records = []
     flip_records = []

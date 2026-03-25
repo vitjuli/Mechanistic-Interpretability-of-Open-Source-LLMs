@@ -1390,6 +1390,57 @@ def create_prompt_pairs(
             logger.info(f"C3 pairing result: {matched} pairs "
                         f"({len(fr_targets)} FR targets, {len(en_map)} EN sources)")
 
+    elif behaviour == "physics_conservation":
+        # Paraphrase patching: same concept_index, T_even → T_odd.
+        # Source: even-indexed template (T0, T2, T4, T6).
+        # Target: odd-indexed template (T1, T3, T5, T7) with the same concept.
+        # Rationale: tests whether the same circuit fires across surface paraphrases
+        #   of the same concept (within-concept generalization).
+        # Both source and target have the same label (TRUE or FALSE), so a successful
+        #   patch preserves the output — we measure effect on internal representations.
+        # For cross-label analysis (conservative ↔ non-conservative), use patch_mode="cross_label"
+        #   which requires source_prompts to be a conservative subset.
+        if patch_mode == "cross_label" and source_prompts is not None:
+            # Cross-label: source = conservative (TRUE), target = non-conservative (FALSE).
+            # Pair by template_idx only (concept descriptions differ between source/target).
+            src_by_tidx: Dict[int, List[Dict]] = {}
+            for p in source_prompts:
+                src_by_tidx.setdefault(p.get("template_idx", -1), []).append(p)
+            for t in prompts:
+                if t.get("label") is False:  # targets are non-conservative prompts
+                    srcs = src_by_tidx.get(t.get("template_idx", -1), [])
+                    if srcs:
+                        pairs.append((srcs[0], t))
+                    else:
+                        logger.warning(
+                            f"physics_conservation cross_label: no source for "
+                            f"concept={t.get('concept_index')} tidx={t.get('template_idx')}"
+                        )
+        else:
+            # Default: paraphrase mode — same concept, T_even ↔ T_odd
+            by_concept_tidx: Dict[tuple, Dict] = {}
+            for p in prompts:
+                key = (p.get("concept_index", -1), p.get("template_idx", -1))
+                by_concept_tidx[key] = p
+            matched = 0
+            for p in prompts:
+                tidx = p.get("template_idx", 0)
+                cidx = p.get("concept_index", -1)
+                if tidx % 2 == 1:  # odd = target; source is the preceding even template
+                    src = by_concept_tidx.get((cidx, tidx - 1))
+                    if src:
+                        pairs.append((src, p))
+                        matched += 1
+                    else:
+                        logger.warning(
+                            f"physics_conservation paraphrase: no even-template source for "
+                            f"concept={cidx} tidx={tidx}"
+                        )
+            logger.info(
+                f"physics_conservation paraphrase pairing: {matched} pairs "
+                f"from {len(prompts)} prompts"
+            )
+
     elif behaviour in ("multilingual_circuits", "multilingual_circuits_b1"):
         # C3 only: language swap (EN antonym → FR antonym), same concept + template_idx.
         # All prompts are antonym-only in this behaviour; patch_mode is ignored (always C3).

@@ -7,8 +7,8 @@ Behaviour: `multilingual_circuits_b1` | Split: train | n_prompts: 48 (24 EN + 24
 | Metric | Value | Threshold | Status |
 |---|---|---|---|
 | EN sign_accuracy | 1.0000 | ≥ 0.90 | PASS |
-| FR sign_accuracy | 0.7292 | ≥ 0.65 | PASS |
-| mean_norm_logprob_diff | 3.7360 | ≥ 1.0 | PASS |
+| FR sign_accuracy | 0.7917 | ≥ 0.65 | PASS |
+| mean_norm_logprob_diff | 4.9380 | ≥ 1.0 | PASS |
 
 **Overall gate: PASS**
 
@@ -25,15 +25,15 @@ Behaviour: `multilingual_circuits_b1` | Split: train | n_prompts: 48 (24 EN + 24
 
 ## Per-Layer IoU — Position Breakdown
 
-Mean IoU (pooled): 0.3385
-Max IoU layer (pooled): 19 (IoU = 0.3895)
-Min IoU layer (pooled): 25 (IoU = 0.2766)
+Mean IoU (pooled): 0.2460
+Max IoU layer (pooled): 17 (IoU = 0.2783)
+Min IoU layer (pooled): 24 (IoU = 0.2065)
 
 | IoU curve | Early (10–11) | Middle (12–20) | Late (21–25) | Middle/Early ratio |
 |---|---|---|---|---|
-| Pooled (all positions) | 0.2885 | 0.3616 | 0.3170 | 1.253× |
-| Decision token only | 0.4131 | 0.4651 | 0.4374 | 1.126× |
-| Content positions (non-decision) | 0.2823 | 0.3445 | 0.3060 | 1.220× |
+| Pooled (all positions) | 0.2375 | 0.2589 | 0.2262 | 1.090× |
+| Decision token only | 0.2182 | 0.2262 | 0.2363 | 1.037× |
+| Content positions (non-decision) | 0.2217 | 0.2352 | 0.2012 | 1.061× |
 
 **Note on curves:**
 - *Pooled*: all 5 token positions per prompt combined (v2 default).
@@ -48,13 +48,13 @@ See `iou_position_comparison.png` for the comparison figure.
 
 ## Claim 3 Assessment — Middle-Layer Concentration
 
-**Status: WEAKLY SUPPORTED**
+**Status: INSUFFICIENT EVIDENCE**
 
 ```
-Primary signal: content-position middle/early ratio = 1.220× (threshold ≥ 1.10). Direction is correct but gradient is small. Cannot firmly distinguish from noise.
-  Pooled ratio:   1.253×
-  Decision ratio: 1.126× (expected flat — semantic token, no language contrast)
-  Content ratio:  1.220× (expected steep — lexical token, language-specific early layers)
+Primary signal: content-position middle/early ratio = 1.061× (< 1.10). No meaningful concentration detected.
+  Pooled ratio:   1.090×
+  Decision ratio: 1.037× (expected flat — semantic token, no language contrast)
+  Content ratio:  1.061× (expected steep — lexical token, language-specific early layers)
 ```
 
 **Interpretation note:** Do not conflate Claim 3 support with overall
@@ -96,9 +96,9 @@ See `bridge_features_only.csv` for details.
 
 | Anthropic Claim | Our evidence | Assessment |
 |---|---|---|
-| **(1) Language-specific features exist** | Min IoU = 0.2766. Weakly supported — room for language-specific features at early/late layers. | Weakly supported. |
-| **(2) Shared cross-lingual features exist** | Max IoU = 0.3895 (layer 19). Moderately supported — three independent measures converge (IoU, bridge, C3). | Moderately supported. |
-| **(3) Shared features concentrated in middle layers** | Content-position middle/early = 1.220× (if available) | **WEAKLY SUPPORTED** |
+| **(1) Language-specific features exist** | Min IoU = 0.2065. Weakly supported — room for language-specific features at early/late layers. | Weakly supported. |
+| **(2) Shared cross-lingual features exist** | Max IoU = 0.2783 (layer 17). Moderately supported — three independent measures converge (IoU, bridge, C3). | Moderately supported. |
+| **(3) Shared features concentrated in middle layers** | Content-position middle/early = 1.061× (if available) | **INSUFFICIENT EVIDENCE** |
 | **(4) Bridge features degrade both EN and FR** | 33 bridges; C3 disrupt=0.645; CI [-0.403, -0.343] | Strongly supported. CI fully negative. |
 
 ## Notes
