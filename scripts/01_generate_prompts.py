@@ -1052,8 +1052,9 @@ def generate_physics_conservation_prompts(
 
     # -------------------------------------------------------------------------
     # 8 templates.  [DESC] is substituted with concept description.
+    # Format: "True or False? [statement]." — explicit quiz frame so the model
+    # predicts ' True' / ' False' as quiz answers, not statement continuations.
     # Capital first letter of [DESC] used where sentence-initial (T3, T4).
-    # All templates end with ":" so correct_answer has a natural leading space.
     # -------------------------------------------------------------------------
     def _cap(s: str) -> str:
         """Capitalise first character only."""
@@ -1061,23 +1062,23 @@ def generate_physics_conservation_prompts(
 
     def make_prompt(desc: str, tidx: int) -> str:
         if tidx == 0:
-            return f"The work done by {desc} is path-independent:"
+            return f"True or False? The work done by {desc} is path-independent."
         elif tidx == 1:
-            return (f"The work performed by {desc} is the same regardless "
-                    f"of the path taken between two fixed endpoints:")
+            return (f"True or False? The work performed by {desc} is the same regardless "
+                    f"of the path taken between two fixed endpoints.")
         elif tidx == 2:
-            return f"The net work done by {desc} along any closed path is zero:"
+            return f"True or False? The net work done by {desc} along any closed path is zero."
         elif tidx == 3:
-            return f"{_cap(desc)} can be expressed as the negative gradient of a scalar function:"
+            return f"True or False? {_cap(desc)} can be expressed as the negative gradient of a scalar function."
         elif tidx == 4:
-            return f"{_cap(desc)} is a conservative force:"
+            return f"True or False? {_cap(desc)} is a conservative force."
         elif tidx == 5:
-            return f"The circulation integral of {desc} around any closed loop is zero:"
+            return f"True or False? The circulation integral of {desc} around any closed loop is zero."
         elif tidx == 6:
-            return f"A particle subject only to {desc} conserves its total mechanical energy:"
+            return f"True or False? A particle subject only to {desc} conserves its total mechanical energy."
         elif tidx == 7:
-            return (f"The work done by {desc} between two fixed points "
-                    f"does not depend on which path connects them:")
+            return (f"True or False? The work done by {desc} between two fixed points "
+                    f"does not depend on which path connects them.")
         else:
             raise ValueError(f"Unknown template index {tidx}")
 
@@ -1150,10 +1151,10 @@ def generate_physics_conservation_pilot_prompts(
       - 3 adversarial:            divergence-free, magnitude-only, path-history (hard)
 
     Template selection (4 of 8 — most diagnostic):
-      T0: "The work done by [X] is path-independent:"  — direct
-      T3: "[X] can be expressed as the negative gradient of a scalar function:" — potential existence
-      T4: "[X] is a conservative force:"                — label vocabulary
-      T5: "The circulation integral of [X] around any closed loop is zero:" — integral characterization
+      T0: "True or False? The work done by [X] is path-independent."  — direct
+      T3: "True or False? [X] can be expressed as the negative gradient of a scalar function." — potential existence
+      T4: "True or False? [X] is a conservative force."               — label vocabulary
+      T5: "True or False? The circulation integral of [X] around any closed loop is zero." — integral characterization
 
     T3 is the most adversarial-diagnostic: C22 (divergence-free) should give FALSE on T3
     because ∇·F=0 does NOT imply F=-∇V. If the model confuses ∇· with ∇×, it fails here.
@@ -1195,13 +1196,13 @@ def generate_physics_conservation_pilot_prompts(
 
     def make_prompt(desc: str, tidx: int) -> str:
         if tidx == 0:
-            return f"The work done by {desc} is path-independent:"
+            return f"True or False? The work done by {desc} is path-independent."
         elif tidx == 3:
-            return f"{_cap(desc)} can be expressed as the negative gradient of a scalar function:"
+            return f"True or False? {_cap(desc)} can be expressed as the negative gradient of a scalar function."
         elif tidx == 4:
-            return f"{_cap(desc)} is a conservative force:"
+            return f"True or False? {_cap(desc)} is a conservative force."
         elif tidx == 5:
-            return f"The circulation integral of {desc} around any closed loop is zero:"
+            return f"True or False? The circulation integral of {desc} around any closed loop is zero."
         else:
             raise ValueError(f"Unexpected pilot template index {tidx}")
 
