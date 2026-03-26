@@ -1070,11 +1070,20 @@ def generate_physics_conservation_prompts(
         elif tidx == 2:
             return f"True or False? The net work done by {desc} along any closed path is zero. Answer:"
         elif tidx == 3:
-            return f"True or False? {_cap(desc)} can be expressed as the negative gradient of a scalar function. Answer:"
+            # OLD: "can be expressed as the negative gradient of a scalar function"
+            # — model doesn't reliably connect named forces (friction, air) to scalar potential absence.
+            # NEW: potential energy framing — model has direct knowledge of whether named forces have PE.
+            return f"True or False? {_cap(desc)} has an associated potential energy function. Answer:"
         elif tidx == 4:
             return f"True or False? {_cap(desc)} is a conservative force. Answer:"
         elif tidx == 5:
-            return f"True or False? The circulation integral of {desc} around any closed loop is zero. Answer:"
+            # OLD: "circulation integral around any closed loop is zero"
+            # — "circulation integral of kinetic friction" is physics-category mismatch;
+            #   named contact forces are never discussed in field-theory circulation terms.
+            #   ALL 6 format variants fail for this → pure knowledge gap, not format.
+            # NEW: concrete physical phrasing — work on closed path, accessible for all force types.
+            return (f"True or False? The total work done by {desc} on an object "
+                    f"completing a full closed loop is zero. Answer:")
         elif tidx == 6:
             return f"True or False? A particle subject only to {desc} conserves its total mechanical energy. Answer:"
         elif tidx == 7:
@@ -1152,10 +1161,12 @@ def generate_physics_conservation_pilot_prompts(
       - 3 adversarial:            divergence-free, magnitude-only, path-history (hard)
 
     Template selection (4 of 8 — most diagnostic):
-      T0: "True or False? The work done by [X] is path-independent. Answer:"  — direct
-      T3: "True or False? [X] can be expressed as the negative gradient of a scalar function. Answer:" — potential existence
-      T4: "True or False? [X] is a conservative force. Answer:"               — label vocabulary
-      T5: "True or False? The circulation integral of [X] around any closed loop is zero. Answer:" — integral characterization
+      T0: "True or False? The work done by [X] is path-independent. Answer:"
+      T3: "True or False? [X] has an associated potential energy function. Answer:"
+           (replaces gradient-of-scalar: model lacks scalar-potential knowledge for named forces)
+      T4: "True or False? [X] is a conservative force. Answer:"
+      T5: "True or False? The total work done by [X] on an object completing a full closed loop is zero. Answer:"
+           (replaces circulation-integral: contact forces have no field-theory circulation representation)
 
     T3 is the most adversarial-diagnostic: C22 (divergence-free) should give FALSE on T3
     because ∇·F=0 does NOT imply F=-∇V. If the model confuses ∇· with ∇×, it fails here.
@@ -1199,11 +1210,12 @@ def generate_physics_conservation_pilot_prompts(
         if tidx == 0:
             return f"True or False? The work done by {desc} is path-independent. Answer:"
         elif tidx == 3:
-            return f"True or False? {_cap(desc)} can be expressed as the negative gradient of a scalar function. Answer:"
+            return f"True or False? {_cap(desc)} has an associated potential energy function. Answer:"
         elif tidx == 4:
             return f"True or False? {_cap(desc)} is a conservative force. Answer:"
         elif tidx == 5:
-            return f"True or False? The circulation integral of {desc} around any closed loop is zero. Answer:"
+            return (f"True or False? The total work done by {desc} on an object "
+                    f"completing a full closed loop is zero. Answer:")
         else:
             raise ValueError(f"Unexpected pilot template index {tidx}")
 

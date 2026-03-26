@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH -A MPHIL-DIS-SL2-GPU
-#SBATCH --job-name=diag_fmt
+#SBATCH --job-name=diag_fmt2
 #SBATCH --partition=ampere
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=00:20:00
+#SBATCH --time=00:15:00
 #SBATCH --output=logs/diag_format_test-%j.out
 #SBATCH --error=logs/diag_format_test-%j.err
 

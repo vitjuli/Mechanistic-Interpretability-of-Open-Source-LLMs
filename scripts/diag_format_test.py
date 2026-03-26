@@ -90,6 +90,14 @@ FORMATS = {
         4: f"Is {d} a conservative force? Answer:",
         5: f"Is the circulation integral of {d} around any closed loop equal to zero? Answer:",
     }[t],
+
+    # v7: new T3/T5 content with v3 format — candidate fix for named non-conservative failures
+    "v7_new_T3T5":  lambda d, t: {
+        0: f"True or False? The work done by {d} is path-independent. Answer:",
+        3: f"True or False? {_cap(d)} has an associated potential energy function. Answer:",
+        4: f"True or False? {_cap(d)} is a conservative force. Answer:",
+        5: f"True or False? The total work done by {d} on an object completing a full closed loop is zero. Answer:",
+    }[t],
 }
 
 # Templates to test
@@ -213,9 +221,9 @@ def main():
     parser.add_argument("--top_k", type=int, default=10,
                         help="Number of top tokens to display")
     parser.add_argument("--formats", nargs="+",
-                        default=list(FORMATS.keys()),
+                        default=["v3_TF_answer", "v7_new_T3T5"],
                         choices=list(FORMATS.keys()),
-                        help="Which format variants to test (default: all)")
+                        help="Which format variants to test (default: v3 vs v7 comparison)")
     parser.add_argument("--device", default=None,
                         help="Force device (cuda/cpu). Default: auto-detect.")
     args = parser.parse_args()
