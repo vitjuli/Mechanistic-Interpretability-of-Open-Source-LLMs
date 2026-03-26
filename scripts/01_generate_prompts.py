@@ -10,6 +10,7 @@ Supported behaviours:
   - multilingual_circuits: Antonym-only EN+FR prompts, Anthropic reproduction (4 templates)
   - multilingual_circuits_b1: B1 extended set — 8 templates per concept (T0-T7), 96 train
   - physics_conservation: Path independence of work (conservative vs non-conservative forces)
+  - physics_conservation_pilot_v3: Yes/No direct questions, 8 concepts × 3 templates (v3 pilot)
 
 Usage:
     python scripts/01_generate_prompts.py
@@ -18,6 +19,7 @@ Usage:
     python scripts/01_generate_prompts.py --behaviour multilingual_antonym
     python scripts/01_generate_prompts.py --behaviour multilingual_circuits_b1
     python scripts/01_generate_prompts.py --behaviour physics_conservation
+    python scripts/01_generate_prompts.py --behaviour physics_conservation_pilot_v3
 """
 
 import json
@@ -1254,6 +1256,108 @@ def generate_physics_conservation_pilot_prompts(
 
 
 GENERATORS["physics_conservation_pilot"] = generate_physics_conservation_pilot_prompts
+
+
+# =============================================================================
+# physics_conservation_pilot_v3 — Yes/No direct questions, 8 concepts × 3 templates
+# =============================================================================
+
+def generate_physics_conservation_pilot_v3_prompts(
+    n_train: int = 24,
+    n_test: int = 0,
+    seed: int = 42,
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Pilot v3: 8 concepts × 3 direct yes/no question templates = 24 prompts.
+
+    Reframes from True/False statement-verification (v1/v2) to direct one-sentence
+    questions with Yes/No answers.  This avoids the systematic True-bias and
+    conversational-follow-up failure modes observed in v1/v2.
+
+    Concept selection (same concept_index as full dataset for future linking):
+      Conservative (label=True  → correct=' Yes'):
+        C00 gravity_uniform      — easy named force
+        C01 spring_hooke         — easy named force
+        C04 gradient_field       — abstract; true by definition
+        C05 curl_free_field      — abstract; ∇×F=0 ↔ conservative
+      Non-conservative (label=False → correct=' No'):
+        C14 friction_kinetic     — easy named force
+        C15 air_resistance       — easy named force
+        C22 divergence_free      — adversarial: ∇·F=0 ≠ ∇×F=0
+        C24 path_history         — adversarial: force depends on full path
+
+    Templates (v3 numbering 0–2):
+      T0: "Is the work done by [X] path-independent?"
+      T1: "Is [X] a conservative force?"
+      T2: "Can [X] generally be written as the negative gradient of a scalar potential?"
+
+    Answer tokens: ' Yes' (conservative) / ' No' (non-conservative).
+
+    Tokenization note: both ' Yes' and ' No' must be single tokens for teacher-forced
+    logprob evaluation.  The gate sbatch verifies this before running script 02.
+    """
+    V3_CONCEPTS = [
+        # (concept_index, description, label, family, force_name, difficulty)
+        (0,  "a uniform gravitational field",
+             True,  "conservative_named",    "gravity_uniform",  "easy"),
+        (1,  "a spring force obeying Hooke's law",
+             True,  "conservative_named",    "spring_hooke",     "easy"),
+        (4,  "a force field equal to the negative gradient of a scalar function",
+             True,  "conservative_abstract", "gradient_field",   "medium"),
+        (5,  "a static force field with zero curl everywhere",
+             True,  "conservative_abstract", "curl_free_field",  "medium"),
+        (14, "kinetic friction",
+             False, "nonconservative_named", "friction_kinetic", "easy"),
+        (15, "air resistance",
+             False, "nonconservative_named", "air_resistance",   "easy"),
+        (22, "a force field with zero divergence everywhere",
+             False, "adversarial_divergence","divergence_free",  "hard"),
+        (24, "a force whose value at any point depends on the entire path taken to reach it",
+             False, "adversarial_pathdep",   "path_history",     "hard"),
+    ]
+
+    def _cap(s: str) -> str:
+        return s[0].upper() + s[1:] if s else s
+
+    def make_prompt(desc: str, tidx: int) -> str:
+        if tidx == 0:
+            return f"Is the work done by {desc} path-independent?"
+        elif tidx == 1:
+            return f"Is {desc} a conservative force?"
+        elif tidx == 2:
+            return f"Can {desc} generally be written as the negative gradient of a scalar potential?"
+        else:
+            raise ValueError(f"Unexpected v3 pilot template index {tidx}")
+
+    V3_TEMPLATE_INDICES = [0, 1, 2]
+
+    all_prompts: List[Dict] = []
+    for (cidx, desc, label, family, force_name, difficulty) in V3_CONCEPTS:
+        correct   = " Yes" if label else " No"
+        incorrect = " No"  if label else " Yes"
+        for tidx in V3_TEMPLATE_INDICES:
+            all_prompts.append({
+                "prompt":            make_prompt(desc, tidx),
+                "correct_answer":    correct,
+                "incorrect_answer":  incorrect,
+                "label":             label,
+                "concept_index":     cidx,
+                "template_idx":      tidx,
+                "concept_family":    family,
+                "force_name":        force_name,
+                "difficulty":        difficulty,
+                "description":       desc,
+            })
+
+    logger.info(
+        f"physics_conservation_pilot_v3: {len(all_prompts)} prompts "
+        f"({sum(1 for p in all_prompts if p['label'])} YES / "
+        f"{sum(1 for p in all_prompts if not p['label'])} NO)"
+    )
+    return all_prompts, []
+
+
+GENERATORS["physics_conservation_pilot_v3"] = generate_physics_conservation_pilot_v3_prompts
 
 
 def main():

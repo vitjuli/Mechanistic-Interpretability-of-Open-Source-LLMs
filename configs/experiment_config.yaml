@@ -85,9 +85,20 @@ behaviours:
     test_size: 0
     min_logit_diff: 0.5
     success_threshold: 0.75
-    description: "Pilot: 9 diagnostic concepts × 4 templates = 36 prompts (validation only)"
+    description: "Pilot: 9 diagnostic concepts × 4 templates = 36 prompts (True/False, validation only)"
     # Run before full physics_conservation to validate format + model behaviour.
     # Gate: overall accuracy >= 0.75; adversarial results reported separately.
+
+  physics_conservation_pilot_v3:
+    train_size: 24
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.75
+    description: "Pilot v3: 8 concepts × 3 Yes/No question templates = 24 prompts"
+    # Reframed from True/False statement-verification to direct Yes/No questions.
+    # Avoids systematic True-bias and conversational-follow-up failure modes.
+    # Gate: overall >= 0.75; easy_acc (named forces) = 1.0; single-token ' Yes'/' No'.
+    # If PASS: redesign full physics_conservation dataset with Yes/No format.
 
   physics_conservation:
     train_size: 150
