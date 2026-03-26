@@ -1799,7 +1799,7 @@ def main():
     base = Path("data")
     prompt_dir = base / "prompts"
 
-    n_prompts_map = {"multilingual_circuits_b1": 96}
+    n_prompts_map = {"multilingual_circuits_b1": 96, "physics_conservation": 150}
     n_prompts_default = n_prompts_map.get(args.behaviour, 48)
 
     if args.graph_json:

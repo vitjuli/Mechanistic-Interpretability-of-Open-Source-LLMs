@@ -532,7 +532,7 @@ def main():
     parser.add_argument(
         "--behaviour",
         type=str,
-        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits", "multilingual_circuits_b1"],
+        choices=["grammar_agreement", "physics_scalar_vector_operator", "antonym_operation", "multilingual_antonym", "multilingual_circuits", "multilingual_circuits_b1", "physics_conservation"],
         default="grammar_agreement",
         help="Which behaviour to process",
     )
