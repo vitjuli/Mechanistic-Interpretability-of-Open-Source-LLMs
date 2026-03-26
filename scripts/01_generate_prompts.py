@@ -1165,8 +1165,9 @@ def generate_physics_conservation_pilot_prompts(
       T3: "True or False? [X] has an associated potential energy function. Answer:"
            (replaces gradient-of-scalar: model lacks scalar-potential knowledge for named forces)
       T4: "True or False? [X] is a conservative force. Answer:"
-      T5: "True or False? The total work done by [X] on an object completing a full closed loop is zero. Answer:"
-           (replaces circulation-integral: contact forces have no field-theory circulation representation)
+      T6: "True or False? A particle subject only to [X] conserves its total mechanical energy. Answer:"
+           (replaces T5 / closed-loop variants: model conflates "closed loop" with zero net displacement
+            → zero work regardless of phrasing; energy-dissipation channel is reliable for named forces)
 
     T3 is the most adversarial-diagnostic: C22 (divergence-free) should give FALSE on T3
     because ∇·F=0 does NOT imply F=-∇V. If the model confuses ∇· with ∇×, it fails here.
@@ -1200,8 +1201,13 @@ def generate_physics_conservation_pilot_prompts(
              False, "adversarial_pathdep",   "path_history",     "hard",   "markovian_contrast"),
     ]
 
-    # 4 pilot templates (indices 0, 3, 4, 5 of the full set)
-    PILOT_TEMPLATE_INDICES = [0, 3, 4, 5]
+    # 4 pilot templates (indices 0, 3, 4, 6 of the full set)
+    # T5 (closed-loop work=0) excluded: model conflates "closed loop" with "zero net
+    # displacement" → zero work, overriding knowledge of named non-conservative forces.
+    # This misconception is format-independent (confirmed across all 6 formats in diagnostics).
+    # T6 (mechanical energy conservation) tests the same underlying property via the energy
+    # channel the model reliably knows for named forces (friction/air dissipate energy).
+    PILOT_TEMPLATE_INDICES = [0, 3, 4, 6]
 
     def _cap(s: str) -> str:
         return s[0].upper() + s[1:] if s else s
@@ -1213,9 +1219,8 @@ def generate_physics_conservation_pilot_prompts(
             return f"True or False? {_cap(desc)} has an associated potential energy function. Answer:"
         elif tidx == 4:
             return f"True or False? {_cap(desc)} is a conservative force. Answer:"
-        elif tidx == 5:
-            return (f"True or False? The total work done by {desc} on an object "
-                    f"completing a full closed loop is zero. Answer:")
+        elif tidx == 6:
+            return f"True or False? A particle subject only to {desc} conserves its total mechanical energy. Answer:"
         else:
             raise ValueError(f"Unexpected pilot template index {tidx}")
 
