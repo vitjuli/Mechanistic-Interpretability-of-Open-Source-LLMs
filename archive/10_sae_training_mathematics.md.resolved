@@ -1,0 +1,651 @@
+# Sparse Autoencoder Training: Mathematical Formulation
+
+## Abstract
+
+This document provides a comprehensive mathematical description of the Sparse Autoencoder (SAE) training methodology implemented for interpretability analysis of transformer language models. The approach follows the paradigm established by Anthropic's mechanistic interpretability research, adapted for layer-wise activation decomposition.
+
+---
+
+## 1. Problem Statement
+
+### 1.1 Motivation
+
+Given a pre-trained transformer language model $\mathcal{M}$ with $L$ layers, we seek to decompose the internal representations at layer $\ell \in \{0, 1, \ldots, L-1\}$ into interpretable, sparse feature activations. 
+
+**Goal:** Learn a sparse, overcomplete representation that decomposes neural activations into a larger set of monosemantic features.
+
+### 1.2 Notation
+
+| Symbol | Description | Dimension |
+|--------|-------------|-----------|
+| $\mathbf{x} \in \mathbb{R}^{d}$ | Input activation vector (layer output) | $d$ |
+| $\mathbf{z} \in \mathbb{R}^{m}$ | Latent feature activation vector | $m$ |
+| $\hat{\mathbf{x}} \in \mathbb{R}^{d}$ | Reconstructed activation | $d$ |
+| $k$ | Expansion factor | scalar |
+| $m = k \cdot d$ | Latent dimension (overcomplete) | $m > d$ |
+| $W_{\text{enc}} \in \mathbb{R}^{m \times d}$ | Encoder weight matrix | $m \times d$ |
+| $\mathbf{b}_{\text{enc}} \in \mathbb{R}^{m}$ | Encoder bias vector | $m$ |
+| $W_{\text{dec}} \in \mathbb{R}^{d \times m}$ | Decoder weight matrix | $d \times m$ |
+| $\mathbf{b}_{\text{dec}} \in \mathbb{R}^{d}$ | Decoder bias vector | $d$ |
+| $\lambda$ | L₁ sparsity penalty coefficient | scalar |
+
+---
+
+## 2. Sparse Autoencoder Architecture
+
+### 2.1 Encoder
+
+The encoder maps input activations to a sparse latent representation via an affine transformation followed by ReLU activation:
+
+$$
+\mathbf{z} = \text{ReLU}(W_{\text{enc}} \mathbf{x} + \mathbf{b}_{\text{enc}})
+$$
+
+where:
+- $\text{ReLU}(u) = \max(0, u)$ applied element-wise
+- The encoder output $\mathbf{z}$ is **sparse** due to ReLU's non-negativity constraint and L₁ regularization (see §2.4)
+
+**Overcompleteness:** The condition $m > d$ allows the model to learn a redundant basis that can represent polysemantic features as separate dimensions.
+
+### 2.2 Decoder
+
+The decoder reconstructs the original activation from the sparse latent representation:
+
+$$
+\hat{\mathbf{x}} = W_{\text{dec}} \mathbf{z} + \mathbf{b}_{\text{dec}}
+$$
+
+**Constraint:** In our implementation, we enforce **tied weights** with transpose relationship:
+$$
+W_{\text{dec}} = W_{\text{enc}}^T
+$$
+
+This constraint:
+1. Reduces parameter count from $O(md + md) = O(2md)$ to $O(md)$
+2. Encourages orthogonality in learned features
+3. Prevents the decoder from "memorizing" reconstruction shortcuts
+
+### 2.3 Full Forward Pass
+
+The complete SAE transformation is:
+
+$$
+\hat{\mathbf{x}} = f_{\text{SAE}}(\mathbf{x}) = W_{\text{dec}} \cdot \text{ReLU}(W_{\text{enc}} \mathbf{x} + \mathbf{b}_{\text{enc}}) + \mathbf{b}_{\text{dec}}
+$$
+
+### 2.4 Loss Function
+
+The training objective combines **reconstruction fidelity** with **sparsity penalty**:
+
+$$
+\mathcal{L}(\mathbf{x}) = \mathcal{L}_{\text{recon}}(\mathbf{x}) + \lambda \mathcal{L}_{\text{sparse}}(\mathbf{x})
+$$
+
+#### 2.4.1 Reconstruction Loss
+
+We use Mean Squared Error (MSE) for reconstruction:
+
+$$
+\mathcal{L}_{\text{recon}}(\mathbf{x}) = \|\mathbf{x} - \hat{\mathbf{x}}\|_2^2 = \sum_{i=1}^{d} (x_i - \hat{x}_i)^2
+$$
+
+**Justification:** MSE penalizes large deviations quadratically, ensuring the SAE preserves information-rich directions in activation space.
+
+#### 2.4.2 Sparsity Loss
+
+We apply L₁ regularization on the latent activations:
+
+$$
+\mathcal{L}_{\text{sparse}}(\mathbf{x}) = \|\mathbf{z}\|_1 = \sum_{j=1}^{m} |z_j|
+$$
+
+Since $z_j \geq 0$ (due to ReLU), this simplifies to:
+
+$$
+\mathcal{L}_{\text{sparse}}(\mathbf{x}) = \sum_{j=1}^{m} z_j
+$$
+
+**Effect of $\lambda$:**
+- $\lambda \to 0$: Dense representations (overfitting to reconstruction)
+- $\lambda \to \infty$: Trivial solution ($\mathbf{z} = \mathbf{0}$)
+- Optimal $\lambda$: Balances reconstruction quality with interpretability
+
+#### 2.4.3 Total Loss (Batch)
+
+For a minibatch $\mathcal{B} = \{\mathbf{x}^{(1)}, \ldots, \mathbf{x}^{(B)}\}$ of size $B$:
+
+$$
+\mathcal{L}_{\text{total}}(\mathcal{B}) = \frac{1}{B} \sum_{i=1}^{B} \left[ \|\mathbf{x}^{(i)} - \hat{\mathbf{x}}^{(i)}\|_2^2 + \lambda \|\mathbf{z}^{(i)}\|_1 \right]
+$$
+
+---
+
+## 3. Training Procedure
+
+### 3.1 Data Preparation
+
+#### 3.1.1 Activation Extraction
+
+Given a dataset $\mathcal{D} = \{s_1, \ldots, s_N\}$ of input sequences and a target layer $\ell$:
+
+1. **Forward Pass:** For each sequence $s_i$, perform forward pass through the model up to layer $\ell$
+2. **Token-Level Extraction:** Extract activations $\mathbf{x}_{i,t} \in \mathbb{R}^{d}$ for each token $t$ in sequence $i$
+3. **Pooling:** Aggregate token activations:
+   $$
+   \mathbf{x}_i = \text{pool}(\{\mathbf{x}_{i,1}, \ldots, \mathbf{x}_{i,T_i}\})
+   $$
+   
+   **Implementation:** We use **last token pooling** (final token's hidden state):
+   $$
+   \mathbf{x}_i = \mathbf{x}_{i, T_i}
+   $$
+
+4. **Normalization:** Activations are stored in their original scale (no normalization), preserving the model's natural activation distribution
+
+**Result:** Dataset $\mathcal{X} = \{\mathbf{x}_1, \ldots, \mathbf{x}_N\}$ where $N$ is the number of sequences.
+
+#### 3.1.2 Train/Validation Split
+
+We partition $\mathcal{X}$ into training and validation sets:
+
+$$
+\begin{aligned}
+\mathcal{X}_{\text{train}} &= \{\mathbf{x}_i : i \in \mathcal{I}_{\text{train}}\}, \quad |\mathcal{X}_{\text{train}}| = n_{\text{train}} \\
+\mathcal{X}_{\text{val}} &= \{\mathbf{x}_i : i \in \mathcal{I}_{\text{val}}\}, \quad |\mathcal{X}_{\text{val}}| = n_{\text{val}}
+\end{aligned}
+$$
+
+where $\mathcal{I}_{\text{train}} \cap \mathcal{I}_{\text{val}} = \emptyset$ and $\mathcal{I}_{\text{train}} \cup \mathcal{I}_{\text{val}} = \{1, \ldots, N\}$.
+
+**Split Strategy:** Random partitioning with proportion:
+$$
+p_{\text{val}} = \frac{n_{\text{val}}}{N} \quad \text{(typically 0.2)}
+$$
+
+**Reproducibility:** The split indices $\mathcal{I}_{\text{train}}, \mathcal{I}_{\text{val}}$ are saved in checkpoints to ensure identical splits upon resuming training.
+
+### 3.2 Optimization
+
+#### 3.2.1 Optimizer
+
+We use **Adam** (Kingma & Ba, 2014) with hyperparameters:
+
+$$
+\begin{aligned}
+\alpha &= 10^{-3} \quad \text{(learning rate)} \\
+\beta_1 &= 0.9 \quad \text{(first moment decay)} \\
+\beta_2 &= 0.999 \quad \text{(second moment decay)} \\
+\epsilon &= 10^{-8} \quad \text{(numerical stability)}
+\end{aligned}
+$$
+
+**Update Rule (simplified):**
+
+At step $t$:
+1. Compute gradient: $\mathbf{g}_t = \nabla_{\theta} \mathcal{L}(\mathcal{B}_t)$
+2. Update biased first moment: $\mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1 - \beta_1) \mathbf{g}_t$
+3. Update biased second moment: $\mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1 - \beta_2) \mathbf{g}_t^2$
+4. Bias correction: $\hat{\mathbf{m}}_t = \mathbf{m}_t / (1 - \beta_1^t)$, $\hat{\mathbf{v}}_t = \mathbf{v}_t / (1 - \beta_2^t)$
+5. Parameter update: $\theta_{t} = \theta_{t-1} - \alpha \frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \epsilon}$
+
+where $\theta = \{W_{\text{enc}}, \mathbf{b}_{\text{enc}}, \mathbf{b}_{\text{dec}}\}$ (recall $W_{\text{dec}} = W_{\text{enc}}^T$).
+
+#### 3.2.2 Batch Sampling
+
+Training uses **stochastic minibatch gradient descent** with batch size $B = 256$:
+
+1. At each step $t$, sample indices $\mathcal{I}_t \subset \mathcal{I}_{\text{train}}$ uniformly at random with $|\mathcal{I}_t| = B$
+2. Form minibatch: $\mathcal{B}_t = \{\mathbf{x}_i : i \in \mathcal{I}_t\}$
+3. Compute loss: $\mathcal{L}(\mathcal{B}_t)$
+4. Backpropagate and update parameters
+
+**Sampling Strategy:** Independent uniform sampling **with replacement** (bootstrap sampling):
+$$
+\mathcal{I}_t \sim \text{Uniform}(\mathcal{I}_{\text{train}}, B)
+$$
+
+This allows:
+- Multiple visits to the same example within an epoch
+- Simplified implementation (no epoch bookkeeping)
+- Continuous training without artificial epoch boundaries
+
+#### 3.2.3 Training Duration
+
+Training continues for a fixed number of steps $T_{\text{max}}$ (e.g., $T_{\text{max}} = 10{,}000$).
+
+**No Early Stopping:** We train for the full $T_{\text{max}}$ steps and select the model with best validation performance.
+
+### 3.3 Validation and Model Selection
+
+#### 3.3.1 Validation Metrics
+
+We evaluate on the full validation set $\mathcal{X}_{\text{val}}$ every $\Delta_{\text{val}}$ steps (e.g., $\Delta_{\text{val}} = 500$).
+
+**Metrics:**
+
+1. **Reconstruction R²** (Coefficient of Determination):
+   $$
+   R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}}
+   $$
+   
+   where:
+   $$
+   \begin{aligned}
+   \text{SS}_{\text{res}} &= \sum_{i \in \mathcal{I}_{\text{val}}} \|\mathbf{x}_i - \hat{\mathbf{x}}_i\|_2^2 \quad \text{(residual sum of squares)} \\
+   \text{SS}_{\text{tot}} &= \sum_{i \in \mathcal{I}_{\text{val}}} \|\mathbf{x}_i - \bar{\mathbf{x}}\|_2^2 \quad \text{(total sum of squares)}
+   \end{aligned}
+   $$
+   
+   with mean activation:
+   $$
+   \bar{\mathbf{x}} = \frac{1}{n_{\text{val}}} \sum_{i \in \mathcal{I}_{\text{val}}} \mathbf{x}_i
+   $$
+   
+   **Interpretation:**
+   - $R^2 = 1$: Perfect reconstruction
+   - $R^2 = 0$: Model performs as well as predicting the mean
+   - $R^2 < 0$: Model performs worse than predicting the mean
+
+2. **Mean L₀ Sparsity** (Active Features):
+   $$
+   L_0 = \frac{1}{n_{\text{val}}} \sum_{i \in \mathcal{I}_{\text{val}}} \|\mathbf{z}_i\|_0
+   $$
+   
+   where $\|\mathbf{z}_i\|_0 = |\{j : z_{i,j} > 0\}|$ counts non-zero features.
+   
+   **Desirable:** Low $L_0$ indicates sparse representations (few active features per input).
+
+3. **Dead Feature Fraction:**
+   $$
+   f_{\text{dead}} = \frac{1}{m} \sum_{j=1}^{m} \mathbb{1}[\max_{i \in \mathcal{I}_{\text{val}}} z_{i,j} = 0]
+   $$
+   
+   This measures the proportion of features that are never active on the validation set.
+   
+   **Problematic:** High $f_{\text{dead}}$ indicates wasted capacity (features that don't participate in reconstruction).
+
+#### 3.3.2 Model Selection Criterion
+
+We select the model checkpoint with **highest validation R²**:
+
+$$
+\theta^* = \arg\max_{t \in \{0, \Delta_{\text{val}}, 2\Delta_{\text{val}}, \ldots, T_{\text{max}}\}} R^2_{\text{val}}(t)
+$$
+
+**Epsilon Comparison:** To handle floating-point precision, we consider model at step $t$ to be "new best" if:
+
+$$
+R^2_{\text{val}}(t) > R^2_{\text{best}} + \epsilon
+$$
+
+where $\epsilon = 10^{-12}$ prevents spurious updates from numerical noise.
+
+### 3.4 Batched Validation (OOM Prevention)
+
+For large validation sets that don't fit in GPU memory, we use **batched evaluation**:
+
+$$
+R^2 \approx 1 - \frac{\sum_{b=1}^{B_{\text{val}}} \text{SS}_{\text{res}}^{(b)}}{\sum_{b=1}^{B_{\text{val}}} \text{SS}_{\text{tot}}^{(b)}}
+$$
+
+where $B_{\text{val}} = \lceil n_{\text{val}} / B_{\text{eval}} \rceil$ is the number of validation batches.
+
+**Approximation:** This computes batch-wise R² and averages, which approximates the true R² but doesn't require materializing the full validation set on GPU.
+
+**Implementation Detail:** Threshold for in-memory vs. batched evaluation:
+$$
+\text{use\_batched} = \begin{cases}
+\text{True} & \text{if } n_{\text{val}} \cdot d \cdot 4 \text{ bytes} > 1\text{ GB} \\
+\text{False} & \text{otherwise}
+\end{cases}
+$$
+
+---
+
+## 4. Reproducibility and Checkpointing
+
+### 4.1 Random Number Generator (RNG) State Management
+
+To ensure **bitwise reproducibility**, we save and restore:
+
+1. **PyTorch RNG State:** $\mathcal{S}_{\text{torch}} = $ `torch.get_rng_state()`
+2. **NumPy RNG State:** $\mathcal{S}_{\text{numpy}} = $ `np.random.get_state()`
+3. **CUDA RNG State:** $\mathcal{S}_{\text{cuda}} = $ `torch.cuda.get_rng_state_all()` (if GPU available)
+
+**Restoration Order (Critical):**
+
+When resuming from checkpoint:
+1. Load checkpoint into CPU memory
+2. **Restore RNG states FIRST** (before any random operations)
+3. Restore data split indices (ensures same train/val partition)
+4. Proceed with training
+
+This ordering ensures that any fallback random operations (e.g., if split indices are missing) use the correct RNG state.
+
+### 4.2 Checkpoint Contents
+
+A training checkpoint $\mathcal{C}_t$ at step $t$ contains:
+
+$$
+\mathcal{C}_t = \{S_t, \Theta_t, \mathcal{O}_t, \mathcal{I}_{\text{train}}, \mathcal{I}_{\text{val}}, \mathcal{S}_{\text{RNG},t}, R^2_{\text{best},t}, \mathcal{M}_t, \text{config}, \text{metadata}\}
+$$
+
+where:
+- $S_t$: Training step number
+- $\Theta_t = \{W_{\text{enc}}, \mathbf{b}_{\text{enc}}, \mathbf{b}_{\text{dec}}\}$: Model parameters
+- $\mathcal{O}_t$: Optimizer state (Adam moments $\mathbf{m}_t, \mathbf{v}_t$)
+- $\mathcal{I}_{\text{train}}, \mathcal{I}_{\text{val}}$: Train/validation split indices
+- $\mathcal{S}_{\text{RNG},t}$: RNG states
+- $R^2_{\text{best},t}$: Best validation R² so far
+- $\mathcal{M}_t$: Current training metrics
+- config: Hyperparameters ($k$, $\lambda$, $\alpha$, $B$, etc.)
+- metadata: Git hash, timestamp, library versions
+
+### 4.3 Atomic Checkpoint Saves
+
+To prevent corruption during HPC preemption, we use **atomic file operations**:
+
+1. Save to temporary file: `checkpoint.pt.tmp`
+2. Atomic rename: `os.replace("checkpoint.pt.tmp", "checkpoint.pt")`
+
+This ensures checkpoints are either fully written or not present (no partial corruption).
+
+**Applies to:**
+- Periodic checkpoints (every $\Delta_{\text{ckpt}}$ steps)
+- Best model checkpoint (`best.pt`)
+- Final model checkpoint (`final.pt`)
+
+---
+
+## 5. Evaluation Metrics (Detailed)
+
+### 5.1 Reconstruction Quality
+
+#### 5.1.1 Per-Sample Reconstruction Error
+
+For input $\mathbf{x} \in \mathbb{R}^d$:
+
+$$
+e(\mathbf{x}) = \|\mathbf{x} - \hat{\mathbf{x}}\|_2 = \sqrt{\sum_{i=1}^{d} (x_i - \hat{x}_i)^2}
+$$
+
+#### 5.1.2 Mean Squared Error (MSE)
+
+$$
+\text{MSE} = \frac{1}{n} \sum_{i=1}^{n} \|\mathbf{x}_i - \hat{\mathbf{x}}_i\|_2^2
+$$
+
+#### 5.1.3 Explained Variance
+
+Alternative to R²:
+
+$$
+\text{EVR} = 1 - \frac{\text{Var}(\mathbf{x} - \hat{\mathbf{x}})}{\text{Var}(\mathbf{x})}
+$$
+
+### 5.2 Sparsity Metrics
+
+#### 5.2.1 L₁ Norm (Average)
+
+$$
+\bar{L}_1 = \frac{1}{n} \sum_{i=1}^{n} \|\mathbf{z}_i\|_1 = \frac{1}{n} \sum_{i=1}^{n} \sum_{j=1}^{m} z_{i,j}
+$$
+
+#### 5.2.2 L₀ Norm (Average Active Features)
+
+$$
+\bar{L}_0 = \frac{1}{n} \sum_{i=1}^{n} |\{j : z_{i,j} > \tau\}|
+$$
+
+where $\tau = 0$ or a small positive threshold (e.g., $\tau = 10^{-6}$).
+
+**Ideal Range:** For interpretability, we target $\bar{L}_0 \ll m$ (typically 10-50 active features out of $m = 4d$).
+
+#### 5.2.3 Feature Activation Frequency
+
+For feature $j$:
+
+$$
+\rho_j = \frac{1}{n} \sum_{i=1}^{n} \mathbb{1}[z_{i,j} > 0]
+$$
+
+**Distribution Analysis:**
+- **Dead features:** $\rho_j = 0$ (never activate)
+- **Rare features:** $0 < \rho_j < 0.01$ (activate on <1% of inputs)
+- **Common features:** $\rho_j > 0.1$ (activate on >10% of inputs)
+
+### 5.3 Feature Interpretability (Post-Training)
+
+After training, we analyze learned features by:
+
+1. **Top Activating Examples:** For feature $j$, find inputs with highest $z_{i,j}$:
+   $$
+   \text{Top}_k(j) = \arg\text{top}_k \{z_{i,j} : i = 1, \ldots, n\}
+   $$
+
+2. **Feature Direction Analysis:** Decoder column $W_{\text{dec}}[:, j] \in \mathbb{R}^d$ represents the direction in activation space that feature $j$ adds to the reconstruction.
+
+3. **Ablation Impact:** Remove feature $j$ and measure effect on downstream task performance.
+
+---
+
+## 6. Hyperparameter Sensitivity Analysis
+
+### 6.1 Expansion Factor $k$
+
+**Trade-off:**
+- **Small $k$ (e.g., 2-4):** Fewer features, may mix multiple concepts (polysemanticity)
+- **Large $k$ (e.g., 8-16):** More features, better separation, but higher dead feature rate
+
+**Typical Choice:** $k = 4$ provides good balance.
+
+### 6.2 L₁ Coefficient $\lambda$
+
+**Effect on Loss:**
+
+$$
+\frac{\partial \mathcal{L}}{\partial \lambda} = \|\mathbf{z}\|_1
+$$
+
+Larger $\lambda$ → sparser $\mathbf{z}$ → higher reconstruction error.
+
+**Optimal Selection:** Empirically, $\lambda \in [10^{-4}, 10^{-2}]$ for typical transformer activations.
+
+**Sweeping Strategy:**
+$$
+\lambda \in \{10^{-4}, 10^{-3.5}, 10^{-3}, 10^{-2.5}, 10^{-2}\}
+$$
+
+Select $\lambda^*$ with highest R² subject to $\bar{L}_0 < L_0^{\text{max}}$ (e.g., 50).
+
+### 6.3 Learning Rate $\alpha$
+
+**Adam's Adaptive Rate:** The effective learning rate for parameter $\theta_i$ at step $t$ is:
+
+$$
+\alpha_{\text{eff},i}(t) = \alpha \frac{1}{\sqrt{\hat{v}_{i,t}} + \epsilon}
+$$
+
+**Typical Range:** $\alpha \in [10^{-4}, 10^{-3}]$
+
+**Our Choice:** $\alpha = 10^{-3}$ works well across different layers and models.
+
+---
+
+## 7. Implementation Considerations
+
+### 7.1 Weight Initialization
+
+**Encoder Weights** $W_{\text{enc}}$:
+- Sampled from: $W_{\text{enc}} \sim \mathcal{N}(0, \sigma^2_{\text{init}})$
+- Typical: $\sigma_{\text{init}} = \sqrt{2 / (d + m)}$ (He initialization)
+
+**Biases:**
+- $\mathbf{b}_{\text{enc}} = \mathbf{0}$ (zero initialization)
+- $\mathbf{b}_{\text{dec}} = \mathbf{0}$
+
+**Decoder Weights:**
+- $W_{\text{dec}} = W_{\text{enc}}^T$ (tied weights, not independently initialized)
+
+### 7.2 Gradient Clipping
+
+To prevent training instability:
+
+$$
+\mathbf{g}_{\text{clipped}} = \begin{cases}
+\mathbf{g} & \text{if } \|\mathbf{g}\|_2 \leq g_{\text{max}} \\
+g_{\text{max}} \frac{\mathbf{g}}{\|\mathbf{g}\|_2} & \text{otherwise}
+\end{cases}
+$$
+
+**Typical:** $g_{\text{max}} = 1.0$
+
+### 7.3 Numerical Stability
+
+**ReLU Gradient:**
+$$
+\frac{\partial \text{ReLU}(u)}{\partial u} = \begin{cases}
+1 & u > 0 \\
+0 & u \leq 0
+\end{cases}
+$$
+
+At $u = 0$, we use the convention $\frac{\partial}{\partial u} = 0$ (standard PyTorch implementation).
+
+**Epsilon in Adam:** $\epsilon = 10^{-8}$ prevents division by zero when $\hat{v}_i \approx 0$.
+
+---
+
+## 8. Theoretical Foundations
+
+### 8.1 Autoencoder as Lossy Compression
+
+The SAE can be viewed as learning a lossy compression scheme:
+
+$$
+\mathbf{x} \xrightarrow{\text{encoding}} \mathbf{z} \xrightarrow{\text{decoding}} \hat{\mathbf{x}}
+$$
+
+**Information Bottleneck:** The L₁ penalty enforces a bottleneck by zeroing out redundant dimensions.
+
+**Rate-Distortion Trade-off:**
+- **Rate:** $R = \bar{L}_0$ (number of active features)
+- **Distortion:** $D = \text{MSE}$
+
+The hyperparameter $\lambda$ controls the Pareto frontier in $(R, D)$ space.
+
+### 8.2 Connection to Dictionary Learning
+
+SAE training is related to **sparse coding** from signal processing:
+
+Given data $\mathbf{X} = [\mathbf{x}_1, \ldots, \mathbf{x}_n]$, find dictionary $\mathbf{D} \in \mathbb{R}^{d \times m}$ and sparse codes $\mathbf{Z} = [\mathbf{z}_1, \ldots, \mathbf{z}_n] \in \mathbb{R}^{m \times n}$ minimizing:
+
+$$
+\min_{\mathbf{D}, \mathbf{Z}} \|\mathbf{X} - \mathbf{D}\mathbf{Z}\|_F^2 + \lambda \|\mathbf{Z}\|_1
+$$
+
+**Differences:**
+1. **Non-negativity:** SAE enforces $\mathbf{z} \geq 0$ via ReLU
+2. **Encoder:** SAE replaces iterative sparse coding with a learned feedforward encoder
+3. **End-to-End:** SAE trains encoder and decoder jointly via backpropagation
+
+### 8.3 Feature Monosemanticity
+
+**Polysemanticity Problem:** Standard neural network neurons may represent multiple unrelated concepts (e.g., "cat" AND "car" in the same neuron).
+
+**SAE Solution:** Overcompleteness ($m > d$) allows:
+- Separate features for correlated concepts
+- Sparse linear combinations reducing feature interference
+
+**Monosemantic Features:** Ideally, each $z_j$ represents one interpretable concept.
+
+---
+
+## 9. Experimental Workflow
+
+### 9.1 Layer-by-Layer Training
+
+For each layer $\ell \in \{0, 1, \ldots, L-1\}$:
+
+1. **Extract Activations:** Run inference on dataset $\mathcal{D}$ to obtain $\mathcal{X}^{(\ell)}$
+2. **Train SAE:** Optimize SAE with layer-specific hyperparameters
+3. **Save Model:** Store $\Theta^{(\ell)*}$ (best checkpoint)
+4. **Evaluate:** Compute metrics on held-out validation set
+
+**Independent Training:** Each layer's SAE is trained independently (no cross-layer dependencies).
+
+### 9.2 Computational Complexity
+
+**Per Training Step:**
+- Forward pass: $O(B \cdot d \cdot m)$ (encoder + decoder)
+- Backward pass: $O(B \cdot d \cdot m)$ (gradients)
+- Optimizer update: $O(d \cdot m)$ (parameter updates)
+
+**Total Training:**
+$$
+\text{FLOPs} \approx T_{\text{max}} \cdot B \cdot d \cdot m \cdot c
+$$
+
+where $c \approx 6$ accounts for forward, backward, and optimizer operations.
+
+**Example:** For $T_{\text{max}} = 10{,}000$, $B = 256$, $d = 768$, $m = 3072$ (GPT-2 layer):
+$$
+\text{FLOPs} \approx 10^{4} \cdot 256 \cdot 768 \cdot 3072 \cdot 6 \approx 3.6 \times 10^{13}
+$$
+
+**GPU Time:** ~10-30 minutes on NVIDIA A100 per layer.
+
+---
+
+## 10. Summary
+
+The SAE training methodology implements a **sparse, overcomplete autoencoder** to decompose transformer layer activations into interpretable features. Key components:
+
+1. **Architecture:** ReLU encoder, linear decoder, tied weights
+2. **Loss:** MSE reconstruction + L₁ sparsity penalty
+3. **Optimization:** Adam with minibatch SGD
+4. **Evaluation:** R² for reconstruction, L₀ for sparsity, dead feature rate
+5. **Reproducibility:** Comprehensive checkpointing with RNG state management
+6. **Robustness:** Atomic saves, batched validation, epsilon comparisons
+
+The resulting sparse features enable:
+- Mechanistic interpretability (feature attribution)
+- Controlled intervention (feature ablation/steering)
+- Quantitative analysis of model internals
+
+---
+
+## References
+
+1. **Anthropic Interpretability Team.** "Towards Monosemanticity: Decomposing Language Models With Dictionary Learning." 2023.
+2. **Kingma, D. P., & Ba, J.** "Adam: A Method for Stochastic Optimization." ICLR 2015.
+3. **Olshausen, B. A., & Field, D. J.** "Sparse Coding with an Overcomplete Basis Set: A Strategy Employed by V1?" Vision Research, 1997.
+4. **Sharkey, L., et al.** "Taking Features out of Superposition with Sparse Autoencoders." ArXiv 2022.
+
+---
+
+## Appendix: Notation Summary
+
+| Symbol | Description |
+|--------|-------------|
+| $\mathbf{x}$ | Input activation |
+| $\mathbf{z}$ | Sparse latent code |
+| $\hat{\mathbf{x}}$ | Reconstructed activation |
+| $d$ | Input dimension |
+| $m$ | Latent dimension ($m = k \cdot d$) |
+| $k$ | Expansion factor |
+| $W_{\text{enc}}$ | Encoder weights |
+| $W_{\text{dec}}$ | Decoder weights ($= W_{\text{enc}}^T$) |
+| $\lambda$ | L₁ sparsity coefficient |
+| $R^2$ | Coefficient of determination |
+| $L_0$ | Number of active features |
+| $f_{\text{dead}}$ | Dead feature fraction |
+| $\alpha$ | Learning rate |
+| $B$ | Batch size |
+| $T_{\text{max}}$ | Maximum training steps |
+
+---
+
+**Document Version:** 1.0  
+**Last Updated:** 2026-01-30  
+**Corresponding Code:** [scripts/04_train_sae.py](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py)

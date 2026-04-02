@@ -1,0 +1,8 @@
+cluster_id,n_features,dominant_profile,layer_range,representative
+0,32,balanced,L10–L16,L10_F101190
+1,14,balanced,L17–L20,L17_F19808
+2,8,fr_leaning,L21–L25,L21_F129759
+3,14,balanced,L20–L23,L20_F37161
+4,16,balanced,L23–L25,L23_F40170
+5,1,fr_leaning,L10–L10,L10_F131503
+6,1,fr_leaning,L20–L20,L20_F101236

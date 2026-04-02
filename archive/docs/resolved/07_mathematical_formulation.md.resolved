@@ -1,0 +1,372 @@
+# Activation Capture Methodology - Mathematical Formulation
+
+**Для диссертации: Математическое описание фазы сбора активаций**
+
+---
+
+## 1. Общая постановка задачи
+
+Пусть $\mathcal{M}$ — автоматическая языковая модель (Large Language Model) с $L$ трансформерными слоями, где каждый слой $\ell \in \{0, 1, \ldots, L-1\}$ отображает скрытые состояния размерности $d_{\text{model}}$:
+
+$$h^{(\ell)} : \mathbb{R}^{T \times d_{\text{model}}} \to \mathbb{R}^{T \times d_{\text{model}}}$$
+
+где $T$ — длина последовательности токенов.
+
+**Цель:** Извлечь активации residual stream (остаточного потока) для обучения Sparse Autoencoder (SAE) и последующего анализа поведенческих паттернов модели.
+
+---
+
+## 2. Residual Stream и Transformer Architecture
+
+### 2.1 Определение Residual Stream
+
+Для входной последовательности $\mathbf{x} = (x_1, \ldots, x_T)$ модель вычисляет скрытые состояния рекуррентно:
+
+$$
+\begin{align}
+\mathbf{h}^{(0)} &= \text{Embed}(\mathbf{x}) \in \mathbb{R}^{T \times d_{\text{model}}} \\
+\mathbf{h}^{(\ell)} &= \text{TransformerBlock}_\ell(\mathbf{h}^{(\ell-1)}), \quad \ell = 1, \ldots, L
+\end{align}
+$$
+
+где $\text{TransformerBlock}_\ell$ включает attention, MLP, и layer normalization компоненты.
+
+**Residual stream** на слое $\ell$ — это выходные скрытые состояния $\mathbf{h}^{(\ell)}$ после применения полного блока трансформера (post-attention, post-MLP, post-layernorm).
+
+### 2.2 Извлечение через Forward Hooks
+
+Для слоя $\ell \in [\ell_{\text{start}}, \ell_{\text{end}})$ регистрируем forward hook:
+
+$$
+\text{Hook}_\ell: \quad \mathbf{h}^{(\ell)} \gets \text{detach}(\text{output}_\ell)
+$$
+
+где `output_ℓ` — выход `blocks[ℓ]` в HuggingFace-архитектуре.
+
+**Критично:** Используем $\mathbf{h}^{(\ell)}$ вместо `hidden_states[ℓ]`, т.к.:
+- `hidden_states[0]` = embeddings
+- `hidden_states[ℓ+1]` = выход слоя $\ell$
+
+---
+
+## 3. Token Selection Strategies
+
+### 3.1 Режим "all" (для SAE обучения)
+
+**Определение:** Извлекаем активации для всех **валидных** (не-padding) токенов.
+
+Пусть $\mathbf{M} \in \{0,1\}^{B \times T}$ — attention mask, где:
+- $M_{i,j} = 1$ если токен $(i,j)$ валидный
+- $M_{i,j} = 0$ если padding
+
+Тогда для батча размера $B$:
+
+$$
+\mathcal{A}^{(\ell)}_{\text{all}} = \left\{ \mathbf{h}^{(\ell)}_{i,j} \in \mathbb{R}^{d_{\text{model}}} : M_{i,j} = 1, \, i \in [B], \, j \in [T] \right\}
+$$
+
+**Результат:** Матрица $\mathbf{A}^{(\ell)} \in \mathbb{R}^{N_{\text{valid}} \times d_{\text{model}}}$, где:
+
+$$N_{\text{valid}} = \sum_{i=1}^B \sum_{j=1}^T M_{i,j}$$
+
+**Применение:** Обучение SAE на распределении активаций модели.
+
+### 3.2 Режим "next_token" (для attribution analysis)
+
+**Определение:** Извлекаем активации на позиции, где модель предсказывает целевой токен.
+
+Для последовательности $i$ вычисляем позицию последнего валидного токена:
+
+$$p_i = \sum_{j=1}^T M_{i,j} - 1$$
+
+Тогда:
+
+$$
+\mathcal{A}^{(\ell)}_{\text{next}} = \left\{ \mathbf{h}^{(\ell)}_{i, p_i} \in \mathbb{R}^{d_{\text{model}}} : i \in [B] \right\}
+$$
+
+**Результат:** Матрица $\mathbf{A}^{(\ell)} \in \mathbb{R}^{B \times d_{\text{model}}}$
+
+**Применение:** Патчинг и каузальная атрибуция (какие активации влияют на конкретный ответ).
+
+---
+
+## 4. Baseline Probability Calculation
+
+### 4.1 Постановка
+
+Для оценки начальной точности модели на поведенческих задачах вычисляем вероятности правильных и неправильных ответов.
+
+**Входные данные:**
+- Промпт: $\mathbf{x} = (x_1, \ldots, x_n)$
+- Корректный ответ: $\mathbf{y}_{\text{correct}} = (y_1^+, \ldots, y_m^+)$
+- Некорректный ответ: $\mathbf{y}_{\text{incorrect}} = (y_1^-, \ldots, y_k^-)$
+
+### 4.2 Teacher Forcing Log-Probability
+
+Для последовательности $\mathbf{y} = (y_1, \ldots, y_m)$ вычисляем:
+
+$$
+\log P(\mathbf{y} \mid \mathbf{x}) = \sum_{t=1}^m \log P(y_t \mid \mathbf{x}, y_{<t})
+$$
+
+где условная вероятность токена:
+
+$$P(y_t \mid \mathbf{x}, y_{<t}) = \text{softmax}(\mathbf{z}_t)[y_t]$$
+
+и $\mathbf{z}_t \in \mathbb{R}^{V}$ — logits на позиции $t$ (где $V$ — размер словаря).
+
+### 4.3 Критичные детали реализации
+
+**Проблема 1:** Tokenization boundary artifacts
+
+При наивной токенизации `prompt + answer` целиком, токенизатор может разбивать answer по-другому, чем при токенизации отдельно.
+
+**Решение:** Ручная конкатенация токенов:
+
+$$
+\begin{align}
+\text{ids}_{\text{prompt}} &= \text{Tokenize}(\mathbf{x}, \text{add\_special\_tokens}=\text{false}) \\
+\text{ids}_{\text{answer}} &= \text{Tokenize}(\mathbf{y}, \text{add\_special\_tokens}=\text{false}) \\
+\text{ids}_{\text{full}} &= \text{AddSpecialTokens}(\text{ids}_{\text{prompt}} \oplus \text{ids}_{\text{answer}})
+\end{align}
+$$
+
+где $\oplus$ — конкатенация списков.
+
+**Проблема 2:** Padding tokens и logit extraction
+
+Модель дополняет короткие последовательности padding-токенами. Наивное извлечение `logits[:, -1]` даст logits на padding-позиции, что некорректно.
+
+**Решение:** Используем attention mask:
+
+$$
+p_i = \left(\sum_{j=1}^T M_{i,j}\right) - 1
+$$
+
+$$
+\mathbf{z}_i = \text{logits}[i, p_i, :]
+$$
+
+**Проблема 3:** Logit shift в causal LM
+
+В автоматической модели logits на позиции $t$ предсказывают токен $t+1$:
+
+$$
+\text{logits}[t] \to P(\text{token}_{t+1})
+$$
+
+Поэтому для вычисления $\log P(y_t \mid \ldots)$ используем:
+
+$$
+\text{logit\_position} = (\text{prompt\_len} - 1) + (t - 1)
+$$
+
+где `prompt_len` включает special tokens.
+
+### 4.4 Итоговая формула
+
+Для батча промптов $\{\mathbf{x}_i\}_{i=1}^B$ и целевых ответов $\{\mathbf{y}_{ij}\}_{j=1}^K$:
+
+$$
+\mathbf{L} \in \mathbb{R}^{B \times K}, \quad L_{ij} = \log P(\mathbf{y}_{ij} \mid \mathbf{x}_i)
+$$
+
+Accuracy вычисляется как:
+
+$$
+\text{Acc} = \frac{1}{B} \sum_{i=1}^B \mathbb{1}\left[ L_{i,\text{correct}} > L_{i,\text{incorrect}} \right]
+$$
+
+---
+
+## 5. Data Format для SAE Training
+
+### 5.1 Структура активаций
+
+Для каждого behaviour и split сохраняем:
+
+$$
+\mathcal{D}_{\text{behaviour}} = \left\{ (\mathbf{A}^{(\ell)}, \mathcal{M}) : \ell \in [\ell_{\text{start}}, \ell_{\text{end}}) \right\}
+$$
+
+где:
+- $\mathbf{A}^{(\ell)} \in \mathbb{R}^{N \times d_{\text{model}}}$ — активации слоя $\ell$ (float16 для экономии памяти)
+- $\mathcal{M}$ — метаданные:
+  - [n_prompts](file:///Users/julia/Desktop/courses/thesis/project/scripts/01_generate_prompts.py#248-376): $B$ (размер батча)
+  - `n_samples`: $N$ (число валидных токенов)
+  - `layer_range`: $[\ell_{\text{start}}, \ell_{\text{end}})$ (half-open interval)
+  - `position_map`: $\{(\text{prompt\_idx}, \text{token\_pos}, \text{token\_id})\}_{k=1}^N$
+
+### 5.2 Memory-efficient storage
+
+**Формат:** `.npz` (compressed NumPy archive)
+
+Для $L_{\text{captured}}$ слоёв, $N$ токенов, $d = 3584$ (Qwen3-4B):
+
+$$
+\text{Memory} = L_{\text{captured}} \times N \times d \times 2 \text{ bytes (float16)}
+$$
+
+**Пример:** 
+- 15 слоёв, 10K токенов/behaviour: $15 \times 10000 \times 3584 \times 2 \approx 1.07$ GB
+
+---
+
+## 6. Оптимизация: Forward Hooks vs output_hidden_states
+
+### 6.1 Baseline подход (неэффективный)
+
+Стандартный метод HuggingFace:
+
+```python
+outputs = model(**inputs, output_hidden_states=True)
+hidden_states = outputs.hidden_states  # Tuple of L+1 tensors
+```
+
+**Память:** Хранит ВСЕ $L+1$ слоёв:
+
+$$
+M_{\text{baseline}} = (L+1) \times B \times T \times d \times \text{dtype\_size}
+$$
+
+Для Qwen3-4B ($L=24$, $d=3584$), $B=16$, $T=512$, bfloat16:
+
+$$
+M_{\text{baseline}} = 25 \times 16 \times 512 \times 3584 \times 2 \approx 2.9 \text{ GB}
+$$
+
+### 6.2 Hook-based подход (оптимальный)
+
+Регистрируем hooks только на $[\ell_{\text{start}}, \ell_{\text{end}})$:
+
+```python
+for ℓ in [ℓ_start, ℓ_end):
+    handle = blocks[ℓ].register_forward_hook(hook_fn)
+```
+
+**Память:** Хранит только запрошенные слои:
+
+$$
+M_{\text{hooks}} = (\ell_{\text{end}} - \ell_{\text{start}}) \times B \times T \times d \times \text{dtype\_size}
+$$
+
+Для типичного $[\ell_{\text{start}}, \ell_{\text{end}}) = [10, 25)$:
+
+$$
+M_{\text{hooks}} = 15 \times 16 \times 512 \times 3584 \times 2 \approx 1.7 \text{ GB}
+$$
+
+**Экономия памяти:**
+
+$$
+\frac{M_{\text{baseline}} - M_{\text{hooks}}}{M_{\text{baseline}}} = \frac{25 - 15}{25} = 40\%
+$$
+
+---
+
+## 7. Multi-GPU Compatibility (device_map='auto')
+
+### 7.1 Проблема
+
+При `device_map='auto'` модель шардируется между GPU/CPU:
+
+$$
+\mathcal{M} = \bigcup_{k=1}^K \mathcal{M}_k, \quad \text{где } \mathcal{M}_k \text{ на устройстве } \text{device}_k
+$$
+
+Наивное размещение inputs на фиксированное устройство:
+
+```python
+inputs = {k: v.to(self.device) for k, v in inputs.items()}
+```
+
+вызовет device mismatch, т.к. $\text{self.device} \neq \text{device}_k$ для $k > 1$.
+
+### 7.2 Решение
+
+**Динамическое определение устройства:**
+
+$$
+\text{device}_{\text{input}} = \begin{cases}
+\text{device}(\theta_1), & \text{if } \text{use\_device\_map} \\
+\text{self.device}, & \text{otherwise}
+\end{cases}
+$$
+
+где $\theta_1$ — первый параметр модели, доступный через:
+
+```python
+device_input = next(self.model.parameters()).device
+```
+
+**Инвариант безопасности:** Все тензоры для операции размещаются на одном устройстве:
+
+$$
+\forall \, \mathbf{t} \in \{\text{inputs}, \text{indices}, \text{masks}\}: \quad \text{device}(\mathbf{t}) = \text{device}_{\text{target}}
+$$
+
+---
+
+## 8. Verification и Quality Assurance
+
+### 8.1 Критичные проверки
+
+**1. Padding exclusion:**
+
+$$
+\forall \, \mathbf{a} \in \mathcal{A}^{(\ell)}_{\text{all}}: \quad \mathbf{a} \neq \mathbf{h}_{i,j}^{(\ell)} \text{ где } M_{i,j} = 0
+$$
+
+**2. Shape consistency:**
+
+$$
+\forall \, \ell_1, \ell_2 \in [\ell_{\text{start}}, \ell_{\text{end}}): \quad \mathbf{A}^{(\ell_1)}.shape[0] = \mathbf{A}^{(\ell_2)}.shape[0]
+$$
+
+**3. n_samples invariant:**
+
+$$
+\left|\mathcal{M}[\text{position\_map}]\right| = \mathbf{A}^{(\ell)}.shape[0] = N_{\text{valid}}
+$$
+
+### 8.2 Unit Tests
+
+Автоматические тесты проверяют:
+1. ✅ Отсутствие padding активаций
+2. ✅ Консистентность размеров между слоями
+3. ✅ Корректность извлечения logits (используя attention_mask)
+4. ✅ Off-by-one indexing (layer $\ell$ = `hidden_states[ℓ+1]`)
+
+---
+
+## 9. Вклад в диссертацию
+
+### 9.1 Методологический вклад
+
+1. **Оптимизация памяти:** Forward hooks вместо output_hidden_states → 40% экономии
+2. **Multi-GPU safety:** Динамическое размещение тензоров для device_map
+3. **Точность baseline:** Корректная обработка tokenization boundaries и padding
+
+### 9.2 Применение
+
+Собранные активации $\{\mathbf{A}^{(\ell)}\}_{\ell=10}^{24}$ используются для:
+
+1. **SAE Training:** 
+   $$\min_{\mathbf{W}_{\text{enc}}, \mathbf{W}_{\text{dec}}} \, \mathbb{E}_{\mathbf{a} \sim \mathcal{A}} \left[ \|\mathbf{a} - \mathbf{W}_{\text{dec}} \sigma(\mathbf{W}_{\text{enc}} \mathbf{a})\|_2^2 + \lambda \|\sigma(\mathbf{W}_{\text{enc}} \mathbf{a})\|_1 \right]$$
+
+2. **Attribution Analysis:** Патчинг активаций $\mathbf{h}_{i,p_i}^{(\ell)}$ для определения каузальных путей
+
+3. **Behaviour Clustering:** Анализ распределения SAE-features для различных поведений
+
+---
+
+## Заключение
+
+Представленная методология обеспечивает:
+- ✅ Корректное извлечение residual stream активаций
+- ✅ Эффективное использование памяти (40% экономия)
+- ✅ Multi-GPU совместимость
+- ✅ Точные baseline вероятности для оценки модели
+
+**Готово к deployment на HPC кластере CSD3 для полномасштабного сбора данных.**

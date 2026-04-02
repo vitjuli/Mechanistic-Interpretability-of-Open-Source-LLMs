@@ -1,0 +1,549 @@
+# Activation Capture - Complete Walkthrough
+
+Step-by-step explanation of [scripts/03_capture_activations.py](file:///Users/julia/Desktop/courses/thesis/project/scripts/03_capture_activations.py) - the second phase of the experimental pipeline.
+
+---
+
+## Overview
+
+**Purpose:** Extract internal MLP activations from specified model layers during forward passes. These activations are used for:
+- Training Sparse Autoencoders (SAEs)
+- Circuit analysis and feature interpretation
+- Attribution analysis
+
+**Input:** Prompts from Phase 1 (baseline evaluation)  
+**Output:** Layer-wise activation tensors stored as `.npy` files  
+**Key Feature:** Efficient batched processing optimized for HPC
+
+---
+
+## Architecture
+
+### High-Level Flow
+
+```
+Load Config → Load Model → For each behaviour:
+  ├─ Load Prompts
+  ├─ Capture Activations (batched)
+  │   ├─ Forward pass with hooks
+  │   ├─ Extract MLP outputs
+  │   └─ Accumulate across batches
+  ├─ Save per-layer .npy files
+  └─ Save metadata
+```
+
+### Files Created
+
+For each behaviour and split:
+```
+data/activations/
+├── grammar_agreement_train_layer_15.npy
+├── grammar_agreement_train_layer_16.npy
+├── ...
+├── grammar_agreement_train_layer_35.npy
+└── grammar_agreement_train_metadata.json
+```
+
+---
+
+## 1. Configuration Loading
+
+### Function: [load_config()](file:///Users/julia/Desktop/courses/thesis/project/scripts/05_build_attribution_graph.py#34-38)
+
+```python
+def load_config(config_path: str = "configs/experiment_config.yaml") -> Dict:
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
+```
+
+**Key Config Parameters:**
+
+```yaml
+activations:
+  layer_range: [15, 35]      # Which layers to capture
+  token_positions: "last_5"   # Token selection strategy
+  batch_size: 8              # HPC memory management
+```
+
+**Why these layers?**
+- Layers 15-35 (middle-to-late layers) typically encode high-level semantic features
+- Earlier layers: Low-level syntax/tokenization
+- Later layers: Task-specific computation
+
+---
+
+## 2. Prompt Loading
+
+### Function: [load_prompts()](file:///Users/julia/Desktop/courses/thesis/project/scripts/02_run_baseline.py#47-67)
+
+```python
+def load_prompts(prompt_path: Path, behaviour: str, split: str = "train") -> List[Dict]:
+    file_path = prompt_path / f"{behaviour}_{split}.jsonl"
+    prompts = []
+    with open(file_path, "r") as f:
+        for line in f:
+            prompts.append(json.loads(line))
+    return prompts
+```
+
+**Input Format (JSONL):**
+```json
+{"prompt": "The cat is sitting on the", "correct_answer": " mat", "incorrect_answer": " dog"}
+{"prompt": "She walks to the", "correct_answer": " store", "incorrect_answer": " stores"}
+```
+
+**Output:** List of dictionaries with [prompt](file:///Users/julia/Desktop/courses/thesis/project/scripts/02_run_baseline.py#47-67), `correct_answer`, `incorrect_answer` keys.
+
+---
+
+## 3. Batched Activation Capture
+
+### Function: [capture_activations_batch()](file:///Users/julia/Desktop/courses/thesis/project/scripts/03_capture_activations.py#48-104)
+
+This is the **core** of the script.
+
+#### 3.1 Signature
+
+```python
+def capture_activations_batch(
+    model: ModelWrapper,
+    prompts: List[Dict],
+    layer_range: tuple,          # (15, 35)
+    batch_size: int = 8,
+    token_positions: str = "last_5",
+) -> Dict[str, np.ndarray]:
+```
+
+#### 3.2 Batching Strategy
+
+**Why batch?**
+- Processing all prompts at once → GPU OOM
+- Processing one-by-one → slow, inefficient GPU usage
+- Batching → optimal GPU utilization
+
+**Implementation:**
+```python
+n_batches = (len(prompts) + batch_size - 1) // batch_size  # Ceiling division
+
+for batch_idx in range(n_batches):
+    start_idx = batch_idx * batch_size
+    end_idx = min(start_idx + batch_size, len(prompts))
+    batch_prompts = prompts[start_idx:end_idx]
+```
+
+**Example:**
+- 100 prompts, batch_size=8
+- → 13 batches (12 full + 1 partial with 4 prompts)
+
+#### 3.3 Capture Mechanism
+
+**Call to `model.capture_activations()`:**
+```python
+batch_acts = model.capture_activations(
+    prompt_texts,                    # List of strings
+    layer_range=(15, 35),           # Layers to hook
+    components=["mlp"],             # MLP outputs only
+    token_positions="last_5",       # Which tokens to keep
+)
+```
+
+**Returns:** `Dict[str, torch.Tensor]`
+```python
+{
+    "layer_15_mlp": torch.Tensor,  # Shape: (batch_size, n_tokens, hidden_size)
+    "layer_16_mlp": torch.Tensor,
+    ...
+    "layer_35_mlp": torch.Tensor,
+}
+```
+
+---
+
+## 4. Hook Mechanism (Inside `model.capture_activations()`)
+
+### 4.1 Hook Registration
+
+PyTorch hooks allow intercepting intermediate activations during forward pass:
+
+```python
+def hook_fn(module, input, output):
+    # Called automatically during forward pass
+    activations[layer_name] = output.detach()  # Store activation
+```
+
+**Registered on:** MLP modules in specified layers
+```python
+for layer_idx in range(start, end):
+    mlp_module = model.model.layers[layer_idx].mlp
+    hook = mlp_module.register_forward_hook(hook_fn)
+    hooks.append(hook)
+```
+
+### 4.2 Forward Pass
+
+```python
+with torch.no_grad():
+    outputs = model.model(**inputs)
+    # Hooks fire automatically, populating activations dict
+```
+
+### 4.3 Token Selection
+
+**Strategy: `"last_5"`**
+
+After forward pass, activations shape: [(batch_size, seq_len, hidden_size)](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py#251-358)
+
+```python
+if token_positions == "last_5":
+    # Extract last 5 tokens from each sequence
+    acts = acts[:, -5:, :]  # Shape: (batch_size, 5, hidden_size)
+elif token_positions == "all":
+    # Keep all tokens (memory intensive!)
+    pass
+```
+
+**Why last 5 tokens?**
+- Late tokens contain answer-relevant computation
+- Reduces data size (critical for HPC storage)
+- Balance between information and efficiency
+
+**Example:**
+- Prompt: "The capital of France is" (6 tokens)
+- Last 5: "capital of France is" (excludes "The")
+- Captures answer-predicting context
+
+### 4.4 Cleanup
+
+```python
+for hook in hooks:
+    hook.remove()  # Prevent memory leaks
+```
+
+---
+
+## 5. Accumulation Across Batches
+
+### Code
+
+```python
+# Initialize storage
+activations_all = {}
+
+# Process batches
+for batch_idx in range(n_batches):
+    batch_acts = model.capture_activations(...)  # Returns dict
+    
+    # Accumulate
+    for layer_name, acts in batch_acts.items():
+        if layer_name not in activations_all:
+            activations_all[layer_name] = []
+        activations_all[layer_name].append(acts.cpu().numpy())
+
+# Concatenate
+activations_final = {}
+for layer_name, acts_list in activations_all.items():
+    activations_final[layer_name] = np.concatenate(acts_list, axis=0)
+```
+
+### Shape Transformations
+
+**Per batch:**
+- `acts.shape = (batch_size, 5, hidden_size)`
+- Example: [(8, 5, 3584)](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py#251-358) for batch_size=8, 5 tokens, Qwen hidden_size=3584
+
+**After concatenation (100 prompts, batch_size=8):**
+- 13 batches: 12×[(8,5,3584)](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py#251-358) + 1×[(4,5,3584)](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py#251-358)
+- Concatenate axis=0: [(100, 5, 3584)](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py#251-358)
+
+**Memory:** `100 * 5 * 3584 * 4 bytes (float32) = 7.2 MB` per layer
+
+---
+
+## 6. Saving Activations
+
+### Function: [save_activations()](file:///Users/julia/Desktop/courses/thesis/project/scripts/03_capture_activations.py#106-151)
+
+#### 6.1 Per-Layer Files
+
+```python
+for layer_name, acts in activations.items():
+    layer_idx = layer_name.split("_")[1]  # "layer_15_mlp" → "15"
+    output_file = output_path / f"{behaviour}_{split}_layer_{layer_idx}.npy"
+    np.save(output_file, acts)
+```
+
+**Why separate files?**
+- Lazy loading during SAE training (load only needed layer)
+- Parallel processing (different layers on different GPUs)
+- Easier debugging (inspect specific layer)
+
+#### 6.2 File Sizes
+
+**Example: 1000 prompts, 21 layers**
+```
+grammar_agreement_train_layer_15.npy: 72 MB
+grammar_agreement_train_layer_16.npy: 72 MB
+...
+grammar_agreement_train_layer_35.npy: 72 MB
+Total: ~1.5 GB
+```
+
+**Calculation:**
+```
+n_prompts * n_tokens * hidden_size * bytes_per_float * n_layers
+= 1000 * 5 * 3584 * 4 * 21
+= 1,508,160,000 bytes ≈ 1.5 GB
+```
+
+#### 6.3 Metadata
+
+```python
+metadata = {
+    "behaviour": "grammar_agreement",
+    "split": "train",
+    "n_prompts": 1000,
+    "layers": ["layer_15_mlp", ..., "layer_35_mlp"],
+    "shapes": {
+        "layer_15_mlp": [1000, 5, 3584],
+        ...
+    },
+    "model": "Qwen/Qwen3-4B-Instruct-2507",
+    "layer_range": [15, 35],
+    "token_positions": "last_5",
+}
+```
+
+**Purpose:**
+- Quick inspection without loading arrays
+- Validation in SAE training script
+- Reproducibility tracking
+
+---
+
+## 7. Main Loop
+
+### Command-Line Arguments
+
+```bash
+# Single behaviour
+python scripts/03_capture_activations.py --behaviour grammar_agreement --split train
+
+# All behaviours
+python scripts/03_capture_activations.py --all --split train --batch_size 16
+
+# Test split
+python scripts/03_capture_activations.py --all --split test
+```
+
+### Processing Flow
+
+```python
+# Load model once
+model = ModelWrapper(...)
+
+# Process each behaviour
+for behaviour in behaviours:
+    prompts = load_prompts(...)           # Load
+    activations = capture_activations_batch(...)  # Capture
+    save_activations(...)                 # Save
+```
+
+**Optimization:** Model loaded once, reused for all behaviours.
+
+---
+
+## 8. Memory Management
+
+### GPU Memory
+
+**Forward pass memory:**
+```
+Model weights: ~8 GB (Qwen3-4B in bfloat16)
+Batch activations: ~100 MB (batch_size=8)
+Intermediate buffers: ~500 MB
+Peak: ~9 GB
+```
+
+**Mitigation:**
+- Immediate `.cpu()` transfer after capture
+- `torch.no_grad()` context (no gradient storage)
+- Hook cleanup
+
+### System Memory
+
+**Accumulation strategy:**
+```python
+activations_all[layer_name].append(acts.cpu().numpy())
+```
+
+**Peak memory:**
+- All prompts × n_layers × activation size
+- 1000 prompts: ~1.5 GB (manageable)
+- 100K prompts: ~150 GB (need streaming/sharding)
+
+---
+
+## 9. HPC Optimization
+
+### Batch Size Selection
+
+**Trade-offs:**
+| Batch Size | GPU Util | Speed | Memory | Recommendation |
+|------------|----------|-------|--------|----------------|
+| 1          | 10%      | Slow  | Low    | ❌ Inefficient |
+| 8          | 70%      | Good  | OK     | ✅ Balanced    |
+| 32         | 95%      | Fast  | High   | ⚠️ May OOM     |
+
+**Config:** Start with 8, increase if no OOM.
+
+### Slurm Integration
+
+See `slurm_scripts/03_activations.slurm`:
+```bash
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --mem=64G
+#SBATCH --time=2:00:00
+
+python scripts/03_capture_activations.py --all --batch_size 8
+```
+
+**Time estimate:**
+- 1000 prompts, 21 layers, batch_size=8
+- ~2-3 minutes per behaviour on A100
+
+---
+
+## 10. Mathematical Formulation
+
+### Activation Tensor
+
+For layer $\ell$, prompt $i$, token position $j$:
+
+**MLP output:**
+$$\mathbf{a}_{\ell,i,j} = \text{MLP}_\ell(\mathbf{h}_{\ell,i,j})$$
+
+where $\mathbf{h}_{\ell,i,j}$ is residual stream at layer $\ell$.
+
+**Stored tensor:**
+$$\mathbf{A}_\ell \in \mathbb{R}^{N \times T \times D}$$
+
+- $N$: Number of prompts
+- $T$: Number of tokens kept (5 for "last_5")
+- $D$: Hidden dimension (3584 for Qwen3-4B)
+
+### Token Selection
+
+**Last 5 tokens:**
+$$\mathbf{A}_\ell = [\mathbf{a}_{\ell,i,L_i-4}, \mathbf{a}_{\ell,i,L_i-3}, ..., \mathbf{a}_{\ell,i,L_i}]_{i=1}^N$$
+
+where $L_i$ is sequence length of prompt $i$.
+
+---
+
+## 11. Validation & Debugging
+
+### Shape Checks
+
+```python
+assert activations["layer_15_mlp"].shape == (n_prompts, 5, 3584)
+assert len(activations) == (layer_range[1] - layer_range[0])
+```
+
+### Sanity Checks
+
+1. **Non-zero activations:** `np.abs(acts).mean() > 0`
+2. **Finite values:** `np.isfinite(acts).all()`
+3. **Consistent across batches:** Check first/last batch shapes match
+
+### Common Issues
+
+| Issue | Symptom | Fix |
+|-------|---------|-----|
+| OOM | CUDA out of memory | Reduce batch_size |
+| Slow | Low GPU util | Increase batch_size |
+| Wrong shape | Assertion error | Check token_positions config |
+| NaN values | `isfinite()` fails | Check model forward pass |
+
+---
+
+## 12. Output Structure
+
+### Directory Tree
+
+```
+data/activations/
+├── grammar_agreement_train_layer_15.npy
+├── grammar_agreement_train_layer_16.npy
+├── ...
+├── grammar_agreement_train_metadata.json
+├── factual_recall_train_layer_15.npy
+├── ...
+└── arithmetic_test_metadata.json
+```
+
+### Next Steps
+
+These activations feed into:
+1. **Phase 3:** SAE Training ([04_train_sae.py](file:///Users/julia/Desktop/courses/thesis/project/scripts/04_train_sae.py))
+   - Uses activations as training data
+   - Learns sparse features per layer
+   
+2. **Phase 4:** Feature Interpretation ([05_interpret_features.py](file:///Users/julia/Desktop/courses/thesis/project/scripts/05_interpret_features.py))
+   - Analyzes which features activate on which prompts
+
+---
+
+## 13. Key Design Decisions
+
+### Why MLP Outputs?
+
+**Alternative:** Residual stream activations
+
+**Rationale:**
+- MLP outputs represent "feature writing" to residual stream
+- Sparse structure (ReLU → many zeros)
+- Interpretable as atomic features
+- Standard in circuit analysis literature
+
+### Why Last 5 Tokens?
+
+**Alternative:** All tokens, last token only, answer tokens only
+
+**Rationale:**
+- Last tokens: Close to answer prediction
+- Multiple tokens: Capture computation trajectory
+- 5: Balance between context and efficiency
+- Empirically works well for circuit analysis
+
+### Why Per-Layer Files?
+
+**Alternative:** Single file with all layers
+
+**Rationale:**
+- SAE training uses one layer at a time
+- Parallel training on different GPUs
+- Easier to debug/inspect specific layers
+- Flexible pipeline (can skip layers)
+
+---
+
+## Summary
+
+**Input:** Prompts from baseline evaluation  
+**Process:** 
+1. Batched forward passes with PyTorch hooks
+2. Extract MLP outputs from layers 15-35
+3. Keep last 5 tokens per prompt
+4. Accumulate across batches
+
+**Output:** 
+- `.npy` files: Layer-wise activation tensors
+- Metadata: Configuration and shapes
+
+**Optimization:**
+- Batching for GPU efficiency
+- Immediate CPU transfer for memory
+- Per-layer storage for downstream flexibility
+
+**Next:** These activations train Sparse Autoencoders to discover interpretable features! 🧠

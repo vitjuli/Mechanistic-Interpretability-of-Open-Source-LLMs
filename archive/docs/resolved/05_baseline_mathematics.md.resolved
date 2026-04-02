@@ -1,0 +1,385 @@
+# Baseline Evaluation - Mathematical Formulation
+
+## Overview
+
+This document provides the complete mathematical formulation for baseline evaluation in the multi-token answer support system. All formulas correspond directly to the implementation in [scripts/02_run_baseline.py](file:///Users/julia/Desktop/courses/thesis/project/scripts/02_run_baseline.py) and [src/model_utils.py](file:///Users/julia/Desktop/courses/thesis/project/src/model_utils.py).
+
+---
+
+## 1. Teacher Forcing Method - teacher-forced likelihood scoring.
+
+### 1.1 Problem Setup
+
+Given:
+- Model $M$ (causal language model)
+- Prompt $p = (p_1, p_2, ..., p_m)$ (tokenized)
+- Target sequence $t = (t_1, t_2, ..., t_n)$ (answer tokens)
+
+**Goal:** Compute $\log P(t | p)$ - the log probability of target given prompt.
+
+### 1.2 Teacher Forcing Formula
+
+Using causal LM decomposition:
+
+$$P(t | p) = \prod_{i=1}^{n} P(t_i | p, t_1, ..., t_{i-1})$$
+
+Taking log:
+
+$$\log P(t | p) = \sum_{i=1}^{n} \log P(t_i | p, t_1, ..., t_{i-1})$$
+
+### 1.3 Implementation
+
+**Single forward pass** with concatenated sequence $s = [p, t]$:
+
+```python
+# Concatenate prompt + target
+s = [p_1, p_2, ..., p_m, t_1, t_2, ..., t_n]
+
+# Forward pass
+logits = model(s)  # Shape: (len(s), vocab_size)
+
+# Extract log probabilities
+log_probs = log_softmax(logits, dim=-1)
+```
+
+**Logits shift** (causal LM property):
+- `logits[i]` predicts token at position `i+1`
+- For target token $t_j$ at position $m+j$ in sequence $s$:
+  - Use `logits[m+j-1]` to get $P(t_j | \text{context})$
+
+**Total log probability:**
+
+$$\text{logprob}(t) = \sum_{j=1}^{n} \log_{\text{softmax}}(\text{logits}[m+j-1])[t_j]$$
+
+where $m = \text{len}(p)$ is prompt length.
+
+---
+
+## 2. Normalized Per-Token Metric
+
+### 2.1 Raw vs Normalized
+
+For target sequence $t$ with $n$ tokens:
+
+**Raw log probability:**
+$$\text{logprob}_{\text{raw}}(t) = \sum_{i=1}^{n} \log P(t_i | \text{context}_i)$$
+
+**Normalized log probability:**
+$$\text{logprob}_{\text{norm}}(t) = \frac{1}{n} \sum_{i=1}^{n} \log P(t_i | \text{context}_i) = \frac{\text{logprob}_{\text{raw}}(t)}{n}$$
+
+### 2.2 Why Normalize?
+
+**Problem:** Raw sum is length-biased
+- 3-token answer: $\log P = -1.5$ (avg $-0.5$ per token)
+- 1-token answer: $\log P = -0.5$ (avg $-0.5$ per token)
+- Raw comparison: $-1.5 < -0.5$ → longer looks worse!
+
+**Solution:** Normalize by token count
+- Both have normalized $\log P = -0.5$
+- Fair comparison ✅
+
+### 2.3 Score Difference
+
+For correct answer $c$ and incorrect answer $w$:
+
+**Raw difference:**
+$$\Delta_{\text{raw}} = \text{logprob}_{\text{raw}}(c) - \text{logprob}_{\text{raw}}(w)$$
+
+**Normalized difference (USED FOR SUCCESS):**
+$$\Delta_{\text{norm}} = \text{logprob}_{\text{norm}}(c) - \text{logprob}_{\text{norm}}(w)$$
+
+$$= \frac{\text{logprob}_{\text{raw}}(c)}{n_c} - \frac{\text{logprob}_{\text{raw}}(w)}{n_w}$$
+
+where $n_c$ and $n_w$ are token counts.
+
+---
+
+## 3. Success Criterion
+
+### 3.1 Definition
+
+Sample is **successful** if:
+
+$$\Delta_{\text{norm}} > \tau$$
+
+where $\tau$ is the threshold (e.g., 2.0).
+
+**Implementation:**
+```python
+success = (logprob_norm_correct - logprob_norm_incorrect) > threshold
+```
+
+### 3.2 Threshold Interpretation
+
+Threshold $\tau = 2.0$ means:
+- Average log probability per token for correct must exceed incorrect by 2.0
+- In probability terms: $\frac{P_{\text{correct}}}{P_{\text{incorrect}}} \approx e^{2.0 \cdot n} \approx 7.4^n$ per token
+- For 1-token: ~7.4× more probable
+- For 2-token: ~54× more probable
+
+---
+
+## 4. Accuracy Calculation
+
+### 4.1 Sample Counts
+
+Given $N$ total samples:
+- $N_{\text{valid}}$: successfully evaluated (no errors)
+- $N_{\text{errors}}$: failed during evaluation (NaN/inf)
+- $N_{\text{success}}$: passed success criterion
+
+**Invariant:**
+$$N = N_{\text{valid}} + N_{\text{errors}}$$
+
+### 4.2 Accuracy Definition
+
+**Main metric (CRITICAL):**
+$$\text{accuracy} = \frac{N_{\text{success}}}{N}$$
+
+**Interpretation:** Errors count as failures (honest evaluation).
+
+**Diagnostic metric:**
+$$\text{accuracy}_{\text{valid}} = \frac{N_{\text{success}}}{N_{\text{valid}}}$$
+
+**Interpretation:** What would accuracy be if no errors occurred.
+
+### 4.3 Invariants
+
+Must hold:
+1. $N_{\text{success}} \leq N_{\text{valid}}$ (can't succeed if errored)
+2. $\text{accuracy} \times N = N_{\text{success}}$ (consistency)
+3. $0 \leq \text{accuracy} \leq \text{accuracy}_{\text{valid}} \leq 1$ (bounds)
+
+---
+
+## 5. Additional Metrics
+
+### 5.1 Sign Accuracy
+
+Fraction of valid samples where correct > incorrect (any margin):
+
+$$\text{acc}_{\text{sign}} = \frac{1}{N_{\text{valid}}} \sum_{i=1}^{N_{\text{valid}}} \mathbb{1}[\Delta_{\text{norm}}^{(i)} > 0]$$
+
+**Interpretation:** Model's directional preference (ignoring threshold).
+
+### 5.2 Statistical Measures
+
+On **valid samples only**:
+
+**Mean:**
+$$\mu_{\Delta} = \frac{1}{N_{\text{valid}}} \sum_{i=1}^{N_{\text{valid}}} \Delta_{\text{norm}}^{(i)}$$
+
+**Median:**
+$$\text{median}(\{\Delta_{\text{norm}}^{(i)}\}_{i=1}^{N_{\text{valid}}})$$
+
+**Standard deviation:**
+$$\sigma_{\Delta} = \sqrt{\frac{1}{N_{\text{valid}}-1} \sum_{i=1}^{N_{\text{valid}}} (\Delta_{\text{norm}}^{(i)} - \mu_{\Delta})^2}$$
+
+### 5.3 Token Length Statistics
+
+**Mean token lengths (valid samples):**
+$$\bar{n}_c = \frac{1}{N_{\text{valid}}} \sum_{i=1}^{N_{\text{valid}}} n_c^{(i)}$$
+
+$$\bar{n}_w = \frac{1}{N_{\text{valid}}} \sum_{i=1}^{N_{\text{valid}}} n_w^{(i)}$$
+
+**Length mismatch rate:**
+$$r_{\text{mismatch}} = \frac{1}{N_{\text{valid}}} \sum_{i=1}^{N_{\text{valid}}} \mathbb{1}[n_c^{(i)} \neq n_w^{(i)}]$$
+
+---
+
+## 6. Pass/Fail Decision
+
+### 6.1 Criterion
+
+Behaviour **passes** if:
+
+$$\text{accuracy} \geq \alpha$$
+
+where $\alpha$ is success threshold (e.g., 0.85 for 85%).
+
+**Implementation:**
+```python
+passed = (accuracy >= success_threshold)
+```
+
+### 6.2 Interpretation
+
+- If passed: Model shows sufficient capability → proceed to circuit analysis
+- If failed: Model too weak or inconsistent → behaviour not suitable
+
+---
+
+## 7. Complete Evaluation Pipeline
+
+### Input
+- Prompts: $\{(p^{(i)}, c^{(i)}, w^{(i)})\}_{i=1}^{N}$
+- Threshold: $\tau$
+- Success threshold: $\alpha$
+
+### For each sample $i$:
+
+1. **Compute log probabilities:**
+   - $L_c^{(i)} = \log P(c^{(i)} | p^{(i)})$ via teacher forcing
+   - $L_w^{(i)} = \log P(w^{(i)} | p^{(i)})$ via teacher forcing
+
+2. **Get token counts:**
+   - $n_c^{(i)} = |c^{(i)}|$
+   - $n_w^{(i)} = |w^{(i)}|$
+
+3. **Normalize:**
+   - $\hat{L}_c^{(i)} = L_c^{(i)} / n_c^{(i)}$
+   - $\hat{L}_w^{(i)} = L_w^{(i)} / n_w^{(i)}$
+
+4. **Compute difference:**
+   - $\Delta^{(i)} = \hat{L}_c^{(i)} - \hat{L}_w^{(i)}$
+
+5. **Determine success:**
+   - $s^{(i)} = \mathbb{1}[\Delta^{(i)} > \tau]$
+
+### Aggregate:
+
+1. **Count samples:**
+   - $N_{\text{valid}} = \#\{\text{valid samples}\}$
+   - $N_{\text{errors}} = N - N_{\text{valid}}$
+   - $N_{\text{success}} = \sum_{i \in \text{valid}} s^{(i)}$
+
+2. **Calculate accuracy:**
+   - $\text{accuracy} = N_{\text{success}} / N$
+
+3. **Decide:**
+   - $\text{passed} = \mathbb{1}[\text{accuracy} \geq \alpha]$
+
+---
+
+## 8. Key Properties
+
+### 8.1 Teacher Forcing Advantages
+- ✅ Single forward pass per answer
+- ✅ Exact sequence probability
+- ✅ Handles multi-token naturally
+- ✅ No generation required
+
+### 8.2 Normalized Metric Properties
+- ✅ Fair comparison across lengths
+- ✅ Interpretable per-token scale
+- ✅ Backward compatible (single-token: normalized = raw)
+- ✅ Reduces length bias
+
+### 8.3 Accuracy Properties
+- ✅ Errors count as failures (honest)
+- ✅ All metrics consistent
+- ✅ No denominator gaming
+- ✅ Interpretable as success rate
+
+---
+
+## 9. Implementation Notes
+
+### 9.1 Numerical Stability
+
+**Log probabilities** are preferred over probabilities:
+- Avoids underflow (probabilities → 0 for long sequences)
+- Log-linear scale more stable
+- Direct from log-softmax
+
+**NaN/Inf handling:**
+- Replace $\pm\infty$ with NaN
+- Filter NaN before statistics
+- Count as errors (failures)
+
+### 9.2 Edge Cases
+
+**Zero-length tokens:**
+```
+if n_c ≤ 0 or n_w ≤ 0:
+    raise ValueError("Invalid token length")
+```
+
+**Empty valid set:**
+```
+if N_valid = 0:
+    accuracy = 0.0
+    passed = False
+```
+
+### 9.3 Visualization Consistency
+
+All plots use **normalized metric**:
+- Histograms: $\Delta_{\text{norm}}$
+- Scatter: $(\hat{L}_w, \hat{L}_c)$
+- Threshold lines at $\tau$ (normalized scale)
+
+---
+
+## 10. Example Calculation
+
+### Setup
+- Prompt: "Capital of France?"
+- Correct: " Paris" → tokens = [5147]
+- Incorrect: " London" → tokens = [7295]
+- Model: Qwen3-4B
+
+### Teacher Forcing
+
+**Correct:**
+```
+Sequence: [prompt_tokens, 5147]
+logits → log_softmax → log P(5147 | context) = -0.3
+logprob_raw = -0.3
+n_c = 1
+logprob_norm = -0.3 / 1 = -0.3
+```
+
+**Incorrect:**
+```
+Sequence: [prompt_tokens, 7295]
+logits → log_softmax → log P(7295 | context) = -3.5
+logprob_raw = -3.5
+n_w = 1
+logprob_norm = -3.5 / 1 = -3.5
+```
+
+### Score
+
+```
+Δ_norm = -0.3 - (-3.5) = 3.2
+threshold τ = 2.0
+success = (3.2 > 2.0) = True ✅
+```
+
+### Interpretation
+- Correct answer 3.2 log-prob units more likely per token
+- Probability ratio: e^3.2 ≈ 24.5× more probable
+- Passes threshold → counted as success
+
+---
+
+## 11. Validation
+
+### Mathematical Invariants
+1. $\text{logprob}_{\text{norm}}(t) = \text{logprob}_{\text{raw}}(t) / |t|$
+2. For $|c| = |w| = 1$: $\Delta_{\text{norm}} = \Delta_{\text{raw}}$
+3. $N_{\text{success}} \leq N_{\text{valid}} \leq N$
+4. $\text{accuracy} = N_{\text{success}} / N$
+
+### Implementation Checks
+- ✅ All formulas match code
+- ✅ Logits shift validated
+- ✅ Normalization correct
+- ✅ Accuracy honest
+- ✅ Edge cases handled
+
+---
+
+## References
+
+**Key Implementation Files:**
+- `src/model_utils.py::get_sequence_log_probs()` - Teacher forcing
+- `scripts/02_run_baseline.py::evaluate_behaviour()` - Evaluation loop
+- `scripts/02_run_baseline.py::print_summary()` - Metrics calculation
+
+**Mathematical Foundation:**
+- Causal language model decomposition
+- Log-probability arithmetic
+- Per-token normalization
+- Statistical aggregation

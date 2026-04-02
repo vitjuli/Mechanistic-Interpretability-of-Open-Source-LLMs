@@ -1,0 +1,226 @@
+{
+  "10": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.5451,
+      "mean_effect": -0.4479,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.8246,
+      "mean_effect": -0.6797,
+      "sign_flip_rate": 0.1818
+    }
+  },
+  "11": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.3715,
+      "mean_effect": 0.0035,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.9155,
+      "mean_effect": -0.87,
+      "sign_flip_rate": 0.0909
+    }
+  },
+  "12": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.4184,
+      "mean_effect": -0.099,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4773,
+      "mean_effect": -0.321,
+      "sign_flip_rate": 0.0909
+    }
+  },
+  "13": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.6536,
+      "mean_effect": -0.4731,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4368,
+      "mean_effect": -0.13,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "14": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.4444,
+      "mean_effect": -0.4167,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4233,
+      "mean_effect": -0.3438,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "15": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.2717,
+      "mean_effect": -0.0078,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.2933,
+      "mean_effect": -0.0362,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "16": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.2708,
+      "mean_effect": -0.1458,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.2983,
+      "mean_effect": 0.0625,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "17": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.2378,
+      "mean_effect": 0.0677,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.6264,
+      "mean_effect": -0.6264,
+      "sign_flip_rate": 0.0909
+    }
+  },
+  "18": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.3819,
+      "mean_effect": -0.3542,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4794,
+      "mean_effect": -0.13,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "19": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.4392,
+      "mean_effect": -0.2587,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.5859,
+      "mean_effect": -0.4964,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "20": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.2812,
+      "mean_effect": -0.1146,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.2706,
+      "mean_effect": 0.0107,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "21": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.3194,
+      "mean_effect": -0.0139,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.3459,
+      "mean_effect": -0.2464,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "22": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.2639,
+      "mean_effect": 0.1389,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4766,
+      "mean_effect": -0.1783,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "23": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 1.6233,
+      "mean_effect": -1.6233,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 1.0646,
+      "mean_effect": -0.8374,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "24": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.434,
+      "mean_effect": -0.1632,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.6925,
+      "mean_effect": -0.5362,
+      "sign_flip_rate": 0.0
+    }
+  },
+  "25": {
+    "vector": {
+      "n": 9,
+      "mean_abs_effect": 0.5781,
+      "mean_effect": -0.4948,
+      "sign_flip_rate": 0.0
+    },
+    "scalar": {
+      "n": 11,
+      "mean_abs_effect": 0.4496,
+      "mean_effect": -0.0717,
+      "sign_flip_rate": 0.0909
+    }
+  }
+}

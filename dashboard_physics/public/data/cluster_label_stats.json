@@ -1,0 +1,162 @@
+{
+  "0": {
+    "meta": {
+      "n_features": 18,
+      "layers": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+        23,
+        24
+      ],
+      "layer_min": 13,
+      "layer_max": 24
+    },
+    "by_label": {
+      "scalar": {
+        "n": 121,
+        "mean_abs_effect": 0.5203,
+        "mean_effect": -0.3181
+      },
+      "vector": {
+        "n": 99,
+        "mean_abs_effect": 0.4855,
+        "mean_effect": -0.2955
+      }
+    },
+    "scalar_fraction": 0.5173,
+    "vector_fraction": 0.4827,
+    "dominant_label": "balanced"
+  },
+  "1": {
+    "meta": {
+      "n_features": 5,
+      "layers": [
+        20
+      ],
+      "layer_min": 20,
+      "layer_max": 20
+    },
+    "by_label": {
+      "scalar": {
+        "n": 11,
+        "mean_abs_effect": 0.2706,
+        "mean_effect": 0.0107
+      },
+      "vector": {
+        "n": 9,
+        "mean_abs_effect": 0.2812,
+        "mean_effect": -0.1146
+      }
+    },
+    "scalar_fraction": 0.4904,
+    "vector_fraction": 0.5096,
+    "dominant_label": "balanced"
+  },
+  "2": {
+    "meta": {
+      "n_features": 5,
+      "layers": [
+        25
+      ],
+      "layer_min": 25,
+      "layer_max": 25
+    },
+    "by_label": {
+      "scalar": {
+        "n": 11,
+        "mean_abs_effect": 0.4496,
+        "mean_effect": -0.0717
+      },
+      "vector": {
+        "n": 9,
+        "mean_abs_effect": 0.5781,
+        "mean_effect": -0.4948
+      }
+    },
+    "scalar_fraction": 0.4375,
+    "vector_fraction": 0.5625,
+    "dominant_label": "vector-leaning"
+  },
+  "3": {
+    "meta": {
+      "n_features": 5,
+      "layers": [
+        12
+      ],
+      "layer_min": 12,
+      "layer_max": 12
+    },
+    "by_label": {
+      "scalar": {
+        "n": 11,
+        "mean_abs_effect": 0.4773,
+        "mean_effect": -0.321
+      },
+      "vector": {
+        "n": 9,
+        "mean_abs_effect": 0.4184,
+        "mean_effect": -0.099
+      }
+    },
+    "scalar_fraction": 0.5329,
+    "vector_fraction": 0.4671,
+    "dominant_label": "scalar-leaning"
+  },
+  "4": {
+    "meta": {
+      "n_features": 5,
+      "layers": [
+        10
+      ],
+      "layer_min": 10,
+      "layer_max": 10
+    },
+    "by_label": {
+      "scalar": {
+        "n": 11,
+        "mean_abs_effect": 0.8246,
+        "mean_effect": -0.6797
+      },
+      "vector": {
+        "n": 9,
+        "mean_abs_effect": 0.5451,
+        "mean_effect": -0.4479
+      }
+    },
+    "scalar_fraction": 0.602,
+    "vector_fraction": 0.398,
+    "dominant_label": "scalar-leaning"
+  },
+  "5": {
+    "meta": {
+      "n_features": 5,
+      "layers": [
+        11
+      ],
+      "layer_min": 11,
+      "layer_max": 11
+    },
+    "by_label": {
+      "scalar": {
+        "n": 11,
+        "mean_abs_effect": 0.9155,
+        "mean_effect": -0.87
+      },
+      "vector": {
+        "n": 9,
+        "mean_abs_effect": 0.3715,
+        "mean_effect": 0.0035
+      }
+    },
+    "scalar_fraction": 0.7113,
+    "vector_fraction": 0.2887,
+    "dominant_label": "scalar-leaning"
+  }
+}

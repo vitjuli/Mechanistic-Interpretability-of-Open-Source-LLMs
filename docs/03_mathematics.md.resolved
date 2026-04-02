@@ -1,0 +1,559 @@
+# Математические формулы проекта
+
+## 🧮 Обозначения
+
+### Основные переменные
+
+| Символ | Описание | Размерность |
+|--------|----------|-------------|
+| $x$ | Активации MLP слоя | $(B, d_{hidden})$ |
+| $z$ | Латентные признаки SAE | $(B, d_{latent})$ |
+| $\hat{x}$ | Реконструированные активации | $(B, d_{hidden})$ |
+| $W_{enc}$ | Матрица кодировщика | $(d_{hidden}, d_{latent})$ |
+| $W_{dec}$ | Матрица декодировщика | $(d_{latent}, d_{hidden})$ |
+| $b_{pre}$ | Pre-bias вектор | $(d_{hidden},)$ |
+| $b_{enc}$ | Bias кодировщика | $(d_{latent},)$ |
+| $b_{dec}$ | Bias декодировщика | $(d_{hidden},)$ |
+| $\lambda$ | L1 коэффициент | скаляр |
+
+### Размеры для Qwen3-4B
+
+```
+d_hidden = 3584        # Размерность скрытого слоя
+d_latent = 14,336      # 4× expansion factor
+B = 256                # Batch size
+```
+
+---
+
+## 1. Sparse Autoencoder (SAE)
+
+### 1.1 Архитектура
+
+#### Forward Pass
+
+**Центрирование:**
+```math
+x_{centered} = x - b_{pre}
+```
+
+**Кодирование:**
+```math
+z = \text{ReLU}(W_{enc}^T \cdot x_{centered} + b_{enc})
+```
+
+где $\text{ReLU}(a) = \max(0, a)$
+
+**Декодирование:**
+```math
+\hat{x} = W_{dec}^T \cdot z + b_{dec} + b_{pre}
+```
+
+**Полный проход:**
+```math
+\hat{x} = W_{dec}^T \cdot \text{ReLU}(W_{enc}^T \cdot (x - b_{pre}) + b_{enc}) + b_{dec} + b_{pre}
+```
+
+### 1.2 Функция потерь
+
+**Общая потеря:**
+```math
+\mathcal{L} = \mathcal{L}_{MSE} + \lambda \cdot \mathcal{L}_{L1}
+```
+
+**MSE (Mean Squared Error):**
+```math
+\mathcal{L}_{MSE} = \frac{1}{B \cdot d_{hidden}} \sum_{i=1}^{B} \sum_{j=1}^{d_{hidden}} (x_{ij} - \hat{x}_{ij})^2
+```
+
+или векторная форма:
+```math
+\mathcal{L}_{MSE} = \frac{1}{B} \|x - \hat{x}\|_2^2
+```
+
+**L1 Sparsity:**
+```math
+\mathcal{L}_{L1} = \frac{1}{B \cdot d_{latent}} \sum_{i=1}^{B} \sum_{j=1}^{d_{latent}} |z_{ij}|
+```
+
+или:
+```math
+\mathcal{L}_{L1} = \mathbb{E}[\|z\|_1]
+```
+
+**Типичное значение:** $\lambda = 0.005$ (настраивается)
+
+### 1.3 Градиенты
+
+**Градиент по декодеру:**
+```math
+\frac{\partial \mathcal{L}}{\partial W_{dec}} = -\frac{2}{B}(x - \hat{x})^T \cdot z
+```
+
+**Градиент по кодеру (через chain rule):**
+```math
+\frac{\partial \mathcal{L}}{\partial W_{enc}} = -\frac{2}{B}(x - b_{pre})^T \cdot \left[\left((x - \hat{x}) \cdot W_{dec}\right) \odot \mathbb{1}_{z > 0}\right] + \frac{\lambda}{B} \cdot \text{sign}(z)
+```
+
+где $\odot$ - поэлементное умножение, $\mathbb{1}_{z > 0}$ - индикатор активных нейронов
+
+### 1.4 Нормализация декодера
+
+После каждого шага обучения:
+```math
+W_{dec}[:, j] \leftarrow \frac{W_{dec}[:, j]}{\|W_{dec}[:, j]\|_2}
+```
+
+для каждого столбца $j$. Это гарантирует $\|W_{dec}[:, j]\|_2 = 1$
+
+---
+
+## 2. Метрики качества SAE
+
+### 2.1 Reconstruction Error
+
+**Mean Squared Error:**
+```math
+\text{MSE} = \frac{1}{N} \sum_{i=1}^{N} \|x_i - \hat{x}_i\|_2^2
+```
+
+**Root Mean Squared Error:**
+```math
+\text{RMSE} = \sqrt{\text{MSE}}
+```
+
+### 2.2 Коэффициент детерминации (R²)
+
+```math
+R^2 = 1 - \frac{SS_{res}}{SS_{tot}}
+```
+
+где:
+```math
+SS_{res} = \sum_{i=1}^{N} \|x_i - \hat{x}_i\|_2^2
+```
+
+```math
+SS_{tot} = \sum_{i=1}^{N} \|x_i - \bar{x}\|_2^2
+```
+
+```math
+\bar{x} = \frac{1}{N} \sum_{i=1}^{N} x_i
+```
+
+**Интерпретация:**
+- $R^2 = 1$: Идеальная реконструкция
+- $R^2 = 0$: Реконструкция не лучше среднего
+- $R^2 < 0$: Реконструкция хуже среднего
+
+**Порог успеха:** $R^2 \geq 0.85$
+
+### 2.3 Метрики разреженности
+
+**L0 (доля активных признаков):**
+```math
+L_0 = \frac{1}{B \cdot d_{latent}} \sum_{i=1}^{B} \sum_{j=1}^{d_{latent}} \mathbb{1}_{z_{ij} > 0}
+```
+
+Типично: $L_0 \approx 0.05$ - $0.10$ (5-10% признаков активны)
+
+**L1 (средняя активация):**
+```math
+L_1 = \frac{1}{B \cdot d_{latent}} \sum_{i=1}^{B} \sum_{j=1}^{d_{latent}} |z_{ij}|
+```
+
+### 2.4 Dead Features
+
+Признак $j$ считается "мёртвым" если:
+```math
+\max_i z_{ij} = 0
+```
+
+**Dead feature fraction:**
+```math
+f_{dead} = \frac{1}{d_{latent}} \sum_{j=1}^{d_{latent}} \mathbb{1}_{\max_i z_{ij} = 0}
+```
+
+**Порог:** $f_{dead} < 0.20$ (менее 20% мёртвых признаков)
+
+---
+
+## 3. Attribution (Атрибуция)
+
+### 3.1 Gradient-based Attribution
+
+**Цель:** Измерить вклад каждого SAE признака в итоговый логит
+
+**Логит для токена $t$:**
+```math
+l_t = \text{logit}(t | x)
+```
+
+где $x$ - входной промпт
+
+**Атрибуция признака $j$ в слое $L$:**
+```math
+A_j^{(L)} = z_j^{(L)} \cdot \frac{\partial l_t}{\partial z_j^{(L)}}
+```
+
+где:
+- $z_j^{(L)}$ - активация признака $j$ в слое $L$
+- $\frac{\partial l_t}{\partial z_j^{(L)}}$ - градиент логита по активации признака
+
+**Интуиция:** 
+- Высокая активация + высокий градиент = высокая атрибуция
+- Признак важен если его изменение сильно влияет на выход
+
+### 3.2 Logit Difference Attribution
+
+Для задач с бинарным выбором (correct vs incorrect):
+
+**Разница логитов:**
+```math
+\Delta l = l_{correct} - l_{incorrect}
+```
+
+**Атрибуция для разницы:**
+```math
+A_j^{(L)} = z_j^{(L)} \cdot \frac{\partial \Delta l}{\partial z_j^{(L)}}
+```
+
+```math
+= z_j^{(L)} \cdot \left(\frac{\partial l_{correct}}{\partial z_j^{(L)}} - \frac{\partial l_{incorrect}}{\partial z_j^{(L)}}\right)
+```
+
+### 3.3 Межслойные атрибуции
+
+Для построения графа зависимостей между слоями:
+
+**Атрибуция от признака $i$ в слое $L$ к признаку $j$ в слое $L+1$:**
+```math
+A_{i \to j}^{(L \to L+1)} = z_i^{(L)} \cdot \frac{\partial z_j^{(L+1)}}{\partial z_i^{(L)}}
+```
+
+Вычисляется через chain rule:
+```math
+\frac{\partial z_j^{(L+1)}}{\partial z_i^{(L)}} = \frac{\partial z_j^{(L+1)}}{\partial h^{(L)}} \cdot \frac{\partial h^{(L)}}{\partial z_i^{(L)}}
+```
+
+где $h^{(L)}$ - скрытое состояние в слое $L$
+
+### 3.4 Нормализация атрибуций
+
+**Softmax нормализация** (для вероятностной интерпретации):
+```math
+\tilde{A}_j^{(L)} = \frac{\exp(A_j^{(L)})}{\sum_{k=1}^{d_{latent}} \exp(A_k^{(L)})}
+```
+
+**Min-Max нормализация:**
+```math
+\tilde{A}_j^{(L)} = \frac{A_j^{(L)} - \min_k A_k^{(L)}}{\max_k A_k^{(L)} - \min_k A_k^{(L)}}
+```
+
+---
+
+## 4. Intervention Experiments
+
+### 4.1 Feature Ablation
+
+**Аблация признака $j$ в слое $L$:**
+```math
+z_j^{(L)} \leftarrow 0
+```
+
+**Эффект аблации:**
+```math
+\text{Effect}_j = \Delta l_{baseline} - \Delta l_{ablated}
+```
+
+где:
+- $\Delta l_{baseline}$ - разница логитов без вмешательства
+- $\Delta l_{ablated}$ - разница логитов после аблации признака $j$
+
+**Важность признака:**
+```math
+\text{Importance}_j = \mathbb{E}_{prompts}[\text{Effect}_j]
+```
+
+### 4.2 Counterfactual Patching
+
+**Патчинг признака $j$ от промпта B к промпту A:**
+```math
+z_j^{(L)}(A) \leftarrow z_j^{(L)}(B)
+```
+
+**Каузальный эффект:**
+```math
+\text{Causal Effect}_j = \Delta l_{A, patched} - \Delta l_{A, baseline}
+```
+
+**Интерпретация:** Насколько изменение признака $j$ причинно влияет на выход
+
+### 4.3 Статистический тест значимости
+
+**T-test для эффектов:**
+```math
+t = \frac{\bar{E} - 0}{SE(\bar{E})}
+```
+
+где:
+```math
+\bar{E} = \frac{1}{N} \sum_{i=1}^{N} \text{Effect}_i
+```
+
+```math
+SE(\bar{E}) = \frac{s}{\sqrt{N}}
+```
+
+```math
+s = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N} (\text{Effect}_i - \bar{E})^2}
+```
+
+**P-value:** Вероятность наблюдать такой эффект случайно
+
+**Порог значимости:** $p < 0.05$ (с поправкой Бонферрони для множественных сравнений)
+
+### 4.4 Effect Size (Cohen's d)
+
+```math
+d = \frac{\bar{E}}{s}
+```
+
+**Интерпретация:**
+- $|d| < 0.2$: Малый эффект
+- $0.2 \leq |d| < 0.8$: Средний эффект
+- $|d| \geq 0.8$: Большой эффект
+
+---
+
+## 5. Baseline Metrics
+
+### 5.1 Accuracy
+
+```math
+\text{Accuracy} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{1}_{prediction_i = correct}
+```
+
+где:
+```math
+prediction_i = \begin{cases}
+correct & \text{if } l_{correct,i} > l_{incorrect,i} \\
+incorrect & \text{otherwise}
+\end{cases}
+```
+
+### 5.2 Logit Difference
+
+**Для одного промпта:**
+```math
+\Delta l = l_{correct} - l_{incorrect}
+```
+
+**Среднее по датасету:**
+```math
+\bar{\Delta l} = \frac{1}{N} \sum_{i=1}^{N} (l_{correct,i} - l_{incorrect,i})
+```
+
+**Стандартное отклонение:**
+```math
+\sigma_{\Delta l} = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N} (\Delta l_i - \bar{\Delta l})^2}
+```
+
+**Интерпретация:**
+- $\Delta l > 2$: Сильная уверенность в правильном ответе
+- $0 < \Delta l < 2$: Слабая уверенность
+- $\Delta l < 0$: Модель предпочитает неправильный ответ
+
+### 5.3 Softmax Probability
+
+**Вероятность токена:**
+```math
+p(t | x) = \frac{\exp(l_t)}{\sum_{t' \in V} \exp(l_{t'})}
+```
+
+где $V$ - словарь
+
+**Вероятность правильного vs неправильного:**
+```math
+p_{correct} = \frac{\exp(l_{correct})}{\exp(l_{correct}) + \exp(l_{incorrect})}
+```
+
+```math
+p_{incorrect} = \frac{\exp(l_{incorrect})}{\exp(l_{correct}) + \exp(l_{incorrect})}
+```
+
+---
+
+## 6. Вычислительная сложность
+
+### 6.1 SAE Forward Pass
+
+**Время:**
+```math
+O(d_{hidden} \cdot d_{latent} + d_{latent} \cdot d_{hidden}) = O(2 \cdot d_{hidden} \cdot d_{latent})
+```
+
+Для Qwen: $O(2 \cdot 3584 \cdot 14336) = O(102{,}760{,}448) \approx O(10^8)$ операций
+
+### 6.2 SAE Training Step
+
+**Время на батч:**
+```math
+O(B \cdot d_{hidden} \cdot d_{latent})
+```
+
+Для Qwen с $B=256$: $O(256 \cdot 3584 \cdot 14336) \approx O(10^{10})$ операций
+
+**Общее время обучения:**
+```math
+T_{total} = N_{steps} \cdot T_{step}
+```
+
+С $N_{steps} = 50{,}000$: примерно 12 часов на A100
+
+### 6.3 Gradient Computation
+
+**Backward pass для атрибуции:**
+```math
+O(L \cdot d_{latent} \cdot d_{vocab})
+```
+
+где $L$ - число слоёв, $d_{vocab}$ - размер словаря
+
+Для Qwen: $O(15 \cdot 14336 \cdot 152064) \approx O(10^{11})$ операций
+
+---
+
+## 7. Память
+
+### 7.1 Модель Qwen3-4B
+
+**Веса модели (bfloat16):**
+```math
+M_{model} = 4B \cdot 2 \text{ bytes} = 8 \text{ GB}
+```
+
+**Активации (для batch_size=16, seq_len=512):**
+```math
+M_{act} = B \cdot L \cdot seq\_len \cdot d_{hidden} \cdot 2 \text{ bytes}
+```
+```math
+= 16 \cdot 30 \cdot 512 \cdot 3584 \cdot 2 \approx 1.75 \text{ GB}
+```
+
+**Пиковая память:** ~12-15 GB на A100
+
+### 7.2 SAE Модель
+
+**Параметры SAE:**
+```math
+N_{params} = (d_{hidden} \cdot d_{latent}) \cdot 2 + d_{hidden} + d_{latent}
+```
+```math
+= (3584 \cdot 14336) \cdot 2 + 3584 + 14336 \approx 103M
+```
+
+**Память (float32):**
+```math
+M_{SAE} = 103M \cdot 4 \text{ bytes} \approx 412 \text{ MB}
+```
+
+**С градиентами и optimizer states (Adam):**
+```math
+M_{total} = M_{SAE} \cdot 4 = 1.6 \text{ GB}
+```
+
+### 7.3 Активации на диске
+
+**Размер для одного промпта:**
+```math
+Size = L \cdot n_{tokens} \cdot d_{hidden} \cdot 2 \text{ bytes}
+```
+```math
+= 15 \cdot 5 \cdot 3584 \cdot 2 = 537{,}600 \text{ bytes} \approx 0.5 \text{ MB}
+```
+
+**Для всего датасета (80 промптов):**
+```math
+Size_{total} = 80 \cdot 0.5 \text{ MB} = 40 \text{ MB} \text{ на поведение}
+```
+
+**Для 4 поведений, 15 слоёв:**
+```math
+Size_{all} = 4 \cdot 15 \cdot 40 \text{ MB} = 2.4 \text{ GB}
+```
+
+---
+
+## 8. Оптимизация
+
+### 8.1 Learning Rate Schedule
+
+**Cosine annealing:**
+```math
+\eta_t = \eta_{min} + \frac{1}{2}(\eta_{max} - \eta_{min})\left(1 + \cos\left(\frac{t\pi}{T}\right)\right)
+```
+
+где:
+- $\eta_t$ - learning rate на шаге $t$
+- $\eta_{max} = 0.0003$ - начальный LR
+- $\eta_{min} = 0.00001$ - минимальный LR
+- $T$ - общее число шагов
+
+### 8.2 Gradient Clipping
+
+```math
+g \leftarrow \begin{cases}
+g & \text{if } \|g\| \leq \theta \\
+\theta \cdot \frac{g}{\|g\|} & \text{otherwise}
+\end{cases}
+```
+
+где $\theta = 1.0$ - порог клиппинга
+
+---
+
+## Практическое применение формул
+
+### Пример расчёта атрибуции:
+
+```python
+# Активации признака
+z = torch.tensor([0.5, 2.1, 0.0, 1.3, 0.0])  # 5 признаков
+
+# Градиенты логита по признакам
+grad = torch.tensor([1.2, 0.8, 0.3, -0.5, 0.1])
+
+# Атрибуция
+attribution = z * grad
+# = tensor([0.6, 1.68, 0.0, -0.65, 0.0])
+
+# Топ признаки
+top_k = torch.topk(attribution.abs(), k=3)
+# indices: [1, 3, 0]  (признаки 1, 3, 0 наиболее важны)
+# values: [1.68, 0.65, 0.6]
+```
+
+### Пример вычисления эффекта аблации:
+
+```python
+# Baseline
+logit_correct_baseline = 5.2
+logit_incorrect_baseline = 2.1
+delta_baseline = 5.2 - 2.1 = 3.1
+
+# После аблации признака
+logit_correct_ablated = 3.8
+logit_incorrect_ablated = 2.3
+delta_ablated = 3.8 - 2.3 = 1.5
+
+# Эффект
+effect = 3.1 - 1.5 = 1.6
+
+# Интерпретация: Аблация признака снизила разницу на 1.6 логита
+# Это большой эффект → признак важен
+```
+
+---
+
+Все эти формулы реализованы в коде проекта! 🎯

@@ -1,0 +1,227 @@
+{
+  "git_commit": "daf2451b667e4f0a3b14bf9436f29a3adc20f2ef",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:01:12",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_ablation_physics_scalar_vector_operator.csv",
+      "size_bytes": 81189
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:01:13",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_ablation_physics_scalar_vector_operator_summary.json",
+      "size_bytes": 880
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:19",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_patching_physics_scalar_vector_operator.csv",
+      "size_bytes": 183275
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:19",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_patching_physics_scalar_vector_operator_summary.json",
+      "size_bytes": 880
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:21",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_steering_physics_scalar_vector_operator.csv",
+      "size_bytes": 41052
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:21",
+      "path": "data/results/interventions/physics_scalar_vector_operator/intervention_steering_physics_scalar_vector_operator_summary.json",
+      "size_bytes": 902
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T11:53:24",
+      "path": "data/results/attribution_graphs/physics_scalar_vector_operator/attribution_graph_train_n80.json",
+      "size_bytes": 21464
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:29",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_10.csv",
+      "size_bytes": 1404
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:38",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_11.csv",
+      "size_bytes": 1404
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:48",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_12.csv",
+      "size_bytes": 1404
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:16:57",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_13.csv",
+      "size_bytes": 192
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:06",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_14.csv",
+      "size_bytes": 260
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:16",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_15.csv",
+      "size_bytes": 260
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:25",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_16.csv",
+      "size_bytes": 184
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:34",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_17.csv",
+      "size_bytes": 336
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:44",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_18.csv",
+      "size_bytes": 185
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:17:53",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_19.csv",
+      "size_bytes": 257
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:02",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_20.csv",
+      "size_bytes": 1450
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:12",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_21.csv",
+      "size_bytes": 188
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:21",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_22.csv",
+      "size_bytes": 190
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:30",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_23.csv",
+      "size_bytes": 257
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:40",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_24.csv",
+      "size_bytes": 256
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:18:49",
+      "path": "data/results/interventions/physics_scalar_vector_operator/importance/feature_importance_layer_25.csv",
+      "size_bytes": 479
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:27",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/interventions.csv",
+      "size_bytes": 320922
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:27",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/common_prompt_idx.json",
+      "size_bytes": 302
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:27",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/audit.json",
+      "size_bytes": 86912
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/interventions_layer_agg.csv",
+      "size_bytes": 5994
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/interventions_prompt_agg.csv",
+      "size_bytes": 8054
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/interventions_feature_agg.csv",
+      "size_bytes": 14485
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/feature_importance.csv",
+      "size_bytes": 6970
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/supernodes.json",
+      "size_bytes": 495
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:28",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/supernodes_summary.csv",
+      "size_bytes": 139
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:38",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/supernodes_effect.json",
+      "size_bytes": 781
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:38",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/supernodes_effect_summary.csv",
+      "size_bytes": 335
+    },
+    {
+      "exists": true,
+      "modified": "2026-02-24T12:22:38",
+      "path": "data/ui_offline/20260224-122225_physics_scalar_vector_operator_train_n80/graph.json",
+      "size_bytes": 19395
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_scalar_vector_operator",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 80,
+    "run_id": "20260224-122225_physics_scalar_vector_operator_train_n80",
+    "split": "train",
+    "timestamp": "2026-02-24T12:22:25.044898"
+  },
+  "timestamp": "2026-02-24T12:22:38.743018"
+}

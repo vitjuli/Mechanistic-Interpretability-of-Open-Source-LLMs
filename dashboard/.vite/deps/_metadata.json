@@ -1,0 +1,52 @@
+{
+  "hash": "89715179",
+  "configHash": "32de32dd",
+  "lockfileHash": "1e33c669",
+  "browserHash": "45726989",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "83d953f5",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "1923e094",
+      "needsInterop": true
+    },
+    "papaparse": {
+      "src": "../../node_modules/papaparse/papaparse.min.js",
+      "file": "papaparse.js",
+      "fileHash": "a03da45a",
+      "needsInterop": true
+    },
+    "react-plotly.js": {
+      "src": "../../node_modules/react-plotly.js/react-plotly.js",
+      "file": "react-plotly__js.js",
+      "fileHash": "73644e4f",
+      "needsInterop": true
+    },
+    "d3-force": {
+      "src": "../../node_modules/d3-force/src/index.js",
+      "file": "d3-force.js",
+      "fileHash": "da02ce2b",
+      "needsInterop": false
+    },
+    "zustand": {
+      "src": "../../node_modules/zustand/esm/index.mjs",
+      "file": "zustand.js",
+      "fileHash": "abba981f",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-NO6UH6X3": {
+      "file": "chunk-NO6UH6X3.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Model Configuration for Qwen3-4B-Instruct-2507
+# Separated from experiment config for modularity
+
+model:
+  name: "Qwen/Qwen3-4B-Instruct-2507"
+  revision: "main"
+  dtype: "bfloat16"
+  device: "auto"
+  max_length: 512
+  trust_remote_code: true
+
+  # Qwen3 recommended generation settings
+  generation:
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    min_p: 0.0
+    max_new_tokens: 50
+
+  # Architecture (populated at runtime)
+  # num_hidden_layers: 36  (Qwen3-4B)
+  # hidden_size: 2560      (Qwen3-4B)
+  # intermediate_size: 6912
+  # num_attention_heads: 32
+
+  # Resource hints
+  memory:
+    model_size_gb: 8.0       # BF16 model size
+    peak_inference_gb: 15.0  # Peak memory during inference
+    activation_cache_gb: 2.0 # Per-layer activation cache
+
+# Cache settings for HPC
+cache:
+  hf_home: "${HF_HOME}"
+  torch_home: "${TORCH_HOME}"
+  offline_mode: false

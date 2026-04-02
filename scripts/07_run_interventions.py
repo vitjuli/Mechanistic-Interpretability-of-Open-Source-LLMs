@@ -250,9 +250,11 @@ def get_top_attributed_features(
             continue
 
         if graph_type == "per_prompt_union":
-            # Fields written by 06_build_attribution_graph.py union method
-            # CRITICAL: Prioritize specific_score (prompt-specific) over raw magnitude activation
-            score = node.get("specific_score", None)
+            # Gradient attribution fields (new, written by compute_per_prompt_gradient_attribution)
+            score = node.get("mean_abs_grad_attr_conditional", None)
+            # Fall back to legacy beta-proxy fields for old graphs
+            if score is None:
+                score = node.get("specific_score", None)
             if score is None:
                 score = node.get("mean_abs_score_conditional", None)
             if score is None:
@@ -2049,8 +2051,14 @@ def main():
                 # - correlation graphs: use corr
                 signed = None
                 if graph_type == "per_prompt_union":
-                    if "beta" in node:
-                        signed = node.get("beta", None)  # stable direction
+                    # Gradient attribution sign (new graphs)
+                    if "grad_attr_sign" in node:
+                        signed = node.get("mean_grad_attr_conditional", None)
+                    # Legacy beta-proxy sign (old graphs)
+                    if signed is None and "beta" in node:
+                        signed = node.get("beta", None)
+                    if signed is None:
+                        signed = node.get("mean_grad_attr_conditional", None)
                     if signed is None:
                         signed = node.get("mean_score_conditional", None)
                     if signed is None:

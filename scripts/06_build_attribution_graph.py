@@ -868,6 +868,124 @@ class TranscoderAttributionBuilder:
 
     # ─── Phase 3: Role-Aware Methods ────────────────────────────────────────
 
+    def compute_per_prompt_gradient_attribution(
+        self, prompt_idx: int
+    ) -> Dict[Tuple[int, int], float]:
+        """
+        Gradient × activation attribution: α_k^ℓ = a_k^ℓ × (∂Δlogit / ∂a_k^ℓ)
+
+        Uses the chain rule through transcoder decoder weights:
+            ∂Δlogit/∂a_k^ℓ ≈ (∂Δlogit/∂MLP_output^ℓ) · W_dec[k, :]
+
+        Captures ∂Δlogit/∂MLP_output via register_full_backward_hook on each
+        block.mlp during a gradient-enabled forward pass. Saved top-k activations
+        (from extracted_features) provide a_k values without re-running the model.
+
+        Falls back to raw activations (no gradient info) for multi-token answers.
+
+        Returns:
+            Dict mapping (layer, feature_idx) -> attribution_score (a × grad)
+        """
+        prompt_data = self.prompts[prompt_idx]
+        prompt_text = prompt_data["prompt"]
+        y_pos = prompt_data.get("correct_answer") or prompt_data.get("answer_matching")
+        y_neg = prompt_data.get("incorrect_answer") or prompt_data.get("answer_not_matching")
+
+        model_hf = self.model.model
+        device = next(model_hf.parameters()).device
+
+        # Tokenize
+        prompt_ids = self.model.tokenizer.encode(prompt_text, add_special_tokens=True)
+        pos_ids = self.model.tokenizer.encode(y_pos, add_special_tokens=False)
+        neg_ids = self.model.tokenizer.encode(y_neg, add_special_tokens=False)
+
+        # Only single-token answers support gradient flow through a single logit difference
+        if len(pos_ids) != 1 or len(neg_ids) != 1:
+            acts = self.collect_feature_activations(prompt_idx)
+            return {(layer, feat): val for layer, d in acts.items() for feat, val in d.items()}
+
+        pos_tok = int(pos_ids[0])
+        neg_tok = int(neg_ids[0])
+
+        input_ids = torch.tensor([prompt_ids], dtype=torch.long, device=device)
+        attn_mask = torch.ones_like(input_ids)
+
+        # Register backward hooks to capture ∂Δlogit/∂MLP_output at last token position
+        mlp_output_grads: Dict[int, torch.Tensor] = {}
+        hooks = []
+
+        for layer_idx in self.layers:
+            try:
+                block = model_hf.model.layers[layer_idx]
+            except (AttributeError, IndexError):
+                continue
+
+            def make_hook(l):
+                def hook_fn(module, grad_in, grad_out):
+                    # grad_out[0]: (1, T, d_model) — gradient w.r.t. MLP output
+                    if grad_out[0] is not None:
+                        mlp_output_grads[l] = grad_out[0][0, -1, :].detach().float()
+                return hook_fn
+
+            h = block.mlp.register_full_backward_hook(make_hook(layer_idx))
+            hooks.append(h)
+
+        try:
+            # Forward pass with gradients (no torch.no_grad context)
+            out = model_hf(input_ids=input_ids, attention_mask=attn_mask, use_cache=False)
+            logits = out.logits[0, -1, :]  # (V,)
+            delta_logit = logits[pos_tok] - logits[neg_tok]
+            delta_logit.backward()
+        except Exception as e:
+            logger.warning(f"Gradient attribution failed for prompt {prompt_idx}: {e}. Using activations only.")
+            for h in hooks:
+                h.remove()
+            acts = self.collect_feature_activations(prompt_idx)
+            return {(layer, feat): val for layer, d in acts.items() for feat, val in d.items()}
+        finally:
+            for h in hooks:
+                h.remove()
+            # Clear gradients to avoid accumulation across calls
+            model_hf.zero_grad(set_to_none=True)
+
+        # Get saved top-k activations for this prompt
+        acts = self.collect_feature_activations(prompt_idx)  # {layer: {feat: activation}}
+
+        attributions: Dict[Tuple[int, int], float] = {}
+
+        for layer in self.layers:
+            layer_acts = acts.get(layer, {})
+            if not layer_acts:
+                continue
+
+            if layer not in mlp_output_grads:
+                # No gradient captured; fall back to activation magnitude
+                for feat, val in layer_acts.items():
+                    attributions[(layer, feat)] = val
+                continue
+
+            grad = mlp_output_grads[layer]  # (d_model,) float32 on CPU after detach
+            tc = self.transcoder_set[layer]
+
+            feat_indices = list(layer_acts.keys())
+            feat_vals = torch.tensor(
+                [layer_acts[f] for f in feat_indices], dtype=torch.float32
+            )
+
+            # W_dec: (d_tc, d_model); slice rows for our top-k features
+            with torch.no_grad():
+                W_dec_sub = tc.W_dec[feat_indices, :].float().cpu()  # (n_feats, d_model)
+
+            grad_cpu = grad.cpu()
+            # ∂Δlogit/∂a_k ≈ grad_mlp_out · W_dec[k, :]
+            dot_products = (W_dec_sub @ grad_cpu.unsqueeze(-1)).squeeze(-1)  # (n_feats,)
+            attr_scores = feat_vals * dot_products  # a_k × grad_k
+
+            for feat_idx, score in zip(feat_indices, attr_scores.tolist()):
+                attributions[(layer, feat_idx)] = float(score)
+
+        return attributions
+
     def _find_content_word_samples(self, prompt_idx: int) -> Tuple[List[int], str]:
         """
         Find position_map sample indices for content-word tokens in this prompt.
@@ -1029,17 +1147,18 @@ class TranscoderAttributionBuilder:
         n_fr = len(fr_prompt_set)
         logger.info(f"Language split: EN={n_en}, FR={n_fr}")
 
-        # ── 2. Decision graph ────────────────────────────────────────────────
-        beta = self.compute_beta(prompt_indices)
-
+        # ── 2. Decision graph (gradient × activation attribution) ───────────
         # Per-prompt top-k; track per-language counts for "both" node attrs
         feature_scores: Dict[Tuple[int, int], list] = defaultdict(list)
         feature_en_count: Dict[Tuple[int, int], int] = defaultdict(int)
         feature_fr_count: Dict[Tuple[int, int], int] = defaultdict(int)
 
-        for p in tqdm(prompt_indices, desc="Decision: per-prompt top-k"):
+        for p in tqdm(prompt_indices, desc="Decision: per-prompt gradient attribution"):
             lang = self.prompts[p].get("language", "en")
-            topk = self.top_features_for_prompt(p, beta, k=k_per_prompt)
+            # gradient × activation attribution (α_k = a_k × ∂Δlogit/∂a_k)
+            attr_scores = self.compute_per_prompt_gradient_attribution(p)
+            # Take top-k by |attribution score|
+            topk = sorted(attr_scores.items(), key=lambda kv: abs(kv[1]), reverse=True)[:k_per_prompt]
             for (layer, feat), score in topk:
                 feature_scores[(layer, feat)].append(float(score))
                 if lang == "en":
@@ -1074,22 +1193,25 @@ class TranscoderAttributionBuilder:
             mean_score_missing0 = float(np.sum(scores) / N)
             mean_abs_missing0 = float(np.sum([abs(s) for s in scores]) / N)
             specific_score = mean_abs_given * (1.0 - freq)
+            grad_attr_sign = int(1 if mean_score_given > 0 else (-1 if mean_score_given < 0 else 0))
 
-            b = beta.get((layer, feat), 0.0)
             attrs = dict(
                 type="feature",
                 layer=int(layer),
                 feature_idx=int(feat),
                 n_prompts=int(n_seen),
                 frequency=float(freq),
+                # Gradient attribution fields (primary)
+                mean_grad_attr_conditional=mean_score_given,
+                mean_abs_grad_attr_conditional=mean_abs_given,
+                grad_attr_sign=grad_attr_sign,
+                # Legacy-compatible aliases (for backward compat with script 07/08)
                 mean_score_conditional=mean_score_given,
                 mean_abs_score_conditional=mean_abs_given,
+                specific_score=float(specific_score),
                 std_score=std_score,
                 mean_score_missing0=mean_score_missing0,
                 mean_abs_missing0=mean_abs_missing0,
-                specific_score=float(specific_score),
-                beta=float(b),
-                beta_sign=int(1 if b > 0 else (-1 if b < 0 else 0)),
                 position_role="decision",
                 causal_status="output_attributed",
             )

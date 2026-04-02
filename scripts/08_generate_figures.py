@@ -149,25 +149,27 @@ def visualize_importance_results(
     df = importance_df.copy()
     
     # Handle possible column name variations
-    # We need: layer, feature_idx, correlation_with_logit_diff (signed), abs_correlation
-    
-    # 1. Check for signed correlation
+    # We need: layer, feature_idx, a signed attribution column, and an abs attribution column
+
+    # 1. Check for signed attribution (gradient-based first, then legacy correlation)
     signed_col = None
-    for c in ["correlation_with_logit_diff", "correlation", "corr"]:
+    for c in ["mean_grad_attr_conditional", "correlation_with_logit_diff", "correlation", "corr"]:
         if c in df.columns:
             signed_col = c
             break
-            
-    # 2. Check for abs correlation
-    abs_col = "abs_correlation" 
-    if abs_col not in df.columns:
-        if "abs_corr" in df.columns:
-            abs_col = "abs_corr"
-        elif signed_col:
-            df[abs_col] = df[signed_col].abs()
-        else:
-            print(f"  Importance DF missing correlation columns. Found: {df.columns}")
-            return
+
+    # 2. Check for abs attribution (gradient-based first, then legacy)
+    abs_col = None
+    for c in ["mean_abs_grad_attr_conditional", "abs_correlation", "abs_corr"]:
+        if c in df.columns:
+            abs_col = c
+            break
+    if abs_col is None and signed_col is not None:
+        abs_col = "abs_attribution"
+        df[abs_col] = df[signed_col].abs()
+    elif abs_col is None:
+        print(f"  Importance DF missing attribution columns. Found: {df.columns.tolist()}")
+        return
             
     if signed_col is None:
         # If we only have abs, we can't show sign color, but can still plot
@@ -205,16 +207,16 @@ def visualize_importance_results(
     ax.set_yticklabels(top["label"], fontsize=9)
     ax.axvline(0, color="black", linewidth=0.8)
     ax.invert_yaxis()
-    ax.set_title(f"Top {len(top)} Features by |corr| (signed shown)\n{behaviour}")
-    ax.set_xlabel(f"Correlation ({signed_col})")
+    ax.set_title(f"Top {len(top)} Features by |attribution| (signed shown)\n{behaviour}")
+    ax.set_xlabel(f"Attribution ({signed_col})")
 
-    # (B) Per-layer mean/max abs corr
+    # (B) Per-layer mean/max abs attribution
     ax = axes[1]
-    ax.plot(by_layer["layer"], by_layer["mean_abs"], marker="o", label="Mean |corr|")
-    ax.plot(by_layer["layer"], by_layer["max_abs"], marker="o", label="Max |corr|")
+    ax.plot(by_layer["layer"], by_layer["mean_abs"], marker="o", label="Mean |attr|")
+    ax.plot(by_layer["layer"], by_layer["max_abs"], marker="o", label="Max |attr|")
     ax.set_title("Importance summary by layer")
     ax.set_xlabel("Layer")
-    ax.set_ylabel("|Correlation|")
+    ax.set_ylabel("|Attribution|")
     ax.legend()
 
     plt.tight_layout()

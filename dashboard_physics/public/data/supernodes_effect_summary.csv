@@ -1,0 +1,7 @@
+cluster_id,n_features,representative,method,missingness_rate
+0,18,L23_F51949,agglomerative,0.9445031712473573
+4,5,L10_F0,agglomerative,0.9445031712473573
+5,5,L11_F0,agglomerative,0.9445031712473573
+3,5,L12_F0,agglomerative,0.9445031712473573
+1,5,L20_F0,agglomerative,0.9445031712473573
+2,5,L25_F152169,agglomerative,0.9445031712473573

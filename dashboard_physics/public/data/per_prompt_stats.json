@@ -1,0 +1,1342 @@
+{
+  "0": {
+    "prompt": "Given a well-behaved function, The quantity angular momentum is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "angular momentum",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.45263671875,
+        "mean_effect": -0.23388671875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.125
+      },
+      "patching": {
+        "mean_abs_effect": 0.3623046875,
+        "mean_effect": -0.0400390625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 1.953125
+      },
+      "steering": {
+        "mean_abs_effect": 0.5071614583333334,
+        "mean_effect": -0.20247395833333334,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.125
+      }
+    }
+  },
+  "1": {
+    "prompt": "In classical electromagnetism, Taking the grad of temperature field gives a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.74609375,
+        "mean_effect": -0.66015625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.0625
+      },
+      "patching": {
+        "mean_abs_effect": 0.48828125,
+        "mean_effect": -0.36328125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.25
+      },
+      "steering": {
+        "mean_abs_effect": 0.9322916666666666,
+        "mean_effect": -0.890625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.0625
+      }
+    }
+  },
+  "2": {
+    "prompt": "Consider a smooth field in three dimensions. In vector calculus, the grad of a pressure field is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.58203125,
+        "mean_effect": -0.36328125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 5.6875
+      },
+      "patching": {
+        "mean_abs_effect": 0.5,
+        "mean_effect": -0.333984375,
+        "sign_flip_rate": 0.25,
+        "mean_baseline": 0.5625
+      },
+      "steering": {
+        "mean_abs_effect": 0.78515625,
+        "mean_effect": -0.6705729166666666,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 5.6875
+      }
+    }
+  },
+  "3": {
+    "prompt": "In classical electromagnetism, Computing the cross product of two vectors yields a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "cross product",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.513671875,
+        "mean_effect": -0.431640625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.375
+      },
+      "patching": {
+        "mean_abs_effect": 0.68359375,
+        "mean_effect": -0.22265625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.875
+      },
+      "steering": {
+        "mean_abs_effect": 0.7395833333333334,
+        "mean_effect": -0.4479166666666667,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.375
+      }
+    }
+  },
+  "4": {
+    "prompt": "In the framework of classical field theory, Computing the rot of velocity field yields a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.4423828125,
+        "mean_effect": -0.2392578125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0
+      },
+      "patching": {
+        "mean_abs_effect": 0.46484375,
+        "mean_effect": -0.31640625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.8125
+      },
+      "steering": {
+        "mean_abs_effect": 0.5104166666666666,
+        "mean_effect": -0.1875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0
+      }
+    }
+  },
+  "5": {
+    "prompt": "In the study of fluid dynamics, The rot of a velocity field produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.4296875,
+        "mean_effect": -0.2421875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      },
+      "patching": {
+        "mean_abs_effect": 0.470703125,
+        "mean_effect": -0.375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 3.078125
+      },
+      "steering": {
+        "mean_abs_effect": 0.4309895833333333,
+        "mean_effect": -0.25390625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      }
+    }
+  },
+  "6": {
+    "prompt": "For a physical system in equilibrium, Taking the Laplacian of temperature field gives a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "laplacian_scalar",
+    "operator_name": "Laplacian",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.30859375,
+        "mean_effect": -0.060546875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 1.953125
+      },
+      "patching": {
+        "mean_abs_effect": 0.6982421875,
+        "mean_effect": -0.5751953125,
+        "sign_flip_rate": 0.0625,
+        "mean_baseline": 1.7578125
+      },
+      "steering": {
+        "mean_abs_effect": 0.6015625,
+        "mean_effect": -0.2942708333333333,
+        "sign_flip_rate": 0.08333333333333333,
+        "mean_baseline": 1.953125
+      }
+    }
+  },
+  "7": {
+    "prompt": "In classical electromagnetism, Computing the inner product of two vectors yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "inner product",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.46875,
+        "mean_effect": -0.359375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.25
+      },
+      "patching": {
+        "mean_abs_effect": 0.60546875,
+        "mean_effect": -0.35546875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.9375
+      },
+      "steering": {
+        "mean_abs_effect": 0.9166666666666666,
+        "mean_effect": -0.8333333333333334,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.25
+      }
+    }
+  },
+  "8": {
+    "prompt": "Given a well-behaved function, The Laplacian of a pressure field produces a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "laplacian_scalar",
+    "operator_name": "Laplacian",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.509765625,
+        "mean_effect": -0.33984375,
+        "sign_flip_rate": 0.3125,
+        "mean_baseline": 0.5625
+      },
+      "patching": {
+        "mean_abs_effect": 0.5927734375,
+        "mean_effect": -0.3818359375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      },
+      "steering": {
+        "mean_abs_effect": 0.4609375,
+        "mean_effect": -0.09635416666666667,
+        "sign_flip_rate": 0.16666666666666666,
+        "mean_baseline": 0.5625
+      }
+    }
+  },
+  "9": {
+    "prompt": "Recall from vector calculus that The result of applying the div to a vector field is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.7734375,
+        "mean_effect": -0.2265625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.875
+      },
+      "patching": {
+        "mean_abs_effect": 0.296875,
+        "mean_effect": -0.2890625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.125
+      },
+      "steering": {
+        "mean_abs_effect": 0.8020833333333334,
+        "mean_effect": -0.19791666666666666,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.875
+      }
+    }
+  },
+  "10": {
+    "prompt": "In the framework of classical field theory, Computing the scalar product of two vectors yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.46875,
+        "mean_effect": -0.3125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.8125
+      },
+      "patching": {
+        "mean_abs_effect": 0.861328125,
+        "mean_effect": -0.56640625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 3.796875
+      },
+      "steering": {
+        "mean_abs_effect": 0.8385416666666666,
+        "mean_effect": -0.6822916666666666,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.8125
+      }
+    }
+  },
+  "11": {
+    "prompt": "Computing the divergence of electric field yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "divergence",
+    "context_prefix": "",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.4384765625,
+        "mean_effect": -0.3427734375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 3.078125
+      },
+      "patching": {
+        "mean_abs_effect": 0.486328125,
+        "mean_effect": -0.267578125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.125
+      },
+      "steering": {
+        "mean_abs_effect": 0.6940104166666666,
+        "mean_effect": -0.5950520833333334,
+        "sign_flip_rate": 0.08333333333333333,
+        "mean_baseline": 3.078125
+      }
+    }
+  },
+  "12": {
+    "prompt": "In classical electromagnetism, The quantity velocity is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "velocity",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.33642578125,
+        "mean_effect": -0.18017578125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.625
+      },
+      "patching": {
+        "mean_abs_effect": 0.78125,
+        "mean_effect": -0.7109375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.0625
+      },
+      "steering": {
+        "mean_abs_effect": 0.4485677083333333,
+        "mean_effect": -0.13606770833333334,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.625
+      }
+    }
+  },
+  "13": {
+    "prompt": "Given a well-behaved function, Computing the div of velocity field yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.681640625,
+        "mean_effect": -0.52734375,
+        "sign_flip_rate": 0.0625,
+        "mean_baseline": 1.7578125
+      },
+      "patching": {
+        "mean_abs_effect": 0.6015625,
+        "mean_effect": -0.3359375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 5.6875
+      },
+      "steering": {
+        "mean_abs_effect": 0.7526041666666666,
+        "mean_effect": -0.6315104166666666,
+        "sign_flip_rate": 0.08333333333333333,
+        "mean_baseline": 1.7578125
+      }
+    }
+  },
+  "14": {
+    "prompt": "For a physical system in equilibrium, force field is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "field_vector",
+    "operator_name": "force field",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.279296875,
+        "mean_effect": -0.169921875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 1.75
+      },
+      "patching": {
+        "mean_abs_effect": 0.529296875,
+        "mean_effect": -0.427734375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 7.375
+      },
+      "steering": {
+        "mean_abs_effect": 0.43359375,
+        "mean_effect": -0.16536458333333334,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 1.75
+      }
+    }
+  },
+  "15": {
+    "prompt": "In classical electromagnetism, Computing the scalar product of two vectors yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.56640625,
+        "mean_effect": -0.34765625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.9375
+      },
+      "patching": {
+        "mean_abs_effect": 0.451171875,
+        "mean_effect": -0.263671875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0
+      },
+      "steering": {
+        "mean_abs_effect": 1.0729166666666667,
+        "mean_effect": -0.78125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.9375
+      }
+    }
+  },
+  "16": {
+    "prompt": "Given a well-behaved function, mass is classified as a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "mass",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.60546875,
+        "mean_effect": -0.37890625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      },
+      "patching": {
+        "mean_abs_effect": 0.43359375,
+        "mean_effect": -0.24609375,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      },
+      "steering": {
+        "mean_abs_effect": 0.7643229166666666,
+        "mean_effect": -0.6393229166666666,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.0625
+      }
+    }
+  },
+  "17": {
+    "prompt": "The inner product between two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "inner product",
+    "context_prefix": "",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.28125,
+        "mean_effect": -0.265625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.125
+      },
+      "patching": {
+        "mean_abs_effect": 0.38232421875,
+        "mean_effect": -0.24169921875,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 2.625
+      },
+      "steering": {
+        "mean_abs_effect": 0.796875,
+        "mean_effect": -0.703125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 6.125
+      }
+    }
+  },
+  "18": {
+    "prompt": "In the framework of classical field theory, The result of the vector product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "vector product",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.4560546875,
+        "mean_effect": 0.0439453125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.75
+      },
+      "patching": {
+        "mean_abs_effect": 0.314453125,
+        "mean_effect": -0.205078125,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 1.75
+      },
+      "steering": {
+        "mean_abs_effect": 0.7395833333333334,
+        "mean_effect": 0.4270833333333333,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.75
+      }
+    }
+  },
+  "19": {
+    "prompt": "In the study of fluid dynamics, In linear algebra, the scalar product of two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {
+      "ablation": {
+        "mean_abs_effect": 0.8515625,
+        "mean_effect": -0.572265625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 3.796875
+      },
+      "patching": {
+        "mean_abs_effect": 0.4287109375,
+        "mean_effect": 0.0087890625,
+        "sign_flip_rate": 0.0,
+        "mean_baseline": 4.75
+      },
+      "steering": {
+        "mean_abs_effect": 1.0390625,
+        "mean_effect": -0.7291666666666666,
+        "sign_flip_rate": 0.08333333333333333,
+        "mean_baseline": 3.796875
+      }
+    }
+  },
+  "20": {
+    "prompt": "In the framework of classical field theory, In physics, the curl of a velocity field is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "curl",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "21": {
+    "prompt": "In classical electromagnetism, Computing the vector product of two vectors yields a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "vector product",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "22": {
+    "prompt": "In physics, the curl of a force field is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "curl",
+    "context_prefix": "",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "23": {
+    "prompt": "Recall from vector calculus that Computing the divergence of magnetic field yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "divergence",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "24": {
+    "prompt": "The grad of a potential field produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "25": {
+    "prompt": "Consider a smooth field in three dimensions. Computing the div of electric field yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "26": {
+    "prompt": "Consider a smooth field in three dimensions. The vector product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "vector product",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "27": {
+    "prompt": "Given a well-behaved function, The rot of a vector potential produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "28": {
+    "prompt": "In classical electromagnetism, In physics, electric potential is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "electric_potential",
+    "operator_name": "electric potential",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "contrast",
+    "category_label": "Key contrast",
+    "interventions": {}
+  },
+  "29": {
+    "prompt": "For a physical system in equilibrium, The result of applying Laplacian to a temperature field is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "laplacian_scalar",
+    "operator_name": "Laplacian",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "30": {
+    "prompt": "In classical electromagnetism, The inner product between two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "inner product",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "31": {
+    "prompt": "In the study of fluid dynamics, The result of the dot product of two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "dot product",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "32": {
+    "prompt": "Given a well-behaved function, The result of applying the divergence to a magnetic field is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "divergence",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "33": {
+    "prompt": "In classical electromagnetism, Computing the div of vector field yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "34": {
+    "prompt": "Given a well-behaved function, The quantity mass is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "mass",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "35": {
+    "prompt": "Consider a smooth field in three dimensions. Taking the grad of potential field gives a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "36": {
+    "prompt": "Recall from vector calculus that The result of the scalar product of two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "37": {
+    "prompt": "In the study of fluid dynamics, The cross product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "cross product",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "38": {
+    "prompt": "The result of the vector product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "vector product",
+    "context_prefix": "",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "39": {
+    "prompt": "Given a well-behaved function, The result of computing the grad of a pressure field is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "40": {
+    "prompt": "In gauge theory, magnetic vector potential is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "vector_potential",
+    "operator_name": "magnetic vector potential",
+    "context_prefix": "",
+    "category": "contrast",
+    "category_label": "Key contrast",
+    "interventions": {}
+  },
+  "41": {
+    "prompt": "In the study of fluid dynamics, The quantity pressure is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "pressure",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "42": {
+    "prompt": "Consider a smooth field in three dimensions. In linear algebra, the dot product of two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "dot product",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "43": {
+    "prompt": "For a physical system in equilibrium, The curl of a velocity field produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "curl",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "44": {
+    "prompt": "Recall from vector calculus that The vector potential of a magnetic field is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "vector_potential",
+    "operator_name": "vector potential",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "contrast",
+    "category_label": "Key contrast",
+    "interventions": {}
+  },
+  "45": {
+    "prompt": "For a physical system in equilibrium, The div of a electric field produces a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "46": {
+    "prompt": "In the study of fluid dynamics, Computing the dot product of two vectors yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "dot product",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "47": {
+    "prompt": "In the framework of classical field theory, The scalar product between two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "48": {
+    "prompt": "Consider a smooth field in three dimensions. In mechanics, work done is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "energy_quantity",
+    "operator_name": "work done",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "49": {
+    "prompt": "In the study of fluid dynamics, In classical mechanics, velocity is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "velocity",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "50": {
+    "prompt": "Given a well-behaved function, The cross product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "cross product",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "51": {
+    "prompt": "Given a well-behaved function, The scalar product between two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "scalar product",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "52": {
+    "prompt": "Recall from vector calculus that Taking the gradient of potential field gives a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "gradient",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "53": {
+    "prompt": "In physics, the rot of a force field is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "54": {
+    "prompt": "In the framework of classical field theory, The result of the cross product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "cross product",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "55": {
+    "prompt": "In the study of fluid dynamics, The result of the cross product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "cross product",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "56": {
+    "prompt": "Given a well-behaved function, Computing the curl of vector potential yields a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "curl",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "57": {
+    "prompt": "Consider a smooth field in three dimensions. In thermodynamics, mass is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "mass",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "58": {
+    "prompt": "For a physical system in equilibrium, The result of the vector product of two vectors is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "cross_product",
+    "operator_name": "vector product",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "59": {
+    "prompt": "Recall from vector calculus that The result of computing the gradient of a scalar potential is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "gradient",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "60": {
+    "prompt": "Consider a smooth field in three dimensions. Taking the Laplacian of pressure field gives a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "laplacian_scalar",
+    "operator_name": "Laplacian",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "61": {
+    "prompt": "Given a well-behaved function, The physical quantity density is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "density",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "62": {
+    "prompt": "Given a well-behaved function, The rot of a magnetic field produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "63": {
+    "prompt": "Consider a smooth field in three dimensions. kinetic energy is classified as a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "energy_quantity",
+    "operator_name": "kinetic energy",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "64": {
+    "prompt": "Recall from vector calculus that Computing the dot product of two vectors yields a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "dot product",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "65": {
+    "prompt": "In classical electromagnetism, The electrostatic potential in electrostatics is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "electric_potential",
+    "operator_name": "electrostatic potential",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "contrast",
+    "category_label": "Key contrast",
+    "interventions": {}
+  },
+  "66": {
+    "prompt": "In classical electromagnetism, Computing the rot of vector potential yields a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "67": {
+    "prompt": "Consider a smooth field in three dimensions. The inner product between two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "inner product",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "68": {
+    "prompt": "Consider a smooth field in three dimensions. In physics, the rot of a magnetic field is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "curl",
+    "operator_name": "rot",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "69": {
+    "prompt": "Given a well-behaved function, The quantity temperature is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "thermodynamic_scalar",
+    "operator_name": "temperature",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "70": {
+    "prompt": "In the study of fluid dynamics, The physical quantity torque is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "torque",
+    "context_prefix": "In the study of fluid dynamics,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "71": {
+    "prompt": "In the framework of classical field theory, The result of the inner product of two vectors is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "dot_product",
+    "operator_name": "inner product",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "easy_lexical",
+    "category_label": "Easy (lexical)",
+    "interventions": {}
+  },
+  "72": {
+    "prompt": "In classical electromagnetism, In classical mechanics, force is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "force",
+    "context_prefix": "In classical electromagnetism,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "73": {
+    "prompt": "In the framework of classical field theory, In physics, the div of a velocity field is classified as a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "div",
+    "context_prefix": "In the framework of classical field theory,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "74": {
+    "prompt": "Recall from vector calculus that The force field at a point in space is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "field_vector",
+    "operator_name": "force field",
+    "context_prefix": "Recall from vector calculus that",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "75": {
+    "prompt": "Given a well-behaved function, The divergence of a electric field produces a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "divergence",
+    "operator_name": "divergence",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  },
+  "76": {
+    "prompt": "Consider a smooth field in three dimensions. The quantity gravitational field is a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "field_vector",
+    "operator_name": "gravitational field",
+    "context_prefix": "Consider a smooth field in three dimensions.",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "77": {
+    "prompt": "For a physical system in equilibrium, velocity is classified as a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "mechanics_vector",
+    "operator_name": "velocity",
+    "context_prefix": "For a physical system in equilibrium,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "78": {
+    "prompt": "Given a well-behaved function, The potential energy of a charged particle in an electric field is a",
+    "correct_answer": "scalar",
+    "incorrect_answer": "vector",
+    "label": "scalar",
+    "physics_concept": "energy_quantity",
+    "operator_name": "potential energy",
+    "context_prefix": "Given a well-behaved function,",
+    "category": "named_quantity",
+    "category_label": "Named quantity",
+    "interventions": {}
+  },
+  "79": {
+    "prompt": "The grad of a scalar field produces a",
+    "correct_answer": "vector",
+    "incorrect_answer": "scalar",
+    "label": "vector",
+    "physics_concept": "gradient",
+    "operator_name": "grad",
+    "context_prefix": "",
+    "category": "operator",
+    "category_label": "Operator (harder)",
+    "interventions": {}
+  }
+}

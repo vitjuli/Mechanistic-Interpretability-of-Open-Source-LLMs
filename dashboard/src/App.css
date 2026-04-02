@@ -1,0 +1,259 @@
+.app {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  grid-template-columns: var(--left-width) 1fr var(--right-width);
+  grid-template-rows: 1fr var(--bottom-height);
+  grid-template-areas:
+    "left center right"
+    "left bottom bottom";
+  gap: 1px;
+  background: var(--border);
+}
+
+.app.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.panel {
+  background: var(--bg-panel);
+  overflow: auto;
+  padding: var(--panel-padding);
+}
+
+.panel-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-center {
+  grid-area: center;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.panel-right {
+  grid-area: right;
+}
+
+.panel-bottom {
+  grid-area: bottom;
+  padding: 0;
+}
+
+/* Panel headers */
+.panel-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Control group styling */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-group label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.control-group select,
+.control-group input[type="text"],
+.control-group input[type="number"],
+.control-group input[type="range"] {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  outline: none;
+}
+
+.control-group select:focus,
+.control-group input:focus {
+  border-color: var(--accent);
+}
+
+/* Checkbox / toggle */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+}
+
+/* Multi-select chips */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.chip:hover {
+  border-color: var(--accent-hover);
+}
+
+/* Loading spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-dim);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Reset button */
+.btn-reset {
+  padding: 4px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.btn-reset:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Title bar */
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title-bar h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Prompt tooltip */
+.prompt-tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  max-width: 260px;
+}
+
+.prompt-tooltip-text {
+  color: var(--text);
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.prompt-tooltip-tokens {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.prompt-tooltip-correct {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.prompt-tooltip-incorrect {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Feature inspection chips */
+.inspect-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  user-select: none;
+}
+
+.inspect-chip-x {
+  cursor: pointer;
+  opacity: 0.7;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.inspect-chip-x:hover {
+  opacity: 1;
+}

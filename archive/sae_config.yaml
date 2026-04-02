@@ -1,0 +1,50 @@
+# Sparse Autoencoder Configuration
+# Based on Anthropic's "Towards Monosemanticity" and the Biology paper methodology
+
+# SAE Architecture
+architecture:
+  type: "standard"              # standard | top_k | gated
+  expansion_factor: 4           # Latent dim = hidden_dim * expansion_factor
+  activation: "relu"            # relu | jumprelu
+  pre_bias: true                # Learned centering offset
+  decoder_norm: true            # Unit-norm decoder columns
+
+# Training Hyperparameters
+training:
+  learning_rate: 0.0003
+  l1_lambda: 0.005              # Sparsity penalty coefficient
+  batch_size: 256
+  max_steps: 50000
+  validation_split: 0.2
+  optimizer: "adam"
+  weight_decay: 0.0
+  lr_scheduler: null            # null | cosine | linear_warmup
+  warmup_steps: 1000
+
+# Quality Thresholds
+thresholds:
+  reconstruction_target: 0.85   # Minimum R-squared on validation
+  dead_neuron_threshold: 0.2    # Max fraction of inactive features
+  min_l0_sparsity: 0.001        # Minimum fraction of active features
+
+# Checkpointing
+checkpointing:
+  save_every: 5000              # Steps between checkpoints
+  keep_best: true               # Save best model by val R-squared
+  keep_last: true               # Save final model
+  max_checkpoints: 5            # Maximum checkpoints to keep
+
+# Layer Selection
+layers:
+  range: [10, 25]               # Layers to train SAEs for
+  priority: [12, 15, 18, 21]    # Layers to train first (most informative)
+  components: ["mlp"]           # Which components to decompose
+
+# Evaluation Metrics
+metrics:
+  - reconstruction_mse          # Mean squared error
+  - r_squared                   # Variance explained
+  - l0_sparsity                 # Fraction of active features per sample
+  - l1_sparsity                 # Mean absolute activation
+  - dead_feature_fraction       # Features that never activate
+  - feature_frequency           # How often each feature activates
