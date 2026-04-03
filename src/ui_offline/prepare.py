@@ -405,7 +405,8 @@ def build_common_index(df: pd.DataFrame, audit: Dict) -> Tuple[List[int], List[i
 # Graph loading — prefer JSON, fall back to GraphML
 # ---------------------------------------------------------------------------
 
-def load_attribution_graph(graphs_dir: Path, split: str, graph_n_prompts: int):
+def load_attribution_graph(graphs_dir: Path, split: str, graph_n_prompts: int,
+                           graph_suffix: str = ""):
     """
     Load the attribution graph, preferring the JSON format over GraphML.
 
@@ -418,8 +419,9 @@ def load_attribution_graph(graphs_dir: Path, split: str, graph_n_prompts: int):
         logger.error("networkx not installed — cannot load graph.")
         return None, None
 
-    json_path = graphs_dir / f"attribution_graph_{split}_n{graph_n_prompts}.json"
-    graphml_path = graphs_dir / f"attribution_graph_{split}_n{graph_n_prompts}.graphml"
+    base = f"attribution_graph_{split}_n{graph_n_prompts}{graph_suffix}"
+    json_path = graphs_dir / f"{base}.json"
+    graphml_path = graphs_dir / f"{base}.graphml"
 
     if json_path.exists():
         logger.info(f"Loading graph from JSON (preferred): {json_path}")
@@ -842,6 +844,7 @@ def prepare_all(
     run_id: str,
     community_method: str = "louvain",
     effect_clusters: Optional[int] = None,
+    graph_suffix: str = "",
 ) -> Path:
     """
     Run the full offline data preparation pipeline.
@@ -865,7 +868,8 @@ def prepare_all(
     raw_source_files = copy_raw_sources(results_dir, behaviour, run_dir)
 
     # ===== Load attribution graph (prefer JSON, fallback GraphML) =====
-    G_attr, graph_source_path = load_attribution_graph(graphs_dir, split, graph_n_prompts)
+    G_attr, graph_source_path = load_attribution_graph(graphs_dir, split, graph_n_prompts,
+                                                        graph_suffix=graph_suffix)
     if graph_source_path:
         logger.info(f"Graph source: {graph_source_path}")
     else:

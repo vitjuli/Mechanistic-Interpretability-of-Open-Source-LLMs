@@ -1101,6 +1101,7 @@ class TranscoderAttributionBuilder:
         vw_threshold: Optional[float] = None,
         k_content: int = 10,
         min_lang_asym: float = 0.0,
+        top_k_per_layer: Optional[int] = None,
     ) -> nx.DiGraph:
         """
         Build role-aware attribution graph: decision nodes + content-word nodes.
@@ -1229,6 +1230,30 @@ class TranscoderAttributionBuilder:
             f"Decision nodes: {decision_added} added "
             f"(skipped_rare={skipped_rare}, skipped_always_on={skipped_always_on})"
         )
+
+        # ── 2b. Optional per-layer top-k pruning ─────────────────────────────
+        # Remove nodes that don't make the top-k cut per layer.
+        # Applied after the frequency/min_prompts filter so thresholds still apply;
+        # top-k is an additional constraint that limits graph size.
+        if top_k_per_layer is not None and top_k_per_layer > 0:
+            from collections import defaultdict as _dd
+            by_layer: dict = _dd(list)
+            for (layer, feat) in list(included_features):
+                score = abs(decision_attrs[(layer, feat)].get("mean_abs_grad_attr_conditional", 0.0))
+                by_layer[layer].append(((layer, feat), score))
+            removed_count = 0
+            for layer, candidates in by_layer.items():
+                candidates.sort(key=lambda x: x[1], reverse=True)
+                for (lyr, ft), _ in candidates[top_k_per_layer:]:
+                    feat_id = f"L{lyr}_F{ft}"
+                    G.remove_node(feat_id)
+                    included_features.discard((lyr, ft))
+                    del decision_attrs[(lyr, ft)]
+                    removed_count += 1
+            logger.info(
+                f"top_k_per_layer={top_k_per_layer}: removed {removed_count} nodes, "
+                f"{len(included_features)} decision nodes remain"
+            )
 
         # ── 3. VW edges for decision nodes ───────────────────────────────────
         n_vw = 0
@@ -1615,6 +1640,13 @@ def main():
         default="",
         help="Suffix appended to output filename (e.g. '_roleaware').",
     )
+    parser.add_argument(
+        "--top_k_per_layer",
+        type=int,
+        default=None,
+        help="(role_aware only) Keep top-k features per layer by mean_abs_grad_attr_conditional. "
+             "Applied after frequency/min_prompts filters. None = keep all (default).",
+    )
     args = parser.parse_args()
 
     # Load configs
@@ -1850,6 +1882,7 @@ def main():
                 vw_threshold=args.vw_threshold,
                 k_content=args.k_content,
                 min_lang_asym=args.min_lang_asym,
+                top_k_per_layer=args.top_k_per_layer,
             )
         else:
             print(f"\nBuilding per-prompt union attribution graph...")

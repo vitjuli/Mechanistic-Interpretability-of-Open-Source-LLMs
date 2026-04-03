@@ -78,6 +78,11 @@ def main():
         "--config", type=str, default="configs/experiment_config.yaml",
         help="Path to experiment config for results path",
     )
+    parser.add_argument(
+        "--graph_suffix", type=str, default="",
+        help="Suffix appended to attribution graph filename before .json "
+             "(e.g. '_roleaware_k3_t05'). Default: empty (standard graph).",
+    )
     args = parser.parse_args()
 
     # Load config for results path
@@ -118,6 +123,7 @@ def main():
         run_id=args.run_id,
         community_method=args.community_method,
         effect_clusters=args.effect_clusters,
+        graph_suffix=args.graph_suffix,
     )
 
     print("\n" + "=" * 70)

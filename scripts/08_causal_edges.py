@@ -1790,6 +1790,10 @@ def main():
                              "circuit feature nodes already in that file. "
                              "Needs model + GPU. Updates the circuits JSON in-place, "
                              "preserving paths/circuit; also rewrites presentation graph.")
+    parser.add_argument("--circuits_output", type=str, default=None,
+                        help="Override default circuits output path "
+                             "(default: data/results/causal_edges/<behaviour>/circuits_<behaviour>_<split>.json). "
+                             "Useful when running sparsified graph variants.")
     args = parser.parse_args()
 
     config    = load_config()
@@ -1820,7 +1824,11 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     causal_edges_path = out_dir / f"causal_edges_{args.behaviour}_{args.split}.json"
-    circuits_path     = out_dir / f"circuits_{args.behaviour}_{args.split}.json"
+    if args.circuits_output:
+        circuits_path = Path(args.circuits_output)
+        circuits_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        circuits_path = out_dir / f"circuits_{args.behaviour}_{args.split}.json"
     manifest_path     = out_dir / f"manifest_{args.behaviour}_{args.split}.json"
 
     # ── Failure-fast: output directory writable ────────────────────────────

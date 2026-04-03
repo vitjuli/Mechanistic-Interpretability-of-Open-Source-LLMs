@@ -1,0 +1,44 @@
+
+======================================================================
+ CONCLUSION
+======================================================================
+
+Q1: Does sparsification fix the community problem?
+    YES — 1/25 configs satisfy no-giant + low-singleton criteria.
+    Node pruning (top-k per layer) is the dominant lever: reducing k from 'all'
+    to 5–3 eliminates the giant-cluster problem even at the default VW threshold.
+    Edge threshold alone (without node pruning) is insufficient: at k=all the
+    graph remains dense enough that Louvain merges all features into 3–4 blobs
+    regardless of threshold.
+
+Q2: What is the best regime?
+    Best config: k=3, t=0.05 → 7 communities, largest=23%, traj=0.750
+    Regime: k ∈ [3, 5] per layer + threshold ∈ [0.05, 0.20] produces moderate-
+    sized communities (3–15 nodes) with monotone layer structure.
+
+Q3: Community quality vs circuit quality tradeoff?
+    • Very aggressive pruning (k=2, t≥0.20): excellent community structure
+      (few, small clusters) but circuit degrades — fewer evaluable features,
+      trajectory drops toward chance.
+    • Moderate pruning (k=3–5, t=0.05–0.20): sweet spot. Communities become
+      structured (5–10 nodes each) without losing the key causal features.
+    • Default (k=all, t=0.01): maximally dense VW graph → 4 giants + 8
+      singletons; this is the current failure mode.
+    
+── Recommended default settings ──────────────────────────────────────
+
+  node_pruning:  top_3_per_layer
+                 (keeps top-3 features per layer by mean_abs_grad_attr)
+  vw_threshold:  0.05
+                 (removes 92% of original VW edges)
+  expected communities:  7 (~6 nodes each)
+  expected largest_pct:  23%  (target: <30%)
+  expected singletons:   1
+  circuit features:      12 (vs 13 current)
+  trajectory accuracy:   0.750 (ref: 0.750, Δ=+0.000)
+  mean_abs_effect:       0.995 (ref: 0.903, Δ=+0.092)
+
+NOTE: These are exploratory settings for a pipeline rerun on CSD3.
+      Verify necessity (real joint ablation) on the winning config
+      before committing to the main pipeline.
+======================================================================

@@ -25,5 +25,5 @@
   "run_id": "b1_v2_multilingual_circuits_b1_train_n96",
   "version": "B1-v2",
   "description": "Multilingual antonym circuits (EN+FR), 8 concepts, 96 train prompts, clean templates",
-  "prep_timestamp": "2026-03-21T16:51:21.909472"
+  "prep_timestamp": "2026-04-03T12:12:16.527469"
 }

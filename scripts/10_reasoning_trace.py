@@ -87,6 +87,10 @@ def parse_args():
                    help="Output directory (default: data/results/reasoning_traces/{behaviour})")
     p.add_argument("--no_figures", action="store_true",
                    help="Skip matplotlib figure generation")
+    p.add_argument("--circuits_json", default=None,
+                   help="Override default circuits JSON path "
+                        "(default: data/results/causal_edges/<behaviour>/circuits_<behaviour>_<split>.json). "
+                        "Useful when running sparsified graph variants.")
     return p.parse_args()
 
 
@@ -948,7 +952,13 @@ def main():
 
     # ── Load inputs ───────────────────────────────────────────────────────────
     print("\nLoading inputs...")
-    circuit = load_circuit(args.behaviour, args.split)
+    if args.circuits_json:
+        _cpath = Path(args.circuits_json)
+        if not _cpath.exists():
+            raise FileNotFoundError(f"circuits_json not found: {_cpath}")
+        circuit = json.loads(_cpath.read_text())
+    else:
+        circuit = load_circuit(args.behaviour, args.split)
     _causal_edges = load_causal_edges(args.behaviour, args.split)  # loaded for future use
 
     run_id = args.run_id or find_run_id(args.behaviour, args.split)
