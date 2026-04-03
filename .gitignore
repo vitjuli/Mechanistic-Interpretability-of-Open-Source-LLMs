@@ -108,3 +108,6 @@ figures/
 # REMOVE jobs/ from ignore below.
 # If not — keep it.
 # jobs/
+# Node.js
+node_modules/
+**/node_modules/
