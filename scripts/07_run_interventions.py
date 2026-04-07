@@ -178,16 +178,20 @@ def load_attribution_graph(
     behaviour: str,
     split: str = "train",
     n_prompts: Optional[int] = None,
+    graph_suffix: str = "_roleaware",
 ) -> Dict:
     """
     Load attribution graph to get top attributed features.
-    
+
     Args:
         results_path: Base results directory
         behaviour: Behaviour name (e.g., "grammar_agreement")
         split: Data split ("train" or "test")
         n_prompts: Number of prompts (e.g., 20, 80). If None, tries to load without suffix first.
-    
+        graph_suffix: Suffix appended to graph filename before .json. Default "_roleaware"
+            loads the role-aware gradient×activation graph (canonical since FIX 1).
+            Pass "" for the plain per-prompt-union graph (legacy).
+
     Returns:
         Graph data dict or None if not found
     """
@@ -197,11 +201,24 @@ def load_attribution_graph(
     # Silent fallback to old naming easily loads the WRONG graph type (or wrong N)
     # and makes sign-based ablation collapse to 0 -> fallback to features [0..k].
     if n_prompts is not None:
-        graph_file = base_path / f"attribution_graph_{split}_n{n_prompts}.json"
+        # Try requested suffix first; if not found and suffix was _roleaware, try no suffix.
+        graph_file = base_path / f"attribution_graph_{split}_n{n_prompts}{graph_suffix}.json"
         if not graph_file.exists():
+            if graph_suffix:
+                fallback = base_path / f"attribution_graph_{split}_n{n_prompts}.json"
+                if fallback.exists():
+                    logger.warning(
+                        f"Roleaware graph not found: {graph_file}. "
+                        f"Falling back to plain graph: {fallback}. "
+                        "Run script 06 with --graph_node_mode role_aware to generate the "
+                        "canonical roleaware graph."
+                    )
+                    with open(fallback, "r") as f:
+                        return json.load(f)
             raise FileNotFoundError(
                 f"Expected attribution graph not found: {graph_file}. "
-                f"Run script 06 with matching --n_prompts (note: 06 may save n_prompts_used). "
+                f"Run script 06 with matching --n_prompts and --graph_node_mode role_aware "
+                f"(note: 06 may save n_prompts_used). "
                 f"Tip: in 07 pass --graph_n_prompts equal to the n_used printed by 06."
             )
         logger.info(f"Loading attribution graph: {graph_file}")
@@ -1848,6 +1865,15 @@ def main():
              "Defaults to --n_prompts if not set.",
     )
     parser.add_argument(
+        "--graph_suffix",
+        type=str,
+        default="_roleaware",
+        help="Suffix appended to attribution graph filename before .json "
+             "(default: '_roleaware' = canonical gradient×activation graph from FIX 1). "
+             "Pass '' to load the plain per-prompt-union graph (legacy β-proxy). "
+             "If the suffixed file is not found, falls back to the plain graph with a warning.",
+    )
+    parser.add_argument(
         "--allow_sharded",
         action="store_true",
         default=False,
@@ -2019,9 +2045,12 @@ def main():
             logger.info(f"Sources counts: {_count_numbers(source_prompts)}")
             
         # Load attribution graph — use --graph_n_prompts if set, else --n_prompts
+        # Default suffix "_roleaware" loads the canonical gradient×activation graph (FIX 1).
         graph_n = args.graph_n_prompts if args.graph_n_prompts is not None else args.n_prompts
         graph_data = load_attribution_graph(
-            results_path, behaviour, args.split, n_prompts=graph_n
+            results_path, behaviour, args.split,
+            n_prompts=graph_n,
+            graph_suffix=args.graph_suffix,
         )
         
         # Build per-layer feature index lists (unsigned and signed)

@@ -706,7 +706,23 @@ class TranscoderAttributionBuilder:
         
         Returns:
             NetworkX graph with union of per-prompt features
+
+        .. deprecated::
+            Use ``aggregate_graphs_role_aware()`` instead.
+            This method uses β-proxy scoring (activation × β_k) which is an
+            importance approximation. The role-aware method uses
+            gradient × activation attribution (activation_approx_v1 VW edges)
+            and is the canonical downstream graph for scripts 07+.
         """
+        import warnings
+        warnings.warn(
+            "aggregate_graphs_per_prompt_union() is deprecated. "
+            "Use aggregate_graphs_role_aware() with --graph_node_mode role_aware "
+            "for gradient×activation attribution (attribution_approx_v1 VW edges). "
+            "This β-proxy method will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # Seed-shuffled prompt selection: avoids dataset ordering bias
         rng = np.random.default_rng(seed)
         available_prompts = sorted(list(self.prompt_to_samples.keys()))
@@ -1102,6 +1118,7 @@ class TranscoderAttributionBuilder:
         k_content: int = 10,
         min_lang_asym: float = 0.0,
         top_k_per_layer: Optional[int] = None,
+        activation_weighted: bool = True,
     ) -> nx.DiGraph:
         """
         Build role-aware attribution graph: decision nodes + content-word nodes.
@@ -1153,11 +1170,16 @@ class TranscoderAttributionBuilder:
         feature_scores: Dict[Tuple[int, int], list] = defaultdict(list)
         feature_en_count: Dict[Tuple[int, int], int] = defaultdict(int)
         feature_fr_count: Dict[Tuple[int, int], int] = defaultdict(int)
+        # Raw activation values per feature — used for activation-weighted VW edges.
+        # Collected alongside attribution scores so we only call the model once per prompt.
+        feature_raw_acts: Dict[Tuple[int, int], list] = defaultdict(list)
 
         for p in tqdm(prompt_indices, desc="Decision: per-prompt gradient attribution"):
             lang = self.prompts[p].get("language", "en")
             # gradient × activation attribution (α_k = a_k × ∂Δlogit/∂a_k)
             attr_scores = self.compute_per_prompt_gradient_attribution(p)
+            # Raw activations from stored top_k data (cheap numpy read, no model inference)
+            raw_acts_p = self.collect_feature_activations(p)
             # Take top-k by |attribution score|
             topk = sorted(attr_scores.items(), key=lambda kv: abs(kv[1]), reverse=True)[:k_per_prompt]
             for (layer, feat), score in topk:
@@ -1166,6 +1188,9 @@ class TranscoderAttributionBuilder:
                     feature_en_count[(layer, feat)] += 1
                 else:
                     feature_fr_count[(layer, feat)] += 1
+                # Collect raw activation value if available at this token position
+                if layer in raw_acts_p and feat in raw_acts_p[layer]:
+                    feature_raw_acts[(layer, feat)].append(abs(raw_acts_p[layer][feat]))
 
         G = nx.DiGraph()
         G.add_node("input", type="input")
@@ -1195,6 +1220,9 @@ class TranscoderAttributionBuilder:
             mean_abs_missing0 = float(np.sum([abs(s) for s in scores]) / N)
             specific_score = mean_abs_given * (1.0 - freq)
             grad_attr_sign = int(1 if mean_score_given > 0 else (-1 if mean_score_given < 0 else 0))
+            # Mean raw activation (conditional on feature being active)
+            raw_act_vals = feature_raw_acts.get((layer, feat), [])
+            mean_act_cond = float(np.mean(raw_act_vals)) if raw_act_vals else 0.0
 
             attrs = dict(
                 type="feature",
@@ -1206,6 +1234,8 @@ class TranscoderAttributionBuilder:
                 mean_grad_attr_conditional=mean_score_given,
                 mean_abs_grad_attr_conditional=mean_abs_given,
                 grad_attr_sign=grad_attr_sign,
+                # Raw activation (used for activation-weighted VW edges)
+                mean_activation_conditional=mean_act_cond,
                 # Legacy-compatible aliases (for backward compat with script 07/08)
                 mean_score_conditional=mean_score_given,
                 mean_abs_score_conditional=mean_abs_given,
@@ -1220,9 +1250,10 @@ class TranscoderAttributionBuilder:
             feat_id = f"L{layer}_F{feat}"
             G.add_node(feat_id, **attrs)
             w = mean_score_given
-            G.add_edge("input", feat_id, weight=w)
-            G.add_edge(feat_id, "output_correct", weight=w)
-            G.add_edge(feat_id, "output_incorrect", weight=-w)
+            # Output edges: typed as "output_attribution" (gradient-based, not β-proxy)
+            G.add_edge("input", feat_id, weight=w, edge_type="input_attribution")
+            G.add_edge(feat_id, "output_correct", weight=w, edge_type="output_attribution")
+            G.add_edge(feat_id, "output_incorrect", weight=-w, edge_type="output_attribution")
             decision_added += 1
             included_features.add((layer, feat))
 
@@ -1255,9 +1286,33 @@ class TranscoderAttributionBuilder:
                 f"{len(included_features)} decision nodes remain"
             )
 
-        # ── 3. VW edges for decision nodes ───────────────────────────────────
+        # ── 3. Feature→feature attribution edges for decision nodes ─────────
+        #
+        # Edge weight formulation (activation_weighted=True, DEFAULT):
+        #   edge(i→j) = mean_act_i × VW_static(i,j)
+        #   where VW_static(i,j) = W_enc_{L+1}[j,:] · W_dec_L[:,i]
+        #         mean_act_i = mean conditional activation of feature i across prompts
+        #
+        # This is labeled edge_type="attribution_approx_v1":
+        #   APPROXIMATION — assumes transcoder encoder is locally linear (constant
+        #   Jacobian). The true causal edge requires a per-prompt backward pass
+        #   through the encoder nonlinearity, which is not computed here.
+        #   Version label allows future upgrade to a prompt-local Jacobian ("_v2").
+        #
+        # activation_weighted=False uses the raw static VW weight (legacy behaviour,
+        # edge_type="virtual_weight"). Kept for backward compatibility only.
+        #
+        # Both modes threshold on |w| >= vw_threshold. With activation weighting the
+        # effective threshold is stricter for rarely-active features (their
+        # mean_act ≈ 0 suppresses the edge weight even if VW_static is large).
         n_vw = 0
         if vw_threshold is not None:
+            # Build mean activation lookup for source features
+            mean_act_lookup: Dict[Tuple[int, int], float] = {}
+            for (layer, feat) in included_features:
+                raw_vals = feature_raw_acts.get((layer, feat), [])
+                mean_act_lookup[(layer, feat)] = float(np.mean(raw_vals)) if raw_vals else 0.0
+
             graph_layers = sorted(set(layer for (layer, _) in included_features))
             for i in range(len(graph_layers) - 1):
                 src_layer = graph_layers[i]
@@ -1269,21 +1324,33 @@ class TranscoderAttributionBuilder:
                 source_tc = self.transcoder_set[src_layer]
                 target_tc = self.transcoder_set[tgt_layer]
                 with torch.no_grad():
-                    W_dec_src = source_tc.W_dec[src_feats, :].float()
-                    W_enc_tgt = target_tc.W_enc[tgt_feats, :].float()
-                    vw_sub = (W_enc_tgt @ W_dec_src.T).cpu()
+                    W_dec_src = source_tc.W_dec[src_feats, :].float()   # (n_src, d_model)
+                    W_enc_tgt = target_tc.W_enc[tgt_feats, :].float()   # (n_tgt, d_model)
+                    vw_sub = (W_enc_tgt @ W_dec_src.T).cpu()            # (n_tgt, n_src)
                 for ti, tgt_feat in enumerate(tgt_feats):
                     for si, src_feat in enumerate(src_feats):
-                        w = float(vw_sub[ti, si])
+                        vw_static = float(vw_sub[ti, si])
+                        if activation_weighted:
+                            mean_act = mean_act_lookup.get((src_layer, src_feat), 0.0)
+                            w = mean_act * vw_static
+                            etype = "attribution_approx_v1"
+                        else:
+                            w = vw_static
+                            etype = "virtual_weight"
                         if abs(w) >= vw_threshold:
                             G.add_edge(
                                 f"L{src_layer}_F{src_feat}",
                                 f"L{tgt_layer}_F{tgt_feat}",
                                 weight=w,
-                                edge_type="virtual_weight",
+                                edge_type=etype,
+                                vw_static=vw_static,  # always stored for reference
                             )
                             n_vw += 1
-            logger.info(f"Decision VW edges: {n_vw} added (threshold={vw_threshold})")
+            logger.info(
+                f"Decision attribution edges: {n_vw} added "
+                f"(threshold={vw_threshold}, mode="
+                f"{'activation_weighted' if activation_weighted else 'static_vw'})"
+            )
 
         # ── 4. Content-word node analysis ────────────────────────────────────
         connectivity_threshold = vw_threshold if vw_threshold is not None else 0.01
@@ -1477,6 +1544,12 @@ class TranscoderAttributionBuilder:
             "vw_threshold": float(vw_threshold) if vw_threshold is not None else None,
             "n_vw_edges": int(n_vw),
             "connectivity_threshold": float(connectivity_threshold),
+            "edge_method": (
+                "activation_weighted_vw_linear_approx"
+                if activation_weighted and vw_threshold is not None
+                else "static_vw" if vw_threshold is not None
+                else "star_only"
+            ),
         }
 
         logger.info(
@@ -1646,6 +1719,20 @@ def main():
         default=None,
         help="(role_aware only) Keep top-k features per layer by mean_abs_grad_attr_conditional. "
              "Applied after frequency/min_prompts filters. None = keep all (default).",
+    )
+    parser.add_argument(
+        "--activation_weighted",
+        action="store_true",
+        default=True,
+        help="(role_aware only) Weight VW edges by mean source activation "
+             "(attribution_approx_v1). Default: True. Pass --no_activation_weighted to use "
+             "raw static VW edges (legacy virtual_weight mode).",
+    )
+    parser.add_argument(
+        "--no_activation_weighted",
+        dest="activation_weighted",
+        action="store_false",
+        help="Use raw static VW edges instead of activation-weighted edges (legacy mode).",
     )
     args = parser.parse_args()
 
@@ -1883,6 +1970,7 @@ def main():
                 k_content=args.k_content,
                 min_lang_asym=args.min_lang_asym,
                 top_k_per_layer=args.top_k_per_layer,
+                activation_weighted=args.activation_weighted,
             )
         else:
             print(f"\nBuilding per-prompt union attribution graph...")
