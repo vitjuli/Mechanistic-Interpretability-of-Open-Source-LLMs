@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-04-03T04:42:28.421367",
-  "git_commit": "58ee97d163a773fe80d071ff6d1b8accf0373094",
-  "host": "gpu-q-18",
+  "timestamp": "2026-04-04T03:31:20.762298",
+  "git_commit": "9d7051182665234b8af35cdce0dd656fff2bec03",
+  "host": "gpu-q-24",
   "device": "cuda:0",
   "behaviour": "multilingual_circuits_b1",
   "split": "train",
-  "graph_path": "data/results/attribution_graphs/multilingual_circuits_b1/attribution_graph_train_n96_roleaware.json",
+  "graph_path": "data/results/attribution_graphs/multilingual_circuits_b1/attribution_graph_train_n96_roleaware_k3_t05.json",
   "model_size": "4b",
   "model_name": "Qwen/Qwen3-4B",
   "n_prompts": 96,
@@ -28,8 +28,8 @@
     24,
     25
   ],
-  "n_feature_nodes": 137,
-  "n_vw_edges": 1052,
+  "n_feature_nodes": 58,
+  "n_vw_edges": 84,
   "agw_top_frac": 0.6,
   "tau_causal": 0.1,
   "n_paths": 50,
@@ -42,10 +42,10 @@
   "debug_mode": false,
   "output_dir": "data/results/causal_edges/multilingual_circuits_b1",
   "causal_edges_path": "data/results/causal_edges/multilingual_circuits_b1/causal_edges_multilingual_circuits_b1_train.json",
-  "circuits_path": "data/results/causal_edges/multilingual_circuits_b1/circuits_multilingual_circuits_b1_train.json",
+  "circuits_path": "data/results/causal_edges/multilingual_circuits_b1/circuits_multilingual_circuits_b1_train_roleaware_k3_t05.json",
   "sufficiency_modes": [
     "s1_linear",
     "s1_5_layerwise"
   ],
-  "estimated_passes": 11328
+  "estimated_passes": 3360
 }
