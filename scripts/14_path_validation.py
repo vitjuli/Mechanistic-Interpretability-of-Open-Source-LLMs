@@ -147,8 +147,10 @@ def ablate_feature_hook(model_hf, layer_idx: int, feat_idx: int,
     def _hook(module, inp, out):
         hook_fired["n"] += 1
         h = out[0] if isinstance(out, tuple) else out
-        # Decision token only
-        x = h[:, token_pos, :].float()  # (1, d_model)
+        # Decision token only — cast to transcoder dtype for matmul compatibility
+        tc_dtype = transcoder.W_enc.dtype
+        tc_device = transcoder.W_enc.device
+        x = h[:, token_pos, :].to(dtype=tc_dtype, device=tc_device)  # (1, d_model)
         with torch.no_grad():
             acts = torch.relu(x @ transcoder.W_enc.T + transcoder.b_enc)  # (1, d_tc)
             acts[:, feat_idx] = 0.0
@@ -202,8 +204,10 @@ def capture_activation_hook(model_hf, layer_idx: int, token_pos: int = -1):
 def get_feature_activation(mlp_input: torch.Tensor, transcoder,
                             feat_idx: int) -> float:
     """Run transcoder encoder on mlp_input, return activation of feat_idx."""
+    tc_dtype = transcoder.W_enc.dtype
+    x = mlp_input.to(dtype=tc_dtype, device=transcoder.W_enc.device)
     with torch.no_grad():
-        acts = torch.relu(mlp_input @ transcoder.W_enc.T + transcoder.b_enc)
+        acts = torch.relu(x @ transcoder.W_enc.T + transcoder.b_enc)
     return float(acts[0, feat_idx])
 
 
