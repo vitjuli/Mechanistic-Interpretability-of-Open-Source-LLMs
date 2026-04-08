@@ -223,6 +223,14 @@
     "transfer_rate": 0.0,
     "mean_shift": -1.3984
   },
+  "path_validation_summary": {
+    "n_paths_validated": 10,
+    "propagation_consistency": 0.820,
+    "top_path": "input → L23_F6889 → L24_F35447 → L25_F43384 → output_correct",
+    "slurm_job": "27224134",
+    "date": "2026-04-07",
+    "note": "B1-sparsified canonical run (k=3/layer, vw_threshold=0.05). Backbone L23→L24→L25 confirmed."
+  },
   "metadata": {
     "behaviour": "multilingual_circuits_b1",
     "split": "train",

@@ -482,6 +482,7 @@ def main():
         "run_id": f"b1_v2_{BEHAVIOUR}_{SPLIT}_n{N_PROMPTS}",
         "version": "B1-v2",
         "description": "Multilingual antonym circuits (EN+FR), 8 concepts, 96 train prompts, clean templates",
+        "behaviour_type": "abstraction",
         "prep_timestamp": pd.Timestamp.now().isoformat(),
     }
     with open(out_dir / "run_manifest.json", "w") as f:

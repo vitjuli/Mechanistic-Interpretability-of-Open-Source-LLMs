@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import useStore from '../../store/useStore';
 import { fmt } from '../../utils/formatters';
+import { generateExplanation } from '../../utils/generateExplanation';
+import ExplanationBlock from '../shared/ExplanationBlock';
 
 // Language badge
 function LangBadge({ lang }) {
@@ -44,7 +46,7 @@ function TrajRow({ label, value, highlight }) {
 }
 
 export default function PromptInspector({ data, indexes }) {
-  const { promptTraces } = data;
+  const { promptTraces, circuit, communityRaw, runManifest } = data;
   const { promptById } = indexes;
 
   const selectedPromptIdx = useStore(s => s.selectedPromptIdx);
@@ -77,6 +79,9 @@ export default function PromptInspector({ data, indexes }) {
   }, [promptTraces]);
 
   const trace = selectedPromptIdx != null ? promptById.get(selectedPromptIdx) : null;
+  const explanation = trace
+    ? generateExplanation(trace, circuit, communityRaw, runManifest?.behaviour_type)
+    : null;
 
   return (
     <div style={{ display: 'flex', gap: 12, height: '100%', overflow: 'hidden' }}>
@@ -275,6 +280,9 @@ export default function PromptInspector({ data, indexes }) {
                 Set as compare B
               </button>
             </div>
+
+            {/* Auto NL explanation */}
+            <ExplanationBlock explanation={explanation} />
           </div>
         )}
       </div>

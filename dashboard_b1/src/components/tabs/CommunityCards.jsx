@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import useStore from '../../store/useStore';
 import { langProfileColor, clusterColor } from '../../utils/colors';
 import { shortNodeId, fmt } from '../../utils/formatters';
+import BehaviourTypePill from '../shared/BehaviourTypePill';
 
 const PROFILE_LABELS = {
   balanced: 'Balanced',
@@ -38,7 +39,7 @@ function ProfileBar({ counts }) {
 }
 
 export default function CommunityCards({ data, indexes }) {
-  const { communityRaw, interventions } = data;
+  const { communityRaw, interventions, communityLabels } = data;
   const { featureToCluster, featuresWithInterventionData } = indexes;
   const setSelectedFeatureId = useStore(s => s.setSelectedFeatureId);
   const setClusters = useStore(s => s.setClusters);
@@ -66,20 +67,25 @@ export default function CommunityCards({ data, indexes }) {
       const withData = members.filter(id => featuresWithInterventionData.has(id)).length;
       const langCounts = comm.lang_profile_counts || {};
 
-      // Named interpretation based on dominant profile + layer range
+      // Use researcher-authored label if present; fall back to heuristic
       const dominantProfile = comm.dominant_profile || 'balanced';
-      let interpretation = '';
+      const authored = communityLabels?.[String(cid)];
       const lmin = comm.layer_min, lmax = comm.layer_max;
-      if (cid === 2 && dominantProfile === 'fr_leaning') {
-        interpretation = '⚠ Competing FR pathway';
-      } else if (dominantProfile === 'balanced' && lmin <= 13) {
-        interpretation = 'Early cross-lingual';
-      } else if (dominantProfile === 'balanced' && lmin >= 17 && lmax <= 23) {
-        interpretation = 'Semantic hub (genuine)';
-      } else if (dominantProfile === 'balanced' && lmax >= 23) {
-        interpretation = 'Late output circuit';
-      } else if (dominantProfile === 'fr_leaning') {
-        interpretation = 'FR-specific';
+      let interpretation = authored?.label ?? '';
+      let authoredDescription = authored?.description ?? null;
+      let behaviourType = authored?.behaviour_type ?? null;
+      if (!interpretation) {
+        if (cid === 2 && dominantProfile === 'fr_leaning') {
+          interpretation = '⚠ Competing FR pathway';
+        } else if (dominantProfile === 'balanced' && lmin <= 13) {
+          interpretation = 'Early cross-lingual';
+        } else if (dominantProfile === 'balanced' && lmin >= 17 && lmax <= 23) {
+          interpretation = 'Semantic hub (genuine)';
+        } else if (dominantProfile === 'balanced' && lmax >= 23) {
+          interpretation = 'Late output circuit';
+        } else if (dominantProfile === 'fr_leaning') {
+          interpretation = 'FR-specific';
+        }
       }
 
       return {
@@ -94,6 +100,8 @@ export default function CommunityCards({ data, indexes }) {
         withData,
         effectSizes,
         interpretation,
+        authoredDescription,
+        behaviourType,
       };
     });
   }, [communityRaw, interventions, featuresWithInterventionData]);
@@ -138,12 +146,20 @@ export default function CommunityCards({ data, indexes }) {
                 <span style={{ fontWeight: 600, fontSize: 13 }}>C{card.cid}</span>
                 <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{card.layerRange}</span>
               </div>
-              <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{card.nFeatures} features</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <BehaviourTypePill behaviourType={card.behaviourType} />
+                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{card.nFeatures} features</span>
+              </div>
             </div>
 
             {card.interpretation && (
-              <div style={{ fontSize: 11, color: langProfileColor(card.dominantProfile), marginBottom: 6, fontStyle: 'italic' }}>
+              <div style={{ fontSize: 11, color: langProfileColor(card.dominantProfile), marginBottom: card.authoredDescription ? 2 : 6, fontStyle: 'italic' }}>
                 {card.interpretation}
+              </div>
+            )}
+            {card.authoredDescription && (
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 6 }}>
+                {card.authoredDescription}
               </div>
             )}
 

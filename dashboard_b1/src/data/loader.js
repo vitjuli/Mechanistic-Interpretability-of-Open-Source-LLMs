@@ -70,6 +70,7 @@ export async function loadAllData() {
     promptPathsText,
     promptFeaturesText,
     layerwiseTracesText,
+    communityLabels,
   ] = await Promise.all([
     fetch(`${BASE}/interventions.csv`).then(r => r.text()),
     fetch(`${BASE}/interventions_feature_agg.csv`).then(r => r.text()),
@@ -95,6 +96,8 @@ export async function loadAllData() {
     fetch(`${BASE}/prompt_paths.csv`).then(r => r.text()),
     fetch(`${BASE}/prompt_features.csv`).then(r => r.text()),
     fetch(`${BASE}/layerwise_traces.csv`).then(r => r.text()),
+    // Optional: researcher-authored community labels (never pipeline-generated)
+    fetch(`${BASE}/community_labels.json`).then(r => r.json()).catch(() => null),
   ]);
 
   const interventions = postProcessInterventions(parseCsv(interventionsText));
@@ -139,5 +142,6 @@ export async function loadAllData() {
     promptPaths,
     promptFeatures,
     layerwiseTraces,
+    communityLabels,
   };
 }

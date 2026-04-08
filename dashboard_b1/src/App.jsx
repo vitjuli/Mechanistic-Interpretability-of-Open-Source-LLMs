@@ -15,6 +15,7 @@ import LanguageFilter from './components/controls/LanguageFilter';
 import AttributionGraph from './components/graph/AttributionGraph';
 import FeatureInspector from './components/inspector/FeatureInspector';
 import TabContainer from './components/tabs/TabContainer';
+import BehaviourTypePill from './components/shared/BehaviourTypePill';
 import useStore from './store/useStore';
 
 function App() {
@@ -88,7 +89,10 @@ function App() {
             marginBottom: 10,
             fontSize: 11,
           }}>
-            <div style={{ fontWeight: 600, marginBottom: 2 }}>Causal Circuit</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <span style={{ fontWeight: 600 }}>Causal Circuit</span>
+              <BehaviourTypePill behaviourType={runManifest?.behaviour_type} />
+            </div>
             <div style={{ color: 'var(--text-dim)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span>{circuit.n_features} features</span>
               <span>{circuit.n_edges} edges</span>

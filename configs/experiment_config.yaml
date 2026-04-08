@@ -100,6 +100,28 @@ behaviours:
     # Gate: overall >= 0.75; easy_acc (named forces) = 1.0; single-token ' Yes'/' No'.
     # If PASS: redesign full physics_conservation dataset with Yes/No format.
 
+  physics_decay_type:
+    train_size: 5
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "B1 Phase 0: alpha vs beta decay classification (Type 1: Latent-state). Answer format: x_or_y."
+    # Answers: ' alpha' (token 8287) / ' beta' (token 13440) — both single-token (audit 2026-04-08).
+    # Phase 0: 5 prompts, concept_index=0 only (alpha decay), 5 templates.
+    # Circuit hypothesis: x → z_particle=(Z,A) → z_signature → y.
+    # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
+
+  physics_intensive_extensive:
+    train_size: 5
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "B6 Phase 0: intensive vs extensive property classification (Type 3: Abstraction). Answer format: x_or_y."
+    # Answers: ' intensive' (token 36195) / ' extensive' (token 16376) — both single-token (audit 2026-04-08).
+    # Phase 0: 5 prompts, concept_index=0 only (temperature / intensive), 5 templates.
+    # Circuit hypothesis: x → z_scaling_type ∈ {intensive, extensive} → y.
+    # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
+
   physics_conservation:
     train_size: 150
     test_size: 50

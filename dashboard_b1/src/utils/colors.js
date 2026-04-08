@@ -65,4 +65,18 @@ export function effectColorScale(min, max) {
   };
 }
 
+export const BEHAVIOUR_TYPE_COLORS = {
+  latent_state:  '#2dd4bf',  // teal
+  candidate_set: '#f59e0b',  // amber
+  abstraction:   '#a78bfa',  // purple
+  gating:        '#fb7185',  // coral
+};
+
+export const BEHAVIOUR_TYPE_LABELS = {
+  latent_state:  'Latent-state',
+  candidate_set: 'Candidate-set',
+  abstraction:   'Abstraction',
+  gating:        'Gating',
+};
+
 export { LAYER_COLORS, CLUSTER_COLORS, EXPERIMENT_COLORS, LANG_PROFILE_COLORS };
