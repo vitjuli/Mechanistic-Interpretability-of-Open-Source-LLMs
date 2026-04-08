@@ -1,0 +1,219 @@
+{
+  "behaviour": "multilingual_circuits_b1",
+  "split": "train",
+  "n_paths_requested": 10,
+  "n_paths_validated": 10,
+  "epsilon": 0.01,
+  "max_prompts": 50,
+  "summary": {
+    "mean_delta_act_B": 2.6072968750000003,
+    "mean_delta_logit": 1.200875,
+    "mean_propagation_consistency": 0.736
+  },
+  "paths": [
+    {
+      "path": [
+        "input",
+        "L24_F35447",
+        "L25_F43384",
+        "output_correct"
+      ],
+      "A_id": "L24_F35447",
+      "B_id": "L25_F43384",
+      "layer_A": 24,
+      "feat_A": 35447,
+      "layer_B": 25,
+      "feat_B": 43384,
+      "mean_delta_act_B": 1.867734375,
+      "mean_delta_logit": 0.775625,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 1,
+      "circuit_score": 0.48657305
+    },
+    {
+      "path": [
+        "input",
+        "L24_F35447",
+        "L25_F43384",
+        "output_incorrect"
+      ],
+      "A_id": "L24_F35447",
+      "B_id": "L25_F43384",
+      "layer_A": 24,
+      "feat_A": 35447,
+      "layer_B": 25,
+      "feat_B": 43384,
+      "mean_delta_act_B": 1.867734375,
+      "mean_delta_logit": 0.775625,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 2,
+      "circuit_score": 0.48657305
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "L25_F43384",
+        "output_correct"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 3,
+      "circuit_score": 0.36089534
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "L25_F43384",
+        "output_incorrect"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 4,
+      "circuit_score": 0.36089534
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "output_correct"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 5,
+      "circuit_score": 0.34435303
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "output_incorrect"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 6,
+      "circuit_score": 0.34435303
+    },
+    {
+      "path": [
+        "input",
+        "L24_F35447",
+        "L25_F54011",
+        "output_correct"
+      ],
+      "A_id": "L24_F35447",
+      "B_id": "L25_F54011",
+      "layer_A": 24,
+      "feat_A": 35447,
+      "layer_B": 25,
+      "feat_B": 54011,
+      "mean_delta_act_B": 0.35,
+      "mean_delta_logit": 0.775625,
+      "propagation_consistency": 0.4,
+      "n_prompts_evaluated": 50,
+      "rank": 7,
+      "circuit_score": 0.12426887
+    },
+    {
+      "path": [
+        "input",
+        "L24_F35447",
+        "L25_F54011",
+        "output_incorrect"
+      ],
+      "A_id": "L24_F35447",
+      "B_id": "L25_F54011",
+      "layer_A": 24,
+      "feat_A": 35447,
+      "layer_B": 25,
+      "feat_B": 54011,
+      "mean_delta_act_B": 0.35,
+      "mean_delta_logit": 0.775625,
+      "propagation_consistency": 0.4,
+      "n_prompts_evaluated": 50,
+      "rank": 8,
+      "circuit_score": 0.12426887
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "L25_F54011",
+        "output_correct"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 9,
+      "circuit_score": 0.09217127
+    },
+    {
+      "path": [
+        "input",
+        "L23_F6889",
+        "L24_F35447",
+        "L25_F54011",
+        "output_incorrect"
+      ],
+      "A_id": "L23_F6889",
+      "B_id": "L24_F35447",
+      "layer_A": 23,
+      "feat_A": 6889,
+      "layer_B": 24,
+      "feat_B": 35447,
+      "mean_delta_act_B": 3.60625,
+      "mean_delta_logit": 1.484375,
+      "propagation_consistency": 0.82,
+      "n_prompts_evaluated": 50,
+      "rank": 10,
+      "circuit_score": 0.09217127
+    }
+  ]
+}
