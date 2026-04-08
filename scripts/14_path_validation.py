@@ -405,8 +405,15 @@ def main():
         trust_remote_code=True,
     )
 
+    device = next(model.model.parameters()).device
     logger.info("Loading transcoder set...")
-    transcoder_set = load_transcoder_set(tc_config, model_size, layers)
+    transcoder_set = load_transcoder_set(
+        model_size=model_size,
+        device=device,
+        dtype=torch.bfloat16,
+        lazy_load=True,
+        layers=layers,
+    )
 
     # Load prompts
     prompts = load_prompts(config, args.behaviour, args.split)
