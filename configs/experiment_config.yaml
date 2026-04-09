@@ -101,13 +101,14 @@ behaviours:
     # If PASS: redesign full physics_conservation dataset with Yes/No format.
 
   physics_decay_type:
-    train_size: 5
+    train_size: 24
     test_size: 0
     min_logit_diff: 0.5
     success_threshold: 0.90
-    description: "B1 Phase 0: alpha vs beta decay classification (Type 1: Latent-state). Answer format: x_or_y."
+    description: "B1 Phase 1: alpha vs beta decay classification (Type 1: Latent-state). Answer format: x_or_y."
     # Answers: ' alpha' (token 8287) / ' beta' (token 13440) — both single-token (audit 2026-04-08).
-    # Phase 0: 5 prompts, concept_index=0 only (alpha decay), 5 templates.
+    # Phase 0 (5 prompts, alpha only): PASS 100%, mean_norm=1.39 (2026-04-09).
+    # Phase 1: 24 prompts — 12 alpha (T0-T11) + 12 beta (T0-T11).
     # Circuit hypothesis: x → z_particle=(Z,A) → z_signature → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 
@@ -124,13 +125,14 @@ behaviours:
     # STATUS: RETIRED — Instruct model treats question format as reasoning task; base P(' intensive') ~10^-10.
 
   physics_gauge_equivalence:
-    train_size: 5
+    train_size: 24
     test_size: 0
     min_logit_diff: 0.5
     success_threshold: 0.90
-    description: "B5 Phase 0: gauge equivalence classification — same vs different physics (Type 3: Abstraction). Answer format: x_or_y."
+    description: "B5 Phase 1: gauge equivalence classification — same vs different physics (Type 3: Abstraction). Completion format."
     # Answers: ' same' (token 1852) / ' different' (token 2155) — both single-token (audit 2026-04-09).
-    # Phase 0: 5 prompts, concept_index=0 only (gauge transformation), 5 templates.
+    # Phase 0 (5 prompts, gauge_equiv only): PASS 100%, mean_norm=14.01 (2026-04-09).
+    # Phase 1: 24 prompts — 12 gauge_equivalent (same, T0-T11) + 12 gauge_inequivalent (different, T0-T11).
     # Circuit hypothesis: x → z_gauge_equiv ∈ {equivalent, inequivalent} → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 
