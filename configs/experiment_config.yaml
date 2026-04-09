@@ -121,6 +121,18 @@ behaviours:
     # Phase 0: 5 prompts, concept_index=0 only (temperature / intensive), 5 templates.
     # Circuit hypothesis: x → z_scaling_type ∈ {intensive, extensive} → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
+    # STATUS: RETIRED — Instruct model treats question format as reasoning task; base P(' intensive') ~10^-10.
+
+  physics_gauge_equivalence:
+    train_size: 5
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "B5 Phase 0: gauge equivalence classification — same vs different physics (Type 3: Abstraction). Answer format: x_or_y."
+    # Answers: ' same' (token 1852) / ' different' (token 2155) — both single-token (audit 2026-04-09).
+    # Phase 0: 5 prompts, concept_index=0 only (gauge transformation), 5 templates.
+    # Circuit hypothesis: x → z_gauge_equiv ∈ {equivalent, inequivalent} → y.
+    # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 
   physics_conservation:
     train_size: 150
