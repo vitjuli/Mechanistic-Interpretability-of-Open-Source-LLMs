@@ -1,0 +1,137 @@
+{
+  "git_commit": "bb069750f0d988c3d6136d424ed8713cc53d4c4a",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:05",
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_ablation_physics_gauge_equivalence.csv",
+      "size_bytes": 51098
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:05",
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_ablation_physics_gauge_equivalence_summary.json",
+      "size_bytes": 921
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_patching_physics_gauge_equivalence.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_patching_physics_gauge_equivalence_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_steering_physics_gauge_equivalence.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_gauge_equivalence/intervention_steering_physics_gauge_equivalence_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:17:47",
+      "path": "data/results/attribution_graphs/physics_gauge_equivalence/attribution_graph_train_n5_roleaware.json",
+      "size_bytes": 82761
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:05",
+      "path": "data/results/interventions/physics_gauge_equivalence/layer_coverage_ablation_physics_gauge_equivalence.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/interventions.csv",
+      "size_bytes": 60594
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/common_prompt_idx.json",
+      "size_bytes": 219
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/audit.json",
+      "size_bytes": 9288
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/interventions_layer_agg.csv",
+      "size_bytes": 2564
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/interventions_prompt_agg.csv",
+      "size_bytes": 1246
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/interventions_feature_agg.csv",
+      "size_bytes": 5036
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/layer_coverage.csv",
+      "size_bytes": 662
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/supernodes.json",
+      "size_bytes": 991
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:06",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/supernodes_summary.csv",
+      "size_bytes": 398
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:07",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/supernodes_effect.json",
+      "size_bytes": 688
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:07",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/supernodes_effect_summary.csv",
+      "size_bytes": 243
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:21:07",
+      "path": "data/ui_offline/20260409-212106_physics_gauge_equivalence_train_n5/graph.json",
+      "size_bytes": 64407
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_gauge_equivalence",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 5,
+    "raw_sources_copied": [
+      "attribution_graph_train_n5.json",
+      "attribution_graph_train_n5_metadata.json",
+      "attribution_graph_train_n5_roleaware.json",
+      "attribution_graph_train_n5_roleaware_metadata.json",
+      "intervention_ablation_physics_gauge_equivalence.csv",
+      "intervention_ablation_physics_gauge_equivalence_summary.json"
+    ],
+    "run_id": "20260409-212106_physics_gauge_equivalence_train_n5",
+    "split": "train",
+    "timestamp": "2026-04-09T21:21:06.252267"
+  },
+  "timestamp": "2026-04-09T21:21:07.656681"
+}

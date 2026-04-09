@@ -1,0 +1,5 @@
+community_id,n_nodes,top_nodes_by_degree,method
+1,21,"['output_correct', 'output_incorrect', 'input', 'L24_F40953', 'L24_F33931']",louvain
+3,16,"['L19_F137712', 'L20_F24239', 'L19_F114972', 'L18_F96974', 'L20_F50415']",louvain
+0,9,"['L14_F96297', 'L14_F77869', 'L14_F32925', 'L15_F31111', 'L15_F90154']",louvain
+2,5,"['L12_F73956', 'L12_F39989', 'L13_F14045', 'L11_F130928', 'L11_F84939']",louvain

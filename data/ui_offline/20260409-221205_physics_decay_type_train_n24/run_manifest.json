@@ -1,0 +1,141 @@
+{
+  "git_commit": "eac33eb1de5b62c56bb8c13e719d3bbf95484a4d",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/intervention_ablation_physics_decay_type.csv",
+      "size_bytes": 237670
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/intervention_ablation_physics_decay_type_summary.json",
+      "size_bytes": 920
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_patching_physics_decay_type.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_patching_physics_decay_type_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_steering_physics_decay_type.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_steering_physics_decay_type_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T21:56:56",
+      "path": "data/results/attribution_graphs/physics_decay_type/attribution_graph_train_n24_roleaware.json",
+      "size_bytes": 76990
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/layer_coverage_ablation_physics_decay_type.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:06",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/interventions.csv",
+      "size_bytes": 273835
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:06",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/common_prompt_idx.json",
+      "size_bytes": 366
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:06",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/audit.json",
+      "size_bytes": 37852
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/interventions_layer_agg.csv",
+      "size_bytes": 3216
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/interventions_prompt_agg.csv",
+      "size_bytes": 4497
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/interventions_feature_agg.csv",
+      "size_bytes": 6372
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/layer_coverage.csv",
+      "size_bytes": 662
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/supernodes.json",
+      "size_bytes": 963
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:07",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/supernodes_summary.csv",
+      "size_bytes": 438
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:16",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/supernodes_effect.json",
+      "size_bytes": 687
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:16",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/supernodes_effect_summary.csv",
+      "size_bytes": 243
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:16",
+      "path": "data/ui_offline/20260409-221205_physics_decay_type_train_n24/graph.json",
+      "size_bytes": 60889
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_decay_type",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 24,
+    "raw_sources_copied": [
+      "attribution_graph_train_n24.json",
+      "attribution_graph_train_n24_metadata.json",
+      "attribution_graph_train_n24_roleaware.json",
+      "attribution_graph_train_n24_roleaware_metadata.json",
+      "attribution_graph_train_n5.json",
+      "attribution_graph_train_n5_metadata.json",
+      "attribution_graph_train_n5_roleaware.json",
+      "attribution_graph_train_n5_roleaware_metadata.json",
+      "intervention_ablation_physics_decay_type.csv",
+      "intervention_ablation_physics_decay_type_summary.json"
+    ],
+    "run_id": "20260409-221205_physics_decay_type_train_n24",
+    "split": "train",
+    "timestamp": "2026-04-09T22:12:05.693367"
+  },
+  "timestamp": "2026-04-09T22:12:16.244262"
+}

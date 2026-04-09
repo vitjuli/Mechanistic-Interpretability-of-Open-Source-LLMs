@@ -1,0 +1,17 @@
+layer,feature_source,layer_has_graph_features,skipped,skipped_reason,n_graph_features,n_features_used,experiment_type
+10,graph,True,False,,3,3,ablation
+11,graph,True,False,,2,2,ablation
+12,graph,True,False,,2,2,ablation
+13,graph,True,False,,1,1,ablation
+14,graph,True,False,,2,2,ablation
+15,graph,True,False,,3,3,ablation
+16,graph,True,False,,3,3,ablation
+17,graph,True,False,,3,3,ablation
+18,graph,True,False,,3,3,ablation
+19,graph,True,False,,3,3,ablation
+20,graph,True,False,,3,3,ablation
+21,graph,True,False,,3,3,ablation
+22,graph,True,False,,3,3,ablation
+23,graph,True,False,,3,3,ablation
+24,graph,True,False,,3,3,ablation
+25,graph,True,False,,3,3,ablation
