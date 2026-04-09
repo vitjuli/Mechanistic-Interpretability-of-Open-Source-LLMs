@@ -1,0 +1,13 @@
+cluster_id,n_features,dominant_profile,layer_range,representative
+0,30,balanced,L10–L15,L10_F105893
+1,30,balanced,L20–L23,L20_F41532
+2,1,fr_leaning,L22–L22,L22_F108295
+3,1,fr_leaning,L24–L24,L24_F81698
+4,1,fr_leaning,L25–L25,L25_F104408
+5,1,fr_leaning,L10–L10,L10_F131503
+6,36,balanced,L15–L20,L15_F106898
+7,1,fr_leaning,L11–L11,L11_F89663
+8,1,fr_leaning,L20–L20,L20_F101236
+9,33,balanced,L22–L25,L22_F117460
+10,1,fr_leaning,L12–L12,L12_F22710
+11,1,fr_leaning,L25–L25,L25_F142914

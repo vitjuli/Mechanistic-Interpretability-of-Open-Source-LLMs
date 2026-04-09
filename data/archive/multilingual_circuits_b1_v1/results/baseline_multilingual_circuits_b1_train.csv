@@ -1,0 +1,176 @@
+prompt,correct_answer,incorrect_answer,correct_log_prob,incorrect_log_prob,correct_token_len,incorrect_token_len,logprob_diff,logprob_diff_normalized,success,generated,score_method,success_metric,threshold,threshold_metric,word,antonym,language,concept_index,template_idx,cross_lang_valid
+"The opposite of ""small"" is", large, small,-8.737210273742676,-16.32022476196289,1,1,7.583014488220215,7.583014488220215,True,"(　　)
+A",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,0,True
+"The antonym of ""small"" is", large, small,-7.150479793548584,-17.956140518188477,1,1,10.805660724639893,10.805660724639893,True,"""large."" This means",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,1,True
+"""small"" is the opposite of", large, small,-4.34613561630249,-10.221186637878418,1,1,5.875051021575928,5.875051021575928,True,"what?
+
+The word **",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,2,True
+"""small"" is the contrary of", large, small,-3.5870206356048584,-9.456899642944336,1,1,5.8698790073394775,5.8698790073394775,True,"what?
+
+The word **",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,5,True
+"The word opposite to ""small"" is", large, small,-4.521059989929199,-10.936606407165527,1,1,6.415546417236328,6.415546417236328,True,"""large"". What is",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,6,True
+"""small"" is an antonym of", large, small,-5.085211277008057,-11.970593452453613,1,1,6.885382175445557,6.885382175445557,True,"""large"" and """,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,small,large,en,0,7,True
+Le contraire de petit est, grand, petit,-0.28897711634635925,-7.357107639312744,1,1,7.068130522966385,7.068130522966385,True,"grand.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,0,True
+L'antonyme de petit est, grand, petit,-0.707766056060791,-6.544758319854736,1,1,5.836992263793945,5.836992263793945,True,"grand.
+
+Réponse:",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,1,True
+L'opposé de petit est, grand, petit,-0.31918424367904663,-4.448763370513916,1,1,4.129579126834869,4.129579126834869,True,"grand.
+
+Which language is",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,2,True
+"En français, le contraire de petit est", grand, petit,-0.2958040237426758,-7.734747409820557,1,1,7.438943386077881,7.438943386077881,True,grand. Cependant,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,5,True
+Le contraire de petit :, grand, petit,-0.6038048267364502,-5.0254130363464355,1,1,4.421608209609985,4.421608209609985,True,"grand
+
+Le contraire",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,6,True
+L'antonyme de petit :, grand, petit,-1.0300538539886475,-4.950318336486816,1,1,3.920264482498169,3.920264482498169,True,"grand, petit, grand",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,petit,grand,fr,0,7,True
+"The opposite of ""fast"" is", slow, fast,-7.464738845825195,-12.881595611572266,1,1,5.41685676574707,5.41685676574707,True,"(　　)
+A",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,0,True
+"The antonym of ""fast"" is", slow, fast,-6.044665336608887,-16.685161590576172,1,1,10.640496253967285,10.640496253967285,True,"""slow"". The ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,1,True
+"""fast"" is the opposite of", slow, fast,-4.74387788772583,-10.905302047729492,1,1,6.161424160003662,6.161424160003662,True,"what?
+
+The word **",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,2,True
+"The contrary of ""fast"" is", slow, fast,-4.192173957824707,-9.641253471374512,1,1,5.449079513549805,5.449079513549805,True,"""slow"". The contrary",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,4,True
+"""fast"" is the contrary of", slow, fast,-3.6369636058807373,-9.629109382629395,1,1,5.992145776748657,5.992145776748657,True,"what word?
+
+The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,5,True
+"The word opposite to ""fast"" is", slow, fast,-5.578726768493652,-10.833320617675781,1,1,5.254593849182129,5.254593849182129,True,"""slow."" What is",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,fast,slow,en,2,6,True
+Le contraire de rapide est, lent, rapide,-1.6032795906066895,-8.194429397583008,1,1,6.591149806976318,6.591149806976318,True,"lent.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,0,True
+L'antonyme de rapide est, lent, rapide,-2.981734275817871,-7.875123500823975,1,1,4.8933892250061035,4.8933892250061035,True,":
+
+A. lent",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,1,True
+L'opposé de rapide est, lent, rapide,-1.3306849002838135,-4.06452751159668,1,1,2.733842611312866,2.733842611312866,True,"lent.
+
+Which language is",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,2,True
+Le terme opposé de rapide est, lent, rapide,-0.8636264204978943,-7.703553199768066,1,1,6.839926779270172,6.839926779270172,True,lent. Le terme oppos,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,4,True
+"En français, le contraire de rapide est", lent, rapide,-0.9169794321060181,-8.452597618103027,1,1,7.535618185997009,7.535618185997009,True,"lent. En anglais,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,5,True
+Le contraire de rapide :, lent, rapide,-1.4300529956817627,-6.752956390380859,1,1,5.322903394699097,5.322903394699097,True,"lent, lente,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,rapide,lent,fr,2,6,True
+"The opposite of ""new"" is", old, new,-8.581466674804688,-16.005599975585938,1,1,7.42413330078125,7.42413330078125,True,"(　　)
+A",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,0,True
+"The antonym of ""new"" is", old, new,-6.802182197570801,-18.11028289794922,1,1,11.308100700378418,11.308100700378418,True,"""old."" The ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,1,True
+"""new"" is the opposite of", old, new,-3.7868757247924805,-11.242284774780273,1,1,7.455409049987793,7.455409049987793,True,"""old"" and """,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,2,True
+"The contrary of ""new"" is", old, new,-2.8265442848205566,-13.266035079956055,1,1,10.439490795135498,10.439490795135498,True,"""old"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,4,True
+"The word opposite to ""new"" is", old, new,-5.096522331237793,-13.198259353637695,1,1,8.101737022399902,8.101737022399902,True,"""old"". The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,6,True
+"""new"" is an antonym of", old, new,-6.20082426071167,-13.412018775939941,1,1,7.2111945152282715,7.2111945152282715,True,"which word?
+
+The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,new,old,en,3,7,True
+Le contraire de nouveau est, vieux, nouveau,-8.208220481872559,-7.731476783752441,1,1,-0.4767436981201172,-0.4767436981201172,False,-il un mot qui sign,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,0,True
+L'antonyme de nouveau est, vieux, nouveau,-9.150372505187988,-12.980120658874512,1,1,3.8297481536865234,3.8297481536865234,True,":
+
+A. ancien",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,1,True
+L'opposé de nouveau est, vieux, nouveau,-11.320780754089355,-6.8746843338012695,1,1,-4.446096420288086,-4.446096420288086,False,"le nombre qui, ajout",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,2,True
+Le terme opposé de nouveau est, vieux, nouveau,-11.116938591003418,-9.59897232055664,1,1,-1.5179662704467773,-1.5179662704467773,False,le terme opposé de,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,4,True
+Le contraire de nouveau :, vieux, nouveau,-9.926538467407227,-6.212665557861328,1,1,-3.7138729095458984,-3.7138729095458984,False,"le mot ""nou",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,6,True
+L'antonyme de nouveau :, vieux, nouveau,-6.641829490661621,-7.491604328155518,1,1,0.8497748374938965,0.8497748374938965,True,A. ancien,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,nouveau,vieux,fr,3,7,True
+"The opposite of ""empty"" is", full, empty,-8.833462715148926,-11.824777603149414,1,1,2.9913148880004883,2.9913148880004883,True,"____
+A. Full",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,0,True
+"""empty"" is the antonym of", full, empty,-6.878741264343262,-9.830184936523438,1,1,2.951443672180176,2.951443672180176,True,"""full"" and """,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,3,True
+"The contrary of ""empty"" is", full, empty,-4.7446064949035645,-9.32027530670166,1,1,4.575668811798096,4.575668811798096,True,"""full"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,4,True
+"""empty"" is the contrary of", full, empty,-4.623348236083984,-8.503495216369629,1,1,3.8801469802856445,3.8801469802856445,True,"what? ""Empty""",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,5,True
+"The word opposite to ""empty"" is", full, empty,-6.597479820251465,-9.83954906463623,1,1,3.2420692443847656,3.2420692443847656,True,"""full,"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,6,True
+"""empty"" is an antonym of", full, empty,-8.503011703491211,-10.0152006149292,1,1,1.5121889114379883,1.5121889114379883,True,"""full"". ""full",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,empty,full,en,4,7,True
+Le contraire de vide est, plein, vide,-1.762812852859497,-5.585987091064453,1,1,3.823174238204956,3.823174238204956,True,"plein.
+
+Le contraire",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,0,True
+Le mot opposé à vide est, plein, vide,-3.731520175933838,-7.094376087188721,1,1,3.362855911254883,3.362855911254883,True,":
+
+A. plein",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,3,True
+Le terme opposé de vide est, plein, vide,-5.379324913024902,-6.582331657409668,1,1,1.2030067443847656,1.2030067443847656,True,"le plein, et le",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,4,True
+"En français, le contraire de vide est", plein, vide,-1.0802887678146362,-6.183718681335449,1,1,5.103429913520813,5.103429913520813,True,"plein. En anglais,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,5,True
+Le contraire de vide :, plein, vide,-4.310728073120117,-6.844523906707764,1,1,2.5337958335876465,2.5337958335876465,True,"l'occupation
+
+Le",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,6,True
+L'antonyme de vide :, plein, vide,-1.6110783815383911,-5.217607021331787,1,1,3.606528639793396,3.606528639793396,True,"plein, l'ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,vide,plein,fr,4,7,True
+"The opposite of ""high"" is", low, high,-6.918270587921143,-11.719721794128418,1,1,4.801451206207275,4.801451206207275,True,"(　　)
+A",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,0,True
+"The antonym of ""high"" is", low, high,-5.711953163146973,-14.6090087890625,1,1,8.897055625915527,8.897055625915527,True,"""low."" The ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,1,True
+"""high"" is the antonym of", low, high,-5.47581148147583,-11.262554168701172,1,1,5.786742687225342,5.786742687225342,True,"""low"". ""high",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,3,True
+"The contrary of ""high"" is", low, high,-4.004205226898193,-9.885706901550293,1,1,5.8815016746521,5.8815016746521,True,"""low"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,4,True
+"The word opposite to ""high"" is", low, high,-5.034916877746582,-10.351066589355469,1,1,5.316149711608887,5.316149711608887,True,"""low,"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,6,True
+"""high"" is an antonym of", low, high,-5.560746192932129,-12.330587387084961,1,1,6.769841194152832,6.769841194152832,True,"""low"". ""high",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,high,low,en,5,7,True
+Le contraire de haut est, bas, haut,-0.8483545184135437,-8.327835083007812,1,1,7.479480564594269,7.479480564594269,True,"bas.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,0,True
+L'antonyme de haut est, bas, haut,-2.735337257385254,-8.004743576049805,1,1,5.269406318664551,5.269406318664551,True,":
+
+A. bas",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,1,True
+Le mot opposé à haut est, bas, haut,-2.265359401702881,-8.223740577697754,1,1,5.958381175994873,5.958381175994873,True,":
+
+A. bas",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,3,True
+Le terme opposé de haut est, bas, haut,-1.6064841747283936,-8.360847473144531,1,1,6.754363298416138,6.754363298416138,True,"bas.
+
+Le terme oppos",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,4,True
+Le contraire de haut :, bas, haut,-0.5351260900497437,-7.665240287780762,1,1,7.130114197731018,7.130114197731018,True,"bas, petit, petit",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,6,True
+L'antonyme de haut :, bas, haut,-1.1009037494659424,-6.69430685043335,1,1,5.593403100967407,5.593403100967407,True,"bas, basse,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,haut,bas,fr,5,7,True
+"The opposite of ""long"" is", short, long,-6.253167152404785,-13.010407447814941,1,1,6.757240295410156,6.757240295410156,True,":
+A. short",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,0,True
+"The antonym of ""long"" is", short, long,-3.0759170055389404,-15.900671005249023,1,1,12.824753999710083,12.824753999710083,True,"""short."" The ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,1,True
+"""long"" is the opposite of", short, long,-3.068596601486206,-11.147571563720703,1,1,8.078974962234497,8.078974962234497,True,"""short"" and """,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,2,True
+"The contrary of ""long"" is", short, long,-3.9778175354003906,-11.382039070129395,1,1,7.404221534729004,7.404221534729004,True,"""short"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,4,True
+"The word opposite to ""long"" is", short, long,-3.977060317993164,-11.502501487731934,1,1,7.5254411697387695,7.5254411697387695,True,"""short."" What is",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,6,True
+"""long"" is an antonym of", short, long,-4.724614143371582,-13.404483795166016,1,1,8.679869651794434,8.679869651794434,True,"""short"" and """,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,short,en,6,7,True
+Le contraire de long est, court, long,-1.3654260635375977,-7.740307331085205,1,1,6.374881267547607,6.374881267547607,True,"court.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,0,True
+L'antonyme de long est, court, long,-1.8728913068771362,-7.574215888977051,1,1,5.7013245820999146,5.7013245820999146,True,":
+
+A. court",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,1,True
+L'opposé de long est, court, long,-9.445037841796875,-5.8892130851745605,1,1,-3.5558247566223145,-3.5558247566223145,False,un nombre qui a la,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,2,True
+Le terme opposé de long est, court, long,-1.5076624155044556,-8.452044486999512,1,1,6.944382071495056,6.944382071495056,True,"court.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,4,True
+Le contraire de long :, court, long,-0.38765332102775574,-7.046370506286621,1,1,6.658717185258865,6.658717185258865,True,"court.
+
+Translate to English",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,6,True
+L'antonyme de long :, court, long,-0.4284154772758484,-7.7700910568237305,1,1,7.341675579547882,7.341675579547882,True,"court, court, court",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,long,court,fr,6,7,True
+"The opposite of ""clean"" is", dirty, clean,-9.639925956726074,-13.457886695861816,1,1,3.817960739135742,3.817960739135742,True,":
+A. dirty",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,0,True
+"""clean"" is the opposite of", dirty, clean,-3.0203466415405273,-10.404561996459961,1,1,7.384215354919434,7.384215354919434,True,"what?
+
+The word **",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,2,True
+"The contrary of ""clean"" is", dirty, clean,-6.257471084594727,-11.408260345458984,1,1,5.150789260864258,5.150789260864258,True,"""dirty"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,4,True
+"""clean"" is the contrary of", dirty, clean,-3.2615087032318115,-9.77843189239502,1,1,6.516923189163208,6.516923189163208,True,"what?
+
+The word **",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,5,True
+"The word opposite to ""clean"" is", dirty, clean,-8.245628356933594,-12.450847625732422,1,1,4.205219268798828,4.205219268798828,True,"""dirty."" The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,6,True
+"""clean"" is an antonym of", dirty, clean,-8.517815589904785,-13.242786407470703,1,1,4.724970817565918,4.724970817565918,True,"which word?
+
+The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,clean,dirty,en,7,7,True
+Le contraire de propre est, sale, propre,-10.15540885925293,-9.281488418579102,1,1,-0.8739204406738281,-0.8739204406738281,False,"quoi ?
+
+La contradiction de",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,0,True
+L'opposé de propre est, sale, propre,-7.9955735206604,-5.43972635269165,1,1,-2.55584716796875,-2.55584716796875,False,"le contraire.
+
+Translate",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,2,True
+Le terme opposé de propre est, sale, propre,-9.377771377563477,-8.008027076721191,1,1,-1.3697443008422852,-1.3697443008422852,False,"le terme de ""v",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,4,True
+"En français, le contraire de propre est", sale, propre,-9.787970542907715,-9.276891708374023,1,1,-0.5110788345336914,-0.5110788345336914,False,"quoi ?
+
+En français,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,5,True
+Le contraire de propre :, sale, propre,-8.619948387145996,-7.368407249450684,1,1,-1.2515411376953125,-1.2515411376953125,False,A. inut,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,6,True
+L'antonyme de propre :, sale, propre,-7.344677925109863,-8.13607120513916,1,1,0.7913932800292969,0.7913932800292969,True,A. sale,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,propre,sale,fr,7,7,True
+"The opposite of ""easy"" is", hard, easy,-12.192610740661621,-16.51631736755371,1,1,4.32370662689209,4.32370662689209,True,"______.
+Answer:
+The",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,0,True
+"The antonym of ""easy"" is", hard, easy,-10.794142723083496,-21.20079803466797,1,1,10.406655311584473,10.406655311584473,True,"""difficult."" This",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,1,True
+"""easy"" is the opposite of", hard, easy,-6.600335597991943,-10.432657241821289,1,1,3.8323216438293457,3.8323216438293457,True,"what word?
+
+The word",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,2,True
+"""easy"" is the antonym of", hard, easy,-7.042206764221191,-11.353853225708008,1,1,4.311646461486816,4.311646461486816,True,"what word?
+
+The ant",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,3,True
+"The contrary of ""easy"" is", hard, easy,-6.32758092880249,-11.776472091674805,1,1,5.4488911628723145,5.4488911628723145,True,"""hard"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,4,True
+"The word opposite to ""easy"" is", hard, easy,-7.435005187988281,-12.106884002685547,1,1,4.671878814697266,4.671878814697266,True,"""hard"" and the",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,easy,hard,en,8,6,True
+Le contraire de facile est, difficile, facile,-1.3546779155731201,-6.397027015686035,1,1,5.042349100112915,5.042349100112915,True,difficile. Le contraire,teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,0,True
+L'antonyme de facile est, difficile, facile,-3.7270641326904297,-7.504607200622559,1,1,3.777543067932129,3.777543067932129,True,":
+
+A. difficile",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,1,True
+L'opposé de facile est, difficile, facile,-2.5129733085632324,-5.299266338348389,1,1,2.7862930297851562,2.7862930297851562,True,":
+
+L'opposé",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,2,True
+Le mot opposé à facile est, difficile, facile,-2.613852024078369,-7.078686714172363,1,1,4.464834690093994,4.464834690093994,True,":
+
+A. simple",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,3,True
+Le terme opposé de facile est, difficile, facile,-2.3934881687164307,-5.976550102233887,1,1,3.583061933517456,3.583061933517456,True,"""difficile"",",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,4,True
+Le contraire de facile :, difficile, facile,-0.2825087904930115,-4.944366931915283,1,1,4.661858141422272,4.661858141422272,True,"difficile, complexe,",teacher_forced_logprob,normalized_per_token,0.5,logprob_diff_normalized,facile,difficile,fr,8,6,True

@@ -11,7 +11,7 @@
 #SBATCH --output=logs/phys_phase0-%j.out
 #SBATCH --error=logs/phys_phase0-%j.err
 #
-# Phase 0 pipeline — physics_decay_type (B1) + physics_intensive_extensive (B6)
+# Phase 0 pipeline — physics_decay_type (B1) + physics_gauge_equivalence (B5)
 #
 # Steps run per behaviour:
 #   A  Step 02   Baseline gate (sign_accuracy >= 0.90, mean_norm >= 0.5)
@@ -44,8 +44,12 @@
 #   --agw_top_frac 0.6     : AGW prefilter fraction
 #
 # Prompt files (Phase 0 — 5 prompts each, concept_index=0 only):
-#   data/prompts/physics_decay_type_phase0.jsonl
-#   data/prompts/physics_intensive_extensive_phase0.jsonl
+#   data/prompts/physics_decay_type_phase0.jsonl        (B1 alpha-decay, completion format)
+#   data/prompts/physics_gauge_equivalence_phase0.jsonl (B5 gauge equiv, completion format)
+#
+# NOTE: physics_intensive_extensive was RETIRED (B6) — Instruct model base P(' intensive')
+#       ~10^-10 in question contexts; replaced by physics_gauge_equivalence (B5).
+#       physics_gauge_equivalence baseline: 100%, mean_norm_diff=14.01 (2026-04-09).
 #
 # These are copied to _train.jsonl before the pipeline runs.
 # The _phase0.jsonl originals are never modified.
@@ -54,8 +58,8 @@
 #   cd /rds/user/iv294/hpc-work/thesis/project
 #   git pull
 #   mkdir -p logs
-#   ls data/prompts/physics_decay_type_phase0.jsonl        # expect 5 lines
-#   ls data/prompts/physics_intensive_extensive_phase0.jsonl  # expect 5 lines
+#   ls data/prompts/physics_decay_type_phase0.jsonl           # expect 5 lines
+#   ls data/prompts/physics_gauge_equivalence_phase0.jsonl    # expect 5 lines
 #   sbatch jobs/physics_phase0_pipeline.sbatch
 #
 # AFTER COMPLETION:
@@ -69,7 +73,7 @@ mkdir -p logs
 
 echo "========================================================"
 echo "  Physics Phase 0 Pipeline"
-echo "  Behaviours: physics_decay_type  physics_intensive_extensive"
+echo "  Behaviours: physics_decay_type  physics_gauge_equivalence"
 echo "========================================================"
 echo "Job ID:   $SLURM_JOB_ID"
 echo "Node:     $(hostname)"
@@ -109,7 +113,7 @@ N_PATHS=10
 
 # Track go/no-go per behaviour
 GATE_DECAY_TYPE=SKIP
-GATE_INTENSIVE=SKIP
+GATE_GAUGE=SKIP
 
 # ════════════════════════════════════════════════════════════════════════════
 # Helper: inline gate check for single-language physics behaviours
@@ -151,7 +155,7 @@ PYEOF
 # PRE-FLIGHT: copy phase0 prompt files to _train.jsonl
 # ════════════════════════════════════════════════════════════════════════════
 echo "==== Pre-flight: copying phase0 prompts ===="
-for BEHAVIOUR in physics_decay_type physics_intensive_extensive; do
+for BEHAVIOUR in physics_decay_type physics_gauge_equivalence; do
     SRC="data/prompts/${BEHAVIOUR}_phase0.jsonl"
     DST="data/prompts/${BEHAVIOUR}_${SPLIT}.jsonl"
     if [ ! -f "$SRC" ]; then
@@ -300,9 +304,9 @@ echo ""
 fi  # end GATE_DECAY_TYPE = PASS
 
 # ════════════════════════════════════════════════════════════════════════════
-# BEHAVIOUR 2: physics_intensive_extensive (B6 — intensive vs extensive)
+# BEHAVIOUR 2: physics_gauge_equivalence (B5 — same vs different physics)
 # ════════════════════════════════════════════════════════════════════════════
-BEHAVIOUR=physics_intensive_extensive
+BEHAVIOUR=physics_gauge_equivalence
 GRAPH_STAR="data/results/attribution_graphs/${BEHAVIOUR}/attribution_graph_${SPLIT}_n${N_PROMPTS}.json"
 GRAPH_ROLEAWARE="data/results/attribution_graphs/${BEHAVIOUR}/attribution_graph_${SPLIT}_n${N_PROMPTS}${OUTPUT_SUFFIX}.json"
 
@@ -320,14 +324,14 @@ python -u scripts/02_run_baseline.py \
     --no-viz
 
 if check_gate "$BEHAVIOUR"; then
-    GATE_INTENSIVE=PASS
+    GATE_GAUGE=PASS
 else
-    GATE_INTENSIVE=FAIL
+    GATE_GAUGE=FAIL
     echo "Skipping stages B-F for ${BEHAVIOUR}."
     echo ""
 fi
 
-if [ "$GATE_INTENSIVE" = "PASS" ]; then
+if [ "$GATE_GAUGE" = "PASS" ]; then
 
 # ── Stage B ──────────────────────────────────────────────────────────────────
 echo "==== [B] Step 04: Feature extraction (${BEHAVIOUR}, top_k=${TOP_K_EXTRACT}) ===="
@@ -395,8 +399,8 @@ python -u scripts/09_prepare_offline_ui.py \
     --graph_suffix "$OUTPUT_SUFFIX" \
     --community_method louvain
 
-RUN_DIR_INTENSIVE=$(ls -1d data/ui_offline/*_${BEHAVIOUR}_${SPLIT}_n${N_PROMPTS} 2>/dev/null | sort | tail -1)
-echo "  UI run: ${RUN_DIR_INTENSIVE:-NOT FOUND}"
+RUN_DIR_GAUGE=$(ls -1d data/ui_offline/*_${BEHAVIOUR}_${SPLIT}_n${N_PROMPTS} 2>/dev/null | sort | tail -1)
+echo "  UI run: ${RUN_DIR_GAUGE:-NOT FOUND}"
 
 echo ""
 
@@ -405,7 +409,7 @@ echo "==== [F] Step 08: Causal edges (${BEHAVIOUR}) ===="
 date
 if [ ! -f "$GRAPH_ROLEAWARE" ]; then
     echo "ERROR: Role-aware graph not found: $GRAPH_ROLEAWARE"
-    GATE_INTENSIVE=FAIL_08
+    GATE_GAUGE=FAIL_08
 else
     python -c "
 import json
@@ -427,7 +431,7 @@ fi
 
 echo ""
 
-fi  # end GATE_INTENSIVE = PASS
+fi  # end GATE_GAUGE = PASS
 
 # ════════════════════════════════════════════════════════════════════════════
 # SUMMARY
@@ -438,12 +442,12 @@ echo "  Finished: $(date)"
 echo "  Job: $SLURM_JOB_ID"
 echo "========================================================"
 echo ""
-echo "  physics_decay_type        : ${GATE_DECAY_TYPE}"
-echo "  physics_intensive_extensive: ${GATE_INTENSIVE}"
+echo "  physics_decay_type       : ${GATE_DECAY_TYPE}"
+echo "  physics_gauge_equivalence: ${GATE_GAUGE}"
 echo ""
 
 # Go/no-go decision
-if [ "$GATE_DECAY_TYPE" = "PASS" ] && [ "$GATE_INTENSIVE" = "PASS" ]; then
+if [ "$GATE_DECAY_TYPE" = "PASS" ] && [ "$GATE_GAUGE" = "PASS" ]; then
     echo "PHASE 0 RESULT: GO — both behaviours passed gate."
     echo ""
     echo "Next steps (run locally after rsync):"
@@ -451,10 +455,10 @@ if [ "$GATE_DECAY_TYPE" = "PASS" ] && [ "$GATE_INTENSIVE" = "PASS" ]; then
     echo "     python -c \"import json; g=json.load(open('data/results/attribution_graphs/physics_decay_type/attribution_graph_train_n5_roleaware.json')); print(sum(1 for n in g['nodes'] if n['type']==\"feature\"), 'feature nodes')\""
     echo "  2. Check ablation logit changes:"
     echo "     head data/results/interventions/physics_decay_type/intervention_ablation_physics_decay_type.csv"
-    echo "  3. If GO criteria met → proceed to Phase 1 (B3, B4, B5, B7, B8)"
+    echo "  3. If GO criteria met → proceed to Phase 1 (B3, B4, B7, B8 + expand B1/B5 to 20-30 prompts)"
     echo "  4. Update community_labels.json for each new dashboard"
     EXIT_CODE=0
-elif [ "$GATE_DECAY_TYPE" = "SKIP" ] && [ "$GATE_INTENSIVE" = "SKIP" ]; then
+elif [ "$GATE_DECAY_TYPE" = "SKIP" ] && [ "$GATE_GAUGE" = "SKIP" ]; then
     echo "PHASE 0 RESULT: ERROR — no behaviours ran (pre-flight failure)."
     EXIT_CODE=1
 else

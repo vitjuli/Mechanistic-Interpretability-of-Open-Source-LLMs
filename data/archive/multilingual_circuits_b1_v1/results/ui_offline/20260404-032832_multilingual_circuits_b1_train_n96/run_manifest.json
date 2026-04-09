@@ -1,0 +1,147 @@
+{
+  "git_commit": "9d7051182665234b8af35cdce0dd656fff2bec03",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-04T01:53:17",
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_ablation_multilingual_circuits_b1.csv",
+      "size_bytes": 1454465
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T01:53:17",
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_ablation_multilingual_circuits_b1_summary.json",
+      "size_bytes": 941
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_patching_multilingual_circuits_b1.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_patching_multilingual_circuits_b1_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_steering_multilingual_circuits_b1.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/multilingual_circuits_b1/intervention_steering_multilingual_circuits_b1_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T00:03:59",
+      "path": "data/results/attribution_graphs/multilingual_circuits_b1/attribution_graph_train_n96_roleaware_k3_t05.json",
+      "size_bytes": 69303
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T01:53:18",
+      "path": "data/results/interventions/multilingual_circuits_b1/layer_coverage_ablation_multilingual_circuits_b1.csv",
+      "size_bytes": 502
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:27:58",
+      "path": "data/results/interventions/multilingual_circuits_b1/layer_coverage_patching_C3_multilingual_circuits_b1.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:46",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/interventions.csv",
+      "size_bytes": 3391155
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:46",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/common_prompt_idx.json",
+      "size_bytes": 558
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:46",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/audit.json",
+      "size_bytes": 219934
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/interventions_layer_agg.csv",
+      "size_bytes": 6541
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/interventions_prompt_agg.csv",
+      "size_bytes": 25088
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/interventions_feature_agg.csv",
+      "size_bytes": 29963
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/layer_coverage.csv",
+      "size_bytes": 1254
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/supernodes.json",
+      "size_bytes": 1201
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:28:47",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/supernodes_summary.csv",
+      "size_bytes": 517
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:29:15",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/supernodes_effect.json",
+      "size_bytes": 1652
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:29:15",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/supernodes_effect_summary.csv",
+      "size_bytes": 497
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-04T03:29:15",
+      "path": "data/ui_offline/20260404-032832_multilingual_circuits_b1_train_n96/graph.json",
+      "size_bytes": 63484
+    }
+  ],
+  "parameters": {
+    "behaviour": "multilingual_circuits_b1",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 96,
+    "raw_sources_copied": [
+      "attribution_graph_train_n96.json",
+      "attribution_graph_train_n96_metadata.json",
+      "attribution_graph_train_n96_roleaware.json",
+      "attribution_graph_train_n96_roleaware_k3_t05.json",
+      "attribution_graph_train_n96_roleaware_k3_t05_metadata.json",
+      "attribution_graph_train_n96_roleaware_metadata.json",
+      "intervention_ablation_multilingual_circuits_b1.csv",
+      "intervention_patching_C3_multilingual_circuits_b1.csv",
+      "intervention_ablation_multilingual_circuits_b1_summary.json",
+      "intervention_patching_C3_multilingual_circuits_b1_summary.json"
+    ],
+    "run_id": "20260404-032832_multilingual_circuits_b1_train_n96",
+    "split": "train",
+    "timestamp": "2026-04-04T03:28:32.040762"
+  },
+  "timestamp": "2026-04-04T03:29:15.486584"
+}
