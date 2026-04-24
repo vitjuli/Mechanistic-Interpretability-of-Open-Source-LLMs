@@ -101,14 +101,17 @@ behaviours:
     # If PASS: redesign full physics_conservation dataset with Yes/No format.
 
   physics_decay_type:
-    train_size: 24
+    train_size: 108
     test_size: 0
     min_logit_diff: 0.5
     success_threshold: 0.90
-    description: "B1 Phase 1: alpha vs beta decay classification (Type 1: Latent-state). Answer format: x_or_y."
+    description: "B1 Phase 2: alpha vs beta decay classification (Type 1: Latent-state). Answer format: x_or_y."
     # Answers: ' alpha' (token 8287) / ' beta' (token 13440) — both single-token (audit 2026-04-08).
     # Phase 0 (5 prompts, alpha only): PASS 100%, mean_norm=1.39 (2026-04-09).
-    # Phase 1: 24 prompts — 12 alpha (T0-T11) + 12 beta (T0-T11).
+    # Phase 1: 24 prompts — 12 alpha (T0-T11) + 12 beta (T0-T11). Archived to _n24_pilot.jsonl.
+    # Phase 2 (v2): 108 prompts — 54 alpha + 54 beta across families F0-F4.
+    #   F0 (24): original pilot; F1 (28): keyword-free; F2 (20): nuclide pairs;
+    #   F3 (20): phenomenological; F4 (16): mechanism/theory (difficulty=hard).
     # Circuit hypothesis: x → z_particle=(Z,A) → z_signature → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 

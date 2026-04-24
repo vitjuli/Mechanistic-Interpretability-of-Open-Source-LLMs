@@ -57,6 +57,11 @@ from src.transcoder import load_transcoder_set, TranscoderSet
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+# VW edge types: legacy static ('virtual_weight') and FIX-1 activation-weighted
+# ('attribution_approx_v1'). Both are cross-layer feature-to-feature edges and
+# must be treated identically by script 08.
+_VW_EDGE_TYPES = {"virtual_weight", "attribution_approx_v1"}
+
 
 # ---------------------------------------------------------------------------
 # HPC / reproducibility helpers
@@ -137,13 +142,17 @@ def extract_graph_features(graph: Dict) -> List[Dict]:
 
 
 def extract_vw_edges(graph: Dict) -> List[Dict]:
-    """Return list of VW edge dicts (source, target, weight)."""
-    return [e for e in graph["edges"] if e.get("edge_type") == "virtual_weight"]
+    """Return list of VW edge dicts (source, target, weight).
+
+    Accepts both legacy static VW edges (edge_type='virtual_weight') and
+    activation-weighted VW edges (edge_type='attribution_approx_v1', FIX 1).
+    """
+    return [e for e in graph["edges"] if e.get("edge_type") in _VW_EDGE_TYPES]
 
 
 def extract_star_edges(graph: Dict) -> List[Dict]:
     """Return attribution (star) edges: feature→output and input→feature."""
-    return [e for e in graph["edges"] if e.get("edge_type") != "virtual_weight"]
+    return [e for e in graph["edges"] if e.get("edge_type") not in _VW_EDGE_TYPES]
 
 
 # ---------------------------------------------------------------------------
@@ -627,7 +636,7 @@ def build_causal_dag(
 
     if include_star_edges:
         for edge in graph["edges"]:
-            if edge.get("edge_type") == "virtual_weight":
+            if edge.get("edge_type") in _VW_EDGE_TYPES:
                 continue
             src = edge.get("source", "")
             tgt = edge.get("target", "")
@@ -1643,7 +1652,7 @@ def build_presentation_graph(
             "Included in Graph B display nodes but excluded from layer-parsed circuit."
         )
 
-    star_edges = [e for e in graph["edges"] if e.get("edge_type") != "virtual_weight"]
+    star_edges = [e for e in graph["edges"] if e.get("edge_type") not in _VW_EDGE_TYPES]
     graph_b_edges: List[Dict] = []
 
     # 1. input_to_feature

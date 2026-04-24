@@ -111,3 +111,9 @@ figures/
 # Node.js
 node_modules/
 **/node_modules/
+
+############################
+# Dashboard & docs
+############################
+dashboard_b1/
+docs/
