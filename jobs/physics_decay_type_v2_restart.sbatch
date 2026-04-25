@@ -22,7 +22,7 @@ set -uo pipefail
 
 mkdir -p logs
 
-# ── PARAMETERS (must match original run) ─────────────────────────────────────
+# ── PARAMETERS ─────────────────────────────────────
 BEHAVIOUR=physics_decay_type
 SPLIT=train
 N_PROMPTS=108
