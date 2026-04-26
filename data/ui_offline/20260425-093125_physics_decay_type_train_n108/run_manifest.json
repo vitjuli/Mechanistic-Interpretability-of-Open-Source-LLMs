@@ -1,0 +1,117 @@
+{
+  "git_commit": "7ff12e86dccc1bfb092bc70a1fa535dfc0b4e732",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/intervention_ablation_physics_decay_type.csv",
+      "size_bytes": 237670
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/intervention_ablation_physics_decay_type_summary.json",
+      "size_bytes": 920
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_patching_physics_decay_type.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_patching_physics_decay_type_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_steering_physics_decay_type.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type/intervention_steering_physics_decay_type_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-09T22:12:03",
+      "path": "data/results/interventions/physics_decay_type/layer_coverage_ablation_physics_decay_type.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/interventions.csv",
+      "size_bytes": 275467
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/common_prompt_idx.json",
+      "size_bytes": 366
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/audit.json",
+      "size_bytes": 37852
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/interventions_layer_agg.csv",
+      "size_bytes": 3216
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/interventions_prompt_agg.csv",
+      "size_bytes": 4497
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/interventions_feature_agg.csv",
+      "size_bytes": 6372
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:26",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/layer_coverage.csv",
+      "size_bytes": 662
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:35",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/supernodes_effect.json",
+      "size_bytes": 687
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-25T09:31:35",
+      "path": "data/ui_offline/20260425-093125_physics_decay_type_train_n108/supernodes_effect_summary.csv",
+      "size_bytes": 243
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_decay_type",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 108,
+    "raw_sources_copied": [
+      "attribution_graph_train_n24.json",
+      "attribution_graph_train_n24_metadata.json",
+      "attribution_graph_train_n24_roleaware.json",
+      "attribution_graph_train_n24_roleaware_metadata.json",
+      "attribution_graph_train_n5.json",
+      "attribution_graph_train_n5_metadata.json",
+      "attribution_graph_train_n5_roleaware.json",
+      "attribution_graph_train_n5_roleaware_metadata.json",
+      "intervention_ablation_physics_decay_type.csv",
+      "intervention_ablation_physics_decay_type_summary.json"
+    ],
+    "run_id": "20260425-093125_physics_decay_type_train_n108",
+    "split": "train",
+    "timestamp": "2026-04-25T09:31:25.069483"
+  },
+  "timestamp": "2026-04-25T09:31:36.063480"
+}
