@@ -463,8 +463,10 @@ def _load_graph_from_json(json_path: Path, nx):
     for edge in data.get(edge_key, []):
         src = edge.get("source")
         tgt = edge.get("target")
-        weight = edge.get("weight", 1.0)
-        G.add_edge(src, tgt, weight=weight)
+        edge_attrs = {k: v for k, v in edge.items() if k not in ("source", "target")}
+        if "weight" not in edge_attrs:
+            edge_attrs["weight"] = 1.0
+        G.add_edge(src, tgt, **edge_attrs)
 
     logger.info(f"  JSON graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
     return G
@@ -550,6 +552,11 @@ def build_supernodes_graph(
             "method": actual_method,
         })
     summary_df = pd.DataFrame(rows).sort_values("n_nodes", ascending=False)
+
+    # Write community assignments back to the graph nodes so graph.json includes them
+    for node, cid in partition.items():
+        if G.has_node(node):
+            G.nodes[node]["community"] = int(cid)
 
     logger.info(
         f"Graph supernodes: {len(supernodes)} communities via {actual_method}"

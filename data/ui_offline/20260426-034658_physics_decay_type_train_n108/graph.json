@@ -3,2361 +3,3098 @@
   "graph": {},
   "links": [
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F128064",
       "target": "L11_F114815",
+      "vw_static": 0.015835046768188477,
       "weight": 0.015835046768188477
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F128064",
       "target": "L11_F144890",
+      "vw_static": 0.03079000487923622,
       "weight": 0.03079000487923622
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F128064",
       "target": "L11_F151375",
+      "vw_static": -0.015660740435123444,
       "weight": -0.015660740435123444
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F128064",
       "target": "L11_F35425",
+      "vw_static": -0.023927951231598854,
       "weight": -0.023927951231598854
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F128064",
       "target": "output_correct",
       "weight": 0.012817546041036139
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F128064",
       "target": "output_incorrect",
       "weight": -0.012817546041036139
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F35580",
       "target": "L11_F114815",
+      "vw_static": -0.03265542536973953,
       "weight": -0.03265542536973953
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F35580",
       "target": "L11_F144890",
+      "vw_static": -0.010715890675783157,
       "weight": -0.010715890675783157
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F35580",
       "target": "L11_F151375",
+      "vw_static": -0.026744473725557327,
       "weight": -0.026744473725557327
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F35580",
       "target": "L11_F35425",
+      "vw_static": -0.0684906467795372,
       "weight": -0.0684906467795372
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F35580",
       "target": "output_correct",
       "weight": 0.030641044199955267
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F35580",
       "target": "output_incorrect",
       "weight": -0.030641044199955267
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F68680",
       "target": "L11_F114815",
+      "vw_static": -0.025286957621574402,
       "weight": -0.025286957621574402
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F68680",
       "target": "L11_F144890",
+      "vw_static": 0.8801870942115784,
       "weight": 0.8801870942115784
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F68680",
       "target": "L11_F151375",
+      "vw_static": 0.1470063030719757,
       "weight": 0.1470063030719757
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F68680",
       "target": "L11_F35425",
+      "vw_static": -0.02784068137407303,
       "weight": -0.02784068137407303
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F68680",
       "target": "output_correct",
       "weight": -0.016284956729837825
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F68680",
       "target": "output_incorrect",
       "weight": 0.016284956729837825
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F80002",
       "target": "L11_F114815",
+      "vw_static": -0.017971016466617584,
       "weight": -0.017971016466617584
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F80002",
       "target": "L11_F144890",
+      "vw_static": 0.011836698278784752,
       "weight": 0.011836698278784752
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F80002",
       "target": "L11_F35425",
+      "vw_static": 0.03256794810295105,
       "weight": 0.03256794810295105
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F80002",
       "target": "output_correct",
       "weight": 0.048006714321672916
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F80002",
       "target": "output_incorrect",
       "weight": -0.048006714321672916
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F83063",
       "target": "L11_F144890",
+      "vw_static": -0.013957170769572258,
       "weight": -0.013957170769572258
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F83063",
       "target": "L11_F151375",
+      "vw_static": 0.14395783841609955,
       "weight": 0.14395783841609955
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L10_F83063",
       "target": "L11_F35425",
+      "vw_static": -0.03337100148200989,
       "weight": -0.03337100148200989
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F83063",
       "target": "output_correct",
       "weight": 0.009670106694102287
     },
     {
+      "edge_type": "output_attribution",
       "source": "L10_F83063",
       "target": "output_incorrect",
       "weight": -0.009670106694102287
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F114815",
       "target": "L12_F2451",
+      "vw_static": 0.07532334327697754,
       "weight": 0.07532334327697754
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F114815",
       "target": "L12_F60",
+      "vw_static": -0.09551084041595459,
       "weight": -0.09551084041595459
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F114815",
       "target": "L12_F71226",
+      "vw_static": 0.1038668230175972,
       "weight": 0.1038668230175972
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F114815",
       "target": "output_correct",
       "weight": -0.011602279730141163
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F114815",
       "target": "output_incorrect",
       "weight": 0.011602279730141163
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F144890",
       "target": "L12_F2451",
+      "vw_static": 0.11170978099107742,
       "weight": 0.11170978099107742
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F144890",
       "target": "L12_F60",
+      "vw_static": 0.07047390937805176,
       "weight": 0.07047390937805176
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F144890",
       "target": "L12_F71226",
+      "vw_static": -0.1366683840751648,
       "weight": -0.1366683840751648
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F144890",
       "target": "output_correct",
       "weight": 0.020504860579967497
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F144890",
       "target": "output_incorrect",
       "weight": -0.020504860579967497
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F151375",
       "target": "L12_F2451",
+      "vw_static": -0.05994172394275665,
       "weight": -0.05994172394275665
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F151375",
       "target": "L12_F60",
+      "vw_static": 0.9962743520736694,
       "weight": 0.9962743520736694
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F151375",
       "target": "L12_F71226",
+      "vw_static": -0.05190296843647957,
       "weight": -0.05190296843647957
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F151375",
       "target": "output_correct",
       "weight": -0.03835516972467303
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F151375",
       "target": "output_incorrect",
       "weight": 0.03835516972467303
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F35425",
       "target": "L12_F2451",
+      "vw_static": -0.018816577270627022,
       "weight": -0.018816577270627022
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F35425",
       "target": "L12_F60",
+      "vw_static": 0.0871744379401207,
       "weight": 0.0871744379401207
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L11_F35425",
       "target": "L12_F71226",
+      "vw_static": -0.3422175347805023,
       "weight": -0.3422175347805023
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F35425",
       "target": "output_correct",
       "weight": 0.0016145050703060058
     },
     {
+      "edge_type": "output_attribution",
       "source": "L11_F35425",
       "target": "output_incorrect",
       "weight": -0.0016145050703060058
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F2451",
       "target": "L13_F45942",
+      "vw_static": 0.011123963631689548,
       "weight": 0.011123963631689548
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F2451",
       "target": "L13_F57499",
+      "vw_static": 0.08841901272535324,
       "weight": 0.08841901272535324
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F2451",
       "target": "L13_F58969",
+      "vw_static": 0.05994398146867752,
       "weight": 0.05994398146867752
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F2451",
       "target": "output_correct",
       "weight": 0.018750807874508807
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F2451",
       "target": "output_incorrect",
       "weight": -0.018750807874508807
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F60",
       "target": "L13_F45942",
+      "vw_static": 0.021271148696541786,
       "weight": 0.021271148696541786
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F60",
       "target": "L13_F57499",
+      "vw_static": 0.03243304044008255,
       "weight": 0.03243304044008255
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F60",
       "target": "L13_F58969",
+      "vw_static": 0.023450657725334167,
       "weight": 0.023450657725334167
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F60",
       "target": "output_correct",
       "weight": -0.04264115983326184
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F60",
       "target": "output_incorrect",
       "weight": 0.04264115983326184
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L12_F71226",
       "target": "L13_F58969",
+      "vw_static": -0.02707412838935852,
       "weight": -0.02707412838935852
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F71226",
       "target": "output_correct",
       "weight": -0.025227868796459267
     },
     {
+      "edge_type": "output_attribution",
       "source": "L12_F71226",
       "target": "output_incorrect",
       "weight": 0.025227868796459267
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L13_F45942",
       "target": "L14_F140141",
+      "vw_static": -0.3201841115951538,
       "weight": -0.3201841115951538
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L13_F45942",
       "target": "L14_F24749",
+      "vw_static": -0.0986456349492073,
       "weight": -0.0986456349492073
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F45942",
       "target": "output_correct",
       "weight": 0.0010930675268173218
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F45942",
       "target": "output_incorrect",
       "weight": -0.0010930675268173218
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L13_F57499",
       "target": "L14_F140141",
+      "vw_static": -0.09833090007305145,
       "weight": -0.09833090007305145
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L13_F57499",
       "target": "L14_F24749",
+      "vw_static": 0.0672331228852272,
       "weight": 0.0672331228852272
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F57499",
       "target": "output_correct",
       "weight": 0.007599338632205437
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F57499",
       "target": "output_incorrect",
       "weight": -0.007599338632205437
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L13_F58969",
       "target": "L14_F140141",
+      "vw_static": 0.12774895131587982,
       "weight": 0.12774895131587982
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F58969",
       "target": "output_correct",
       "weight": -0.024514745839911957
     },
     {
+      "edge_type": "output_attribution",
       "source": "L13_F58969",
       "target": "output_incorrect",
       "weight": 0.024514745839911957
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F140141",
       "target": "L15_F15507",
+      "vw_static": 0.062099914997816086,
       "weight": 0.062099914997816086
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F140141",
       "target": "L15_F64857",
+      "vw_static": 0.04678628221154213,
       "weight": 0.04678628221154213
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F140141",
       "target": "L15_F89707",
+      "vw_static": 0.030152447521686554,
       "weight": 0.030152447521686554
     },
     {
+      "edge_type": "output_attribution",
       "source": "L14_F140141",
       "target": "output_correct",
       "weight": -0.05266860025850209
     },
     {
+      "edge_type": "output_attribution",
       "source": "L14_F140141",
       "target": "output_incorrect",
       "weight": 0.05266860025850209
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F24749",
       "target": "L15_F15507",
+      "vw_static": 0.09337712079286575,
       "weight": 0.09337712079286575
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F24749",
       "target": "L15_F64857",
+      "vw_static": 0.10406102240085602,
       "weight": 0.10406102240085602
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L14_F24749",
       "target": "L15_F89707",
+      "vw_static": 0.09523288160562515,
       "weight": 0.09523288160562515
     },
     {
+      "edge_type": "output_attribution",
       "source": "L14_F24749",
       "target": "output_correct",
       "weight": -1.6279133229420102e-05
     },
     {
+      "edge_type": "output_attribution",
       "source": "L14_F24749",
       "target": "output_incorrect",
       "weight": 1.6279133229420102e-05
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F15507",
       "target": "L16_F14097",
+      "vw_static": 0.04229849576950073,
       "weight": 0.04229849576950073
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F15507",
       "target": "L16_F46637",
+      "vw_static": 0.03450721874833107,
       "weight": 0.03450721874833107
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F15507",
       "target": "L16_F53285",
+      "vw_static": 0.2140245884656906,
       "weight": 0.2140245884656906
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F15507",
       "target": "L16_F82587",
+      "vw_static": 0.06733708828687668,
       "weight": 0.06733708828687668
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F15507",
       "target": "output_correct",
       "weight": 0.0060721831396222115
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F15507",
       "target": "output_incorrect",
       "weight": -0.0060721831396222115
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F64857",
       "target": "L16_F14097",
+      "vw_static": -0.07134682685136795,
       "weight": -0.07134682685136795
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F64857",
       "target": "L16_F33974",
+      "vw_static": 0.012202807702124119,
       "weight": 0.012202807702124119
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F64857",
       "target": "L16_F46637",
+      "vw_static": -0.03833999112248421,
       "weight": -0.03833999112248421
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F64857",
       "target": "L16_F53285",
+      "vw_static": 0.22929628193378448,
       "weight": 0.22929628193378448
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F64857",
       "target": "L16_F82587",
+      "vw_static": 0.7219961285591125,
       "weight": 0.7219961285591125
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F64857",
       "target": "output_correct",
       "weight": -0.002463313640426781
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F64857",
       "target": "output_incorrect",
       "weight": 0.002463313640426781
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F89707",
       "target": "L16_F14097",
+      "vw_static": 0.04636693745851517,
       "weight": 0.04636693745851517
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F89707",
       "target": "L16_F33974",
+      "vw_static": -0.04211793467402458,
       "weight": -0.04211793467402458
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F89707",
       "target": "L16_F46637",
+      "vw_static": 0.039329893887043,
       "weight": 0.039329893887043
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L15_F89707",
       "target": "L16_F82587",
+      "vw_static": -0.015345633029937744,
       "weight": -0.015345633029937744
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F89707",
       "target": "output_correct",
       "weight": -0.062423348219858274
     },
     {
+      "edge_type": "output_attribution",
       "source": "L15_F89707",
       "target": "output_incorrect",
       "weight": 0.062423348219858274
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F14097",
       "target": "L17_F111674",
+      "vw_static": -0.11200489848852158,
       "weight": -0.11200489848852158
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F14097",
       "target": "L17_F122323",
+      "vw_static": -0.05212808772921562,
       "weight": -0.05212808772921562
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F14097",
       "target": "L17_F153539",
+      "vw_static": 0.06849221140146255,
       "weight": 0.06849221140146255
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F14097",
       "target": "L17_F63126",
+      "vw_static": -0.010345114395022392,
       "weight": -0.010345114395022392
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F14097",
       "target": "L17_F6720",
+      "vw_static": -0.10972445458173752,
       "weight": -0.10972445458173752
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F14097",
       "target": "output_correct",
       "weight": -0.07435180967052778
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F14097",
       "target": "output_incorrect",
       "weight": 0.07435180967052778
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F33974",
       "target": "L17_F111674",
+      "vw_static": -0.04222611337900162,
       "weight": -0.04222611337900162
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F33974",
       "target": "L17_F122323",
+      "vw_static": -0.1776096075773239,
       "weight": -0.1776096075773239
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F33974",
       "target": "L17_F153539",
+      "vw_static": 0.08879681676626205,
       "weight": 0.08879681676626205
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F33974",
       "target": "L17_F6720",
+      "vw_static": -0.2438405156135559,
       "weight": -0.2438405156135559
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F33974",
       "target": "output_correct",
       "weight": -0.014272806545098623
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F33974",
       "target": "output_incorrect",
       "weight": 0.014272806545098623
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F46637",
       "target": "L17_F111674",
+      "vw_static": -0.18013805150985718,
       "weight": -0.18013805150985718
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F46637",
       "target": "L17_F122323",
+      "vw_static": -0.20494535565376282,
       "weight": -0.20494535565376282
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F46637",
       "target": "L17_F153539",
+      "vw_static": -0.018317963927984238,
       "weight": -0.018317963927984238
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F46637",
       "target": "L17_F63126",
+      "vw_static": 0.09480942785739899,
       "weight": 0.09480942785739899
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F46637",
       "target": "L17_F6720",
+      "vw_static": -0.16331730782985687,
       "weight": -0.16331730782985687
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F46637",
       "target": "output_correct",
       "weight": -0.041923575241256644
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F46637",
       "target": "output_incorrect",
       "weight": 0.041923575241256644
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F53285",
       "target": "L17_F111674",
+      "vw_static": -0.045675989240407944,
       "weight": -0.045675989240407944
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F53285",
       "target": "L17_F122323",
+      "vw_static": -0.19078457355499268,
       "weight": -0.19078457355499268
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F53285",
       "target": "L17_F153539",
+      "vw_static": -0.06290316581726074,
       "weight": -0.06290316581726074
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F53285",
       "target": "L17_F63126",
+      "vw_static": -0.0861339122056961,
       "weight": -0.0861339122056961
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F53285",
       "target": "L17_F6720",
+      "vw_static": -0.20036198198795319,
       "weight": -0.20036198198795319
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F53285",
       "target": "output_correct",
       "weight": -0.05058537686572356
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F53285",
       "target": "output_incorrect",
       "weight": 0.05058537686572356
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F82587",
       "target": "L17_F111674",
+      "vw_static": -0.018655404448509216,
       "weight": -0.018655404448509216
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F82587",
       "target": "L17_F122323",
+      "vw_static": 0.024999402463436127,
       "weight": 0.024999402463436127
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F82587",
       "target": "L17_F153539",
+      "vw_static": -0.052216753363609314,
       "weight": -0.052216753363609314
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F82587",
       "target": "L17_F63126",
+      "vw_static": 0.015287766233086586,
       "weight": 0.015287766233086586
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L16_F82587",
       "target": "L17_F6720",
+      "vw_static": -0.06754246354103088,
       "weight": -0.06754246354103088
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F82587",
       "target": "output_correct",
       "weight": -0.04329959005117416
     },
     {
+      "edge_type": "output_attribution",
       "source": "L16_F82587",
       "target": "output_incorrect",
       "weight": 0.04329959005117416
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F111674",
       "target": "L18_F108180",
+      "vw_static": -0.04661821573972702,
       "weight": -0.04661821573972702
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F111674",
       "target": "L18_F145795",
+      "vw_static": -0.02958439663052559,
       "weight": -0.02958439663052559
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F111674",
       "target": "L18_F152260",
+      "vw_static": 0.05775444582104683,
       "weight": 0.05775444582104683
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F111674",
       "target": "L18_F41804",
+      "vw_static": 0.10584799945354462,
       "weight": 0.10584799945354462
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F111674",
       "target": "output_correct",
       "weight": -0.05844604799693281
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F111674",
       "target": "output_incorrect",
       "weight": 0.05844604799693281
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F122323",
       "target": "L18_F108180",
+      "vw_static": 0.12049350142478943,
       "weight": 0.12049350142478943
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F122323",
       "target": "L18_F145795",
+      "vw_static": -0.018765075132250786,
       "weight": -0.018765075132250786
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F122323",
       "target": "L18_F152260",
+      "vw_static": 0.13056370615959167,
       "weight": 0.13056370615959167
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F122323",
       "target": "L18_F41804",
+      "vw_static": -0.022944334894418716,
       "weight": -0.022944334894418716
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F122323",
       "target": "output_correct",
       "weight": -0.0656406853128882
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F122323",
       "target": "output_incorrect",
       "weight": 0.0656406853128882
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F153539",
       "target": "L18_F108180",
+      "vw_static": 0.160294771194458,
       "weight": 0.160294771194458
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F153539",
       "target": "L18_F145795",
+      "vw_static": 0.01982349157333374,
       "weight": 0.01982349157333374
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F153539",
       "target": "L18_F152260",
+      "vw_static": 0.02451922371983528,
       "weight": 0.02451922371983528
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F153539",
       "target": "L18_F41804",
+      "vw_static": 0.017621830105781555,
       "weight": 0.017621830105781555
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F153539",
       "target": "output_correct",
       "weight": 0.013686959513686073
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F153539",
       "target": "output_incorrect",
       "weight": -0.013686959513686073
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F63126",
       "target": "L18_F108180",
+      "vw_static": 0.12837639451026917,
       "weight": 0.12837639451026917
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F63126",
       "target": "L18_F145795",
+      "vw_static": 0.06475606560707092,
       "weight": 0.06475606560707092
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F63126",
       "target": "L18_F152260",
+      "vw_static": 0.02896474301815033,
       "weight": 0.02896474301815033
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F63126",
       "target": "L18_F41804",
+      "vw_static": -0.018841806799173355,
       "weight": -0.018841806799173355
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F63126",
       "target": "output_correct",
       "weight": 0.013030472283179943
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F63126",
       "target": "output_incorrect",
       "weight": -0.013030472283179943
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F6720",
       "target": "L18_F108180",
+      "vw_static": -0.01203116774559021,
       "weight": -0.01203116774559021
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F6720",
       "target": "L18_F145795",
+      "vw_static": 0.10981980711221695,
       "weight": 0.10981980711221695
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F6720",
       "target": "L18_F152260",
+      "vw_static": 0.2236993908882141,
       "weight": 0.2236993908882141
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L17_F6720",
       "target": "L18_F41804",
+      "vw_static": -0.05492432788014412,
       "weight": -0.05492432788014412
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F6720",
       "target": "output_correct",
       "weight": 0.045558538701799184
     },
     {
+      "edge_type": "output_attribution",
       "source": "L17_F6720",
       "target": "output_incorrect",
       "weight": -0.045558538701799184
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F108180",
       "target": "L19_F25394",
+      "vw_static": 0.16525349020957947,
       "weight": 0.16525349020957947
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F108180",
       "target": "L19_F41536",
+      "vw_static": 0.03711560368537903,
       "weight": 0.03711560368537903
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F108180",
       "target": "L19_F94584",
+      "vw_static": 0.1378249228000641,
       "weight": 0.1378249228000641
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F108180",
       "target": "output_correct",
       "weight": -0.07168304830275733
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F108180",
       "target": "output_incorrect",
       "weight": 0.07168304830275733
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F145795",
       "target": "L19_F130590",
+      "vw_static": -0.06737005710601807,
       "weight": -0.06737005710601807
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F145795",
       "target": "L19_F25394",
+      "vw_static": 0.03467454016208649,
       "weight": 0.03467454016208649
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F145795",
       "target": "L19_F44438",
+      "vw_static": -0.02097933366894722,
       "weight": -0.02097933366894722
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F145795",
       "target": "L19_F94584",
+      "vw_static": -0.02117815986275673,
       "weight": -0.02117815986275673
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F145795",
       "target": "output_correct",
       "weight": 0.022868163883686066
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F145795",
       "target": "output_incorrect",
       "weight": -0.022868163883686066
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F152260",
       "target": "L19_F130590",
+      "vw_static": -0.09036600589752197,
       "weight": -0.09036600589752197
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F152260",
       "target": "L19_F25394",
+      "vw_static": -0.06276415288448334,
       "weight": -0.06276415288448334
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F152260",
       "target": "L19_F41536",
+      "vw_static": 0.12995246052742004,
       "weight": 0.12995246052742004
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F152260",
       "target": "L19_F44438",
+      "vw_static": 0.24279719591140747,
       "weight": 0.24279719591140747
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F152260",
       "target": "L19_F94584",
+      "vw_static": 0.41581037640571594,
       "weight": 0.41581037640571594
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F152260",
       "target": "output_correct",
       "weight": -0.024182757821635925
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F152260",
       "target": "output_incorrect",
       "weight": 0.024182757821635925
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F41804",
       "target": "L19_F130590",
+      "vw_static": 0.01207887101918459,
       "weight": 0.01207887101918459
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F41804",
       "target": "L19_F25394",
+      "vw_static": -0.12248671799898148,
       "weight": -0.12248671799898148
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F41804",
       "target": "L19_F41536",
+      "vw_static": -0.08583321422338486,
       "weight": -0.08583321422338486
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F41804",
       "target": "L19_F44438",
+      "vw_static": 0.026124117895960808,
       "weight": 0.026124117895960808
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L18_F41804",
       "target": "L19_F94584",
+      "vw_static": 0.04241714999079704,
       "weight": 0.04241714999079704
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F41804",
       "target": "output_correct",
       "weight": -0.05839515542206557
     },
     {
+      "edge_type": "output_attribution",
       "source": "L18_F41804",
       "target": "output_incorrect",
       "weight": 0.05839515542206557
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F130590",
       "target": "L20_F117855",
+      "vw_static": 0.18191589415073395,
       "weight": 0.18191589415073395
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F130590",
       "target": "L20_F18705",
+      "vw_static": 0.08174125850200653,
       "weight": 0.08174125850200653
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F130590",
       "target": "L20_F72939",
+      "vw_static": 0.41586223244667053,
       "weight": 0.41586223244667053
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F130590",
       "target": "L20_F74959",
+      "vw_static": 0.0780906230211258,
       "weight": 0.0780906230211258
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F130590",
       "target": "L20_F80071",
+      "vw_static": 0.06357476115226746,
       "weight": 0.06357476115226746
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F130590",
       "target": "output_correct",
       "weight": 0.001419778602818648
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F130590",
       "target": "output_incorrect",
       "weight": -0.001419778602818648
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F25394",
       "target": "L20_F117855",
+      "vw_static": 0.1051892563700676,
       "weight": 0.1051892563700676
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F25394",
       "target": "L20_F18705",
+      "vw_static": 0.8968852758407593,
       "weight": 0.8968852758407593
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F25394",
       "target": "L20_F72939",
+      "vw_static": 0.06755109876394272,
       "weight": 0.06755109876394272
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F25394",
       "target": "L20_F74959",
+      "vw_static": 0.09821229428052902,
       "weight": 0.09821229428052902
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F25394",
       "target": "L20_F80071",
+      "vw_static": -0.11770306527614594,
       "weight": -0.11770306527614594
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F25394",
       "target": "output_correct",
       "weight": -0.002917921318421288
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F25394",
       "target": "output_incorrect",
       "weight": 0.002917921318421288
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F41536",
       "target": "L20_F117855",
+      "vw_static": 0.14370515942573547,
       "weight": 0.14370515942573547
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F41536",
       "target": "L20_F18705",
+      "vw_static": -0.02119698002934456,
       "weight": -0.02119698002934456
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F41536",
       "target": "L20_F72939",
+      "vw_static": -0.09767252206802368,
       "weight": -0.09767252206802368
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F41536",
       "target": "L20_F74959",
+      "vw_static": 0.11126069724559784,
       "weight": 0.11126069724559784
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F41536",
       "target": "L20_F80071",
+      "vw_static": 0.0834575891494751,
       "weight": 0.0834575891494751
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F41536",
       "target": "output_correct",
       "weight": 0.053780371944109596
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F41536",
       "target": "output_incorrect",
       "weight": -0.053780371944109596
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F44438",
       "target": "L20_F117855",
+      "vw_static": 0.04145053029060364,
       "weight": 0.04145053029060364
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F44438",
       "target": "L20_F18705",
+      "vw_static": -0.11673902720212936,
       "weight": -0.11673902720212936
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F44438",
       "target": "L20_F72939",
+      "vw_static": 0.153545543551445,
       "weight": 0.153545543551445
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F44438",
       "target": "L20_F74959",
+      "vw_static": 0.05721704661846161,
       "weight": 0.05721704661846161
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F44438",
       "target": "L20_F80071",
+      "vw_static": 0.2580036222934723,
       "weight": 0.2580036222934723
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F44438",
       "target": "output_correct",
       "weight": -0.04294415842741728
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F44438",
       "target": "output_incorrect",
       "weight": 0.04294415842741728
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F94584",
       "target": "L20_F117855",
+      "vw_static": 0.14786015450954437,
       "weight": 0.14786015450954437
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F94584",
       "target": "L20_F18705",
+      "vw_static": -0.050114672631025314,
       "weight": -0.050114672631025314
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F94584",
       "target": "L20_F72939",
+      "vw_static": -0.1660098135471344,
       "weight": -0.1660098135471344
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F94584",
       "target": "L20_F74959",
+      "vw_static": -0.1267121434211731,
       "weight": -0.1267121434211731
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L19_F94584",
       "target": "L20_F80071",
+      "vw_static": 0.11322054266929626,
       "weight": 0.11322054266929626
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F94584",
       "target": "output_correct",
       "weight": -0.04293653290522726
     },
     {
+      "edge_type": "output_attribution",
       "source": "L19_F94584",
       "target": "output_incorrect",
       "weight": 0.04293653290522726
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F117855",
       "target": "L21_F12280",
+      "vw_static": -0.10382615029811859,
       "weight": -0.10382615029811859
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F117855",
       "target": "L21_F157518",
+      "vw_static": 0.13374967873096466,
       "weight": 0.13374967873096466
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F117855",
       "target": "L21_F53078",
+      "vw_static": 0.05094028636813164,
       "weight": 0.05094028636813164
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F117855",
       "target": "L21_F56012",
+      "vw_static": -0.15226803719997406,
       "weight": -0.15226803719997406
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F117855",
       "target": "L21_F99203",
+      "vw_static": 0.19847917556762695,
       "weight": 0.19847917556762695
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F117855",
       "target": "output_correct",
       "weight": -0.02792426459491253
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F117855",
       "target": "output_incorrect",
       "weight": 0.02792426459491253
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F18705",
       "target": "L21_F12280",
+      "vw_static": 0.26210731267929077,
       "weight": 0.26210731267929077
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F18705",
       "target": "L21_F157518",
+      "vw_static": 0.12347486615180969,
       "weight": 0.12347486615180969
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F18705",
       "target": "L21_F53078",
+      "vw_static": 0.14625756442546844,
       "weight": 0.14625756442546844
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F18705",
       "target": "L21_F99203",
+      "vw_static": 0.05401879921555519,
       "weight": 0.05401879921555519
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F18705",
       "target": "output_correct",
       "weight": -0.018876862360371484
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F18705",
       "target": "output_incorrect",
       "weight": 0.018876862360371484
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F72939",
       "target": "L21_F157518",
+      "vw_static": 0.02851390652358532,
       "weight": 0.02851390652358532
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F72939",
       "target": "L21_F53078",
+      "vw_static": 0.7237681150436401,
       "weight": 0.7237681150436401
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F72939",
       "target": "L21_F56012",
+      "vw_static": 0.34968605637550354,
       "weight": 0.34968605637550354
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F72939",
       "target": "output_correct",
       "weight": 0.015951601592333692
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F72939",
       "target": "output_incorrect",
       "weight": -0.015951601592333692
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F74959",
       "target": "L21_F12280",
+      "vw_static": 0.04426383972167969,
       "weight": 0.04426383972167969
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F74959",
       "target": "L21_F157518",
+      "vw_static": 0.05312434583902359,
       "weight": 0.05312434583902359
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F74959",
       "target": "L21_F53078",
+      "vw_static": 0.057925909757614136,
       "weight": 0.057925909757614136
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F74959",
       "target": "L21_F56012",
+      "vw_static": 0.4857620298862457,
       "weight": 0.4857620298862457
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F74959",
       "target": "L21_F99203",
+      "vw_static": 0.10581277310848236,
       "weight": 0.10581277310848236
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F74959",
       "target": "output_correct",
       "weight": 0.0922398075218434
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F74959",
       "target": "output_incorrect",
       "weight": -0.0922398075218434
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F80071",
       "target": "L21_F12280",
+      "vw_static": -0.0468144454061985,
       "weight": -0.0468144454061985
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F80071",
       "target": "L21_F157518",
+      "vw_static": -0.049530990421772,
       "weight": -0.049530990421772
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F80071",
       "target": "L21_F53078",
+      "vw_static": 0.11351866275072098,
       "weight": 0.11351866275072098
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F80071",
       "target": "L21_F56012",
+      "vw_static": -0.034314367920160294,
       "weight": -0.034314367920160294
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L20_F80071",
       "target": "L21_F99203",
+      "vw_static": -0.030724268406629562,
       "weight": -0.030724268406629562
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F80071",
       "target": "output_correct",
       "weight": -0.035055055469274524
     },
     {
+      "edge_type": "output_attribution",
       "source": "L20_F80071",
       "target": "output_incorrect",
       "weight": 0.035055055469274524
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F12280",
       "target": "L22_F110496",
+      "vw_static": 0.414448082447052,
       "weight": 0.414448082447052
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F12280",
       "target": "L22_F113311",
+      "vw_static": 0.08076290041208267,
       "weight": 0.08076290041208267
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F12280",
       "target": "L22_F133148",
+      "vw_static": 0.05205497890710831,
       "weight": 0.05205497890710831
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F12280",
       "target": "L22_F28148",
+      "vw_static": 0.12297283858060837,
       "weight": 0.12297283858060837
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F12280",
       "target": "L22_F93236",
+      "vw_static": -0.0332811176776886,
       "weight": -0.0332811176776886
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F12280",
       "target": "output_correct",
       "weight": 0.011597688649854963
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F12280",
       "target": "output_incorrect",
       "weight": -0.011597688649854963
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F157518",
       "target": "L22_F110496",
+      "vw_static": 0.05209307372570038,
       "weight": 0.05209307372570038
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F157518",
       "target": "L22_F113311",
+      "vw_static": 0.07845108211040497,
       "weight": 0.07845108211040497
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F157518",
       "target": "L22_F133148",
+      "vw_static": 0.026296956464648247,
       "weight": 0.026296956464648247
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F157518",
       "target": "L22_F28148",
+      "vw_static": -0.10835728049278259,
       "weight": -0.10835728049278259
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F157518",
       "target": "L22_F93236",
+      "vw_static": 0.15448647737503052,
       "weight": 0.15448647737503052
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F157518",
       "target": "output_correct",
       "weight": 0.02978034866483588
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F157518",
       "target": "output_incorrect",
       "weight": -0.02978034866483588
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F53078",
       "target": "L22_F110496",
+      "vw_static": 0.03762940689921379,
       "weight": 0.03762940689921379
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F53078",
       "target": "L22_F113311",
+      "vw_static": 0.06889230012893677,
       "weight": 0.06889230012893677
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F53078",
       "target": "L22_F133148",
+      "vw_static": -0.0224762000143528,
       "weight": -0.0224762000143528
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F53078",
       "target": "L22_F28148",
+      "vw_static": 0.32913443446159363,
       "weight": 0.32913443446159363
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F53078",
       "target": "L22_F93236",
+      "vw_static": 0.05849059298634529,
       "weight": 0.05849059298634529
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F53078",
       "target": "output_correct",
       "weight": -0.05888004702600566
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F53078",
       "target": "output_incorrect",
       "weight": 0.05888004702600566
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F56012",
       "target": "L22_F110496",
+      "vw_static": 0.03763312101364136,
       "weight": 0.03763312101364136
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F56012",
       "target": "L22_F113311",
+      "vw_static": 0.1373947262763977,
       "weight": 0.1373947262763977
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F56012",
       "target": "L22_F133148",
+      "vw_static": 0.041355714201927185,
       "weight": 0.041355714201927185
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F56012",
       "target": "L22_F28148",
+      "vw_static": -0.01708316244184971,
       "weight": -0.01708316244184971
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F56012",
       "target": "L22_F93236",
+      "vw_static": -1.077553391456604,
       "weight": -1.077553391456604
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F56012",
       "target": "output_correct",
       "weight": -0.046611773866144096
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F56012",
       "target": "output_incorrect",
       "weight": 0.046611773866144096
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F99203",
       "target": "L22_F110496",
+      "vw_static": -0.011128576472401619,
       "weight": -0.011128576472401619
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F99203",
       "target": "L22_F113311",
+      "vw_static": 0.07291381806135178,
       "weight": 0.07291381806135178
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F99203",
       "target": "L22_F133148",
+      "vw_static": -0.010539134033024311,
       "weight": -0.010539134033024311
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F99203",
       "target": "L22_F28148",
+      "vw_static": 0.22279885411262512,
       "weight": 0.22279885411262512
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L21_F99203",
       "target": "L22_F93236",
+      "vw_static": 0.13166867196559906,
       "weight": 0.13166867196559906
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F99203",
       "target": "output_correct",
       "weight": -0.052184469583961696
     },
     {
+      "edge_type": "output_attribution",
       "source": "L21_F99203",
       "target": "output_incorrect",
       "weight": 0.052184469583961696
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F110496",
       "target": "L23_F109767",
+      "vw_static": 0.07518091052770615,
       "weight": 0.07518091052770615
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F110496",
       "target": "L23_F140107",
+      "vw_static": 0.04078122600913048,
       "weight": 0.04078122600913048
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F110496",
       "target": "L23_F161196",
+      "vw_static": -0.032401908189058304,
       "weight": -0.032401908189058304
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F110496",
       "target": "L23_F71067",
+      "vw_static": 0.09226870536804199,
       "weight": 0.09226870536804199
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F110496",
       "target": "L23_F83556",
+      "vw_static": 0.45203879475593567,
       "weight": 0.45203879475593567
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F110496",
       "target": "output_correct",
       "weight": 0.05485721013468245
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F110496",
       "target": "output_incorrect",
       "weight": -0.05485721013468245
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F113311",
       "target": "L23_F109767",
+      "vw_static": 0.8681759238243103,
       "weight": 0.8681759238243103
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F113311",
       "target": "L23_F161196",
+      "vw_static": 0.13152964413166046,
       "weight": 0.13152964413166046
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F113311",
       "target": "L23_F71067",
+      "vw_static": -0.09655655920505524,
       "weight": -0.09655655920505524
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F113311",
       "target": "L23_F83556",
+      "vw_static": -0.02427486889064312,
       "weight": -0.02427486889064312
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F113311",
       "target": "output_correct",
       "weight": -0.030320186333523857
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F113311",
       "target": "output_incorrect",
       "weight": 0.030320186333523857
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F133148",
       "target": "L23_F161196",
+      "vw_static": 0.17787837982177734,
       "weight": 0.17787837982177734
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F133148",
       "target": "L23_F71067",
+      "vw_static": 0.8659504055976868,
       "weight": 0.8659504055976868
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F133148",
       "target": "L23_F83556",
+      "vw_static": 0.10305609554052353,
       "weight": 0.10305609554052353
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F133148",
       "target": "output_correct",
       "weight": 0.05826224726350868
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F133148",
       "target": "output_incorrect",
       "weight": -0.05826224726350868
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F28148",
       "target": "L23_F109767",
+      "vw_static": 0.02765200473368168,
       "weight": 0.02765200473368168
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F28148",
       "target": "L23_F140107",
+      "vw_static": 0.022026710212230682,
       "weight": 0.022026710212230682
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F28148",
       "target": "L23_F161196",
+      "vw_static": 0.06518785655498505,
       "weight": 0.06518785655498505
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F28148",
       "target": "L23_F71067",
+      "vw_static": -0.08070676028728485,
       "weight": -0.08070676028728485
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F28148",
       "target": "L23_F83556",
+      "vw_static": -0.05138752609491348,
       "weight": -0.05138752609491348
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F28148",
       "target": "output_correct",
       "weight": 0.022440950705933927
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F28148",
       "target": "output_incorrect",
       "weight": -0.022440950705933927
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F93236",
       "target": "L23_F109767",
+      "vw_static": 0.037871889770030975,
       "weight": 0.037871889770030975
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F93236",
       "target": "L23_F140107",
+      "vw_static": -0.023867018520832062,
       "weight": -0.023867018520832062
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F93236",
       "target": "L23_F161196",
+      "vw_static": 0.17620804905891418,
       "weight": 0.17620804905891418
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F93236",
       "target": "L23_F71067",
+      "vw_static": -0.06968338787555695,
       "weight": -0.06968338787555695
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L22_F93236",
       "target": "L23_F83556",
+      "vw_static": 0.08408165723085403,
       "weight": 0.08408165723085403
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F93236",
       "target": "output_correct",
       "weight": 0.08191441588836615
     },
     {
+      "edge_type": "output_attribution",
       "source": "L22_F93236",
       "target": "output_incorrect",
       "weight": -0.08191441588836615
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F109767",
       "target": "L24_F18943",
+      "vw_static": 0.11416283249855042,
       "weight": 0.11416283249855042
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F109767",
       "target": "L24_F249",
+      "vw_static": -0.10867708921432495,
       "weight": -0.10867708921432495
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F109767",
       "target": "L24_F52031",
+      "vw_static": 0.057228606194257736,
       "weight": 0.057228606194257736
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F109767",
       "target": "L24_F60777",
+      "vw_static": 0.049075838178396225,
       "weight": 0.049075838178396225
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F109767",
       "target": "L24_F88968",
+      "vw_static": 0.0969737321138382,
       "weight": 0.0969737321138382
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F109767",
       "target": "output_correct",
       "weight": -0.01651012421220164
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F109767",
       "target": "output_incorrect",
       "weight": 0.01651012421220164
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F140107",
       "target": "L24_F18943",
+      "vw_static": -0.06802891939878464,
       "weight": -0.06802891939878464
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F140107",
       "target": "L24_F52031",
+      "vw_static": -0.027866195887327194,
       "weight": -0.027866195887327194
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F140107",
       "target": "L24_F60777",
+      "vw_static": -0.1251680999994278,
       "weight": -0.1251680999994278
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F140107",
       "target": "L24_F88968",
+      "vw_static": 0.3097466826438904,
       "weight": 0.3097466826438904
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F140107",
       "target": "output_correct",
       "weight": -0.01303413353032536
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F140107",
       "target": "output_incorrect",
       "weight": 0.01303413353032536
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F161196",
       "target": "L24_F18943",
+      "vw_static": 0.014318743720650673,
       "weight": 0.014318743720650673
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F161196",
       "target": "L24_F249",
+      "vw_static": 0.16302472352981567,
       "weight": 0.16302472352981567
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F161196",
       "target": "L24_F52031",
+      "vw_static": -0.04230682924389839,
       "weight": -0.04230682924389839
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F161196",
       "target": "L24_F60777",
+      "vw_static": 0.0600852407515049,
       "weight": 0.0600852407515049
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F161196",
       "target": "L24_F88968",
+      "vw_static": 0.6306232213973999,
       "weight": 0.6306232213973999
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F161196",
       "target": "output_correct",
       "weight": -0.0020472174209933127
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F161196",
       "target": "output_incorrect",
       "weight": 0.0020472174209933127
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F71067",
       "target": "L24_F18943",
+      "vw_static": 0.09775614738464355,
       "weight": 0.09775614738464355
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F71067",
       "target": "L24_F249",
+      "vw_static": 0.26201409101486206,
       "weight": 0.26201409101486206
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F71067",
       "target": "L24_F52031",
+      "vw_static": 0.19000929594039917,
       "weight": 0.19000929594039917
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F71067",
       "target": "L24_F60777",
+      "vw_static": 0.4146411120891571,
       "weight": 0.4146411120891571
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F71067",
       "target": "L24_F88968",
+      "vw_static": 0.45216095447540283,
       "weight": 0.45216095447540283
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F71067",
       "target": "output_correct",
       "weight": 0.029947676194401886
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F71067",
       "target": "output_incorrect",
       "weight": -0.029947676194401886
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F83556",
       "target": "L24_F18943",
+      "vw_static": 0.1276084929704666,
       "weight": 0.1276084929704666
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F83556",
       "target": "L24_F249",
+      "vw_static": 1.2035466432571411,
       "weight": 1.2035466432571411
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F83556",
       "target": "L24_F52031",
+      "vw_static": 0.12656047940254211,
       "weight": 0.12656047940254211
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F83556",
       "target": "L24_F60777",
+      "vw_static": 0.7935968041419983,
       "weight": 0.7935968041419983
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L23_F83556",
       "target": "L24_F88968",
+      "vw_static": 0.18603858351707458,
       "weight": 0.18603858351707458
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F83556",
       "target": "output_correct",
       "weight": 0.005228461875092415
     },
     {
+      "edge_type": "output_attribution",
       "source": "L23_F83556",
       "target": "output_incorrect",
       "weight": -0.005228461875092415
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F18943",
       "target": "L25_F105937",
+      "vw_static": 0.057577118277549744,
       "weight": 0.057577118277549744
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F18943",
       "target": "L25_F110282",
+      "vw_static": 0.03768863156437874,
       "weight": 0.03768863156437874
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F18943",
       "target": "L25_F126439",
+      "vw_static": -0.14134179055690765,
       "weight": -0.14134179055690765
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F18943",
       "target": "L25_F142075",
+      "vw_static": -0.02620561793446541,
       "weight": -0.02620561793446541
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F18943",
       "target": "L25_F71226",
+      "vw_static": 0.015658460557460785,
       "weight": 0.015658460557460785
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F18943",
       "target": "output_correct",
       "weight": 0.016778253267208734
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F18943",
       "target": "output_incorrect",
       "weight": -0.016778253267208734
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F249",
       "target": "L25_F105937",
+      "vw_static": 0.11906760185956955,
       "weight": 0.11906760185956955
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F249",
       "target": "L25_F110282",
+      "vw_static": 0.24942642450332642,
       "weight": 0.24942642450332642
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F249",
       "target": "L25_F126439",
+      "vw_static": -0.02368442714214325,
       "weight": -0.02368442714214325
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F249",
       "target": "L25_F142075",
+      "vw_static": -0.15778876841068268,
       "weight": -0.15778876841068268
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F249",
       "target": "L25_F71226",
+      "vw_static": -0.11803703010082245,
       "weight": -0.11803703010082245
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F249",
       "target": "output_correct",
       "weight": 0.01279302310043325
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F249",
       "target": "output_incorrect",
       "weight": -0.01279302310043325
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F52031",
       "target": "L25_F105937",
+      "vw_static": 0.10563355684280396,
       "weight": 0.10563355684280396
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F52031",
       "target": "L25_F110282",
+      "vw_static": 0.03007631003856659,
       "weight": 0.03007631003856659
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F52031",
       "target": "L25_F126439",
+      "vw_static": 0.17661812901496887,
       "weight": 0.17661812901496887
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F52031",
       "target": "L25_F142075",
+      "vw_static": 0.08006659150123596,
       "weight": 0.08006659150123596
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F52031",
       "target": "L25_F71226",
+      "vw_static": 0.07143470644950867,
       "weight": 0.07143470644950867
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F52031",
       "target": "output_correct",
       "weight": 0.029984951139457764
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F52031",
       "target": "output_incorrect",
       "weight": -0.029984951139457764
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F60777",
       "target": "L25_F105937",
+      "vw_static": 0.2420884519815445,
       "weight": 0.2420884519815445
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F60777",
       "target": "L25_F110282",
+      "vw_static": 0.29987192153930664,
       "weight": 0.29987192153930664
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F60777",
       "target": "L25_F126439",
+      "vw_static": 0.20699073374271393,
       "weight": 0.20699073374271393
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F60777",
       "target": "L25_F142075",
+      "vw_static": 0.11408059298992157,
       "weight": 0.11408059298992157
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F60777",
       "target": "L25_F71226",
+      "vw_static": 0.32393136620521545,
       "weight": 0.32393136620521545
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F60777",
       "target": "output_correct",
       "weight": -0.011494283165250505
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F60777",
       "target": "output_incorrect",
       "weight": 0.011494283165250505
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F88968",
       "target": "L25_F105937",
+      "vw_static": 0.043546706438064575,
       "weight": 0.043546706438064575
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F88968",
       "target": "L25_F110282",
+      "vw_static": -0.01933598890900612,
       "weight": -0.01933598890900612
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F88968",
       "target": "L25_F126439",
+      "vw_static": 0.05269507318735123,
       "weight": 0.05269507318735123
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F88968",
       "target": "L25_F142075",
+      "vw_static": 0.07117153704166412,
       "weight": 0.07117153704166412
     },
     {
+      "edge_type": "virtual_weight",
       "source": "L24_F88968",
       "target": "L25_F71226",
+      "vw_static": -0.047441303730010986,
       "weight": -0.047441303730010986
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F88968",
       "target": "output_correct",
       "weight": 0.007106006177591866
     },
     {
+      "edge_type": "output_attribution",
       "source": "L24_F88968",
       "target": "output_incorrect",
       "weight": -0.007106006177591866
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F105937",
       "target": "output_correct",
       "weight": -0.011484906246716326
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F105937",
       "target": "output_incorrect",
       "weight": 0.011484906246716326
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F110282",
       "target": "output_correct",
       "weight": 0.06756614644447682
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F110282",
       "target": "output_incorrect",
       "weight": -0.06756614644447682
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F126439",
       "target": "output_correct",
       "weight": 0.027754530993600687
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F126439",
       "target": "output_incorrect",
       "weight": -0.027754530993600687
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F142075",
       "target": "output_correct",
       "weight": -0.007249276552881513
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F142075",
       "target": "output_incorrect",
       "weight": 0.007249276552881513
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F71226",
       "target": "output_correct",
       "weight": 0.06572137262723217
     },
     {
+      "edge_type": "output_attribution",
       "source": "L25_F71226",
       "target": "output_incorrect",
       "weight": -0.06572137262723217
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L10_F128064",
       "weight": 0.012817546041036139
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L10_F35580",
       "weight": 0.030641044199955267
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L10_F68680",
       "weight": -0.016284956729837825
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L10_F80002",
       "weight": 0.048006714321672916
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L10_F83063",
       "weight": 0.009670106694102287
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L11_F114815",
       "weight": -0.011602279730141163
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L11_F144890",
       "weight": 0.020504860579967497
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L11_F151375",
       "weight": -0.03835516972467303
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L11_F35425",
       "weight": 0.0016145050703060058
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L12_F2451",
       "weight": 0.018750807874508807
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L12_F60",
       "weight": -0.04264115983326184
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L12_F71226",
       "weight": -0.025227868796459267
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L13_F45942",
       "weight": 0.0010930675268173218
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L13_F57499",
       "weight": 0.007599338632205437
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L13_F58969",
       "weight": -0.024514745839911957
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L14_F140141",
       "weight": -0.05266860025850209
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L14_F24749",
       "weight": -1.6279133229420102e-05
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L15_F15507",
       "weight": 0.0060721831396222115
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L15_F64857",
       "weight": -0.002463313640426781
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L15_F89707",
       "weight": -0.062423348219858274
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L16_F14097",
       "weight": -0.07435180967052778
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L16_F33974",
       "weight": -0.014272806545098623
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L16_F46637",
       "weight": -0.041923575241256644
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L16_F53285",
       "weight": -0.05058537686572356
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L16_F82587",
       "weight": -0.04329959005117416
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L17_F111674",
       "weight": -0.05844604799693281
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L17_F122323",
       "weight": -0.0656406853128882
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L17_F153539",
       "weight": 0.013686959513686073
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L17_F63126",
       "weight": 0.013030472283179943
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L17_F6720",
       "weight": 0.045558538701799184
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L18_F108180",
       "weight": -0.07168304830275733
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L18_F145795",
       "weight": 0.022868163883686066
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L18_F152260",
       "weight": -0.024182757821635925
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L18_F41804",
       "weight": -0.05839515542206557
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L19_F130590",
       "weight": 0.001419778602818648
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L19_F25394",
       "weight": -0.002917921318421288
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L19_F41536",
       "weight": 0.053780371944109596
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L19_F44438",
       "weight": -0.04294415842741728
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L19_F94584",
       "weight": -0.04293653290522726
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L20_F117855",
       "weight": -0.02792426459491253
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L20_F18705",
       "weight": -0.018876862360371484
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L20_F72939",
       "weight": 0.015951601592333692
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L20_F74959",
       "weight": 0.0922398075218434
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L20_F80071",
       "weight": -0.035055055469274524
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L21_F12280",
       "weight": 0.011597688649854963
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L21_F157518",
       "weight": 0.02978034866483588
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L21_F53078",
       "weight": -0.05888004702600566
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L21_F56012",
       "weight": -0.046611773866144096
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L21_F99203",
       "weight": -0.052184469583961696
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L22_F110496",
       "weight": 0.05485721013468245
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L22_F113311",
       "weight": -0.030320186333523857
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L22_F133148",
       "weight": 0.05826224726350868
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L22_F28148",
       "weight": 0.022440950705933927
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L22_F93236",
       "weight": 0.08191441588836615
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L23_F109767",
       "weight": -0.01651012421220164
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L23_F140107",
       "weight": -0.01303413353032536
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L23_F161196",
       "weight": -0.0020472174209933127
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L23_F71067",
       "weight": 0.029947676194401886
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L23_F83556",
       "weight": 0.005228461875092415
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L24_F18943",
       "weight": 0.016778253267208734
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L24_F249",
       "weight": 0.01279302310043325
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L24_F52031",
       "weight": 0.029984951139457764
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L24_F60777",
       "weight": -0.011494283165250505
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L24_F88968",
       "weight": 0.007106006177591866
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L25_F105937",
       "weight": -0.011484906246716326
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L25_F110282",
       "weight": 0.06756614644447682
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L25_F126439",
       "weight": 0.027754530993600687
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L25_F142075",
       "weight": -0.007249276552881513
     },
     {
+      "edge_type": "input_attribution",
       "source": "input",
       "target": "L25_F71226",
       "weight": 0.06572137262723217
@@ -2367,6 +3104,7 @@
   "nodes": [
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 128064,
       "frequency": 0.4537037037037037,
       "grad_attr_sign": 1,
@@ -2387,6 +3125,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 35580,
       "frequency": 0.5648148148148148,
       "grad_attr_sign": 1,
@@ -2407,6 +3146,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 68680,
       "frequency": 0.12962962962962962,
       "grad_attr_sign": -1,
@@ -2427,6 +3167,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 80002,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -2447,6 +3188,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 83063,
       "frequency": 0.24074074074074073,
       "grad_attr_sign": 1,
@@ -2467,6 +3209,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 114815,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": -1,
@@ -2487,6 +3230,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 144890,
       "frequency": 0.18518518518518517,
       "grad_attr_sign": 1,
@@ -2507,6 +3251,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 151375,
       "frequency": 0.37037037037037035,
       "grad_attr_sign": -1,
@@ -2527,6 +3272,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 35425,
       "frequency": 0.3888888888888889,
       "grad_attr_sign": 1,
@@ -2547,6 +3293,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 2451,
       "frequency": 0.3425925925925926,
       "grad_attr_sign": 1,
@@ -2567,6 +3314,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 60,
       "frequency": 0.17592592592592593,
       "grad_attr_sign": -1,
@@ -2587,6 +3335,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 71226,
       "frequency": 0.12962962962962962,
       "grad_attr_sign": -1,
@@ -2607,6 +3356,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 45942,
       "frequency": 0.23148148148148148,
       "grad_attr_sign": 1,
@@ -2627,6 +3377,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 57499,
       "frequency": 0.26851851851851855,
       "grad_attr_sign": 1,
@@ -2647,6 +3398,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 58969,
       "frequency": 0.42592592592592593,
       "grad_attr_sign": -1,
@@ -2667,6 +3419,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 140141,
       "frequency": 0.10185185185185185,
       "grad_attr_sign": -1,
@@ -2687,6 +3440,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 3,
       "feature_idx": 24749,
       "frequency": 0.26851851851851855,
       "grad_attr_sign": -1,
@@ -2707,6 +3461,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 15507,
       "frequency": 0.14814814814814814,
       "grad_attr_sign": 1,
@@ -2727,6 +3482,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 64857,
       "frequency": 0.5462962962962963,
       "grad_attr_sign": -1,
@@ -2747,6 +3503,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 89707,
       "frequency": 0.16666666666666666,
       "grad_attr_sign": -1,
@@ -2767,6 +3524,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 14097,
       "frequency": 0.1388888888888889,
       "grad_attr_sign": -1,
@@ -2787,6 +3545,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 33974,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": -1,
@@ -2807,6 +3566,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 46637,
       "frequency": 0.25,
       "grad_attr_sign": -1,
@@ -2827,6 +3587,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 53285,
       "frequency": 0.1574074074074074,
       "grad_attr_sign": -1,
@@ -2847,6 +3608,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 82587,
       "frequency": 0.32407407407407407,
       "grad_attr_sign": -1,
@@ -2867,6 +3629,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 111674,
       "frequency": 0.10185185185185185,
       "grad_attr_sign": -1,
@@ -2887,6 +3650,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 122323,
       "frequency": 0.1574074074074074,
       "grad_attr_sign": -1,
@@ -2907,6 +3671,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 153539,
       "frequency": 0.6574074074074074,
       "grad_attr_sign": 1,
@@ -2927,6 +3692,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 63126,
       "frequency": 0.3611111111111111,
       "grad_attr_sign": 1,
@@ -2947,6 +3713,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 6720,
       "frequency": 0.16666666666666666,
       "grad_attr_sign": 1,
@@ -2967,6 +3734,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 108180,
       "frequency": 0.5370370370370371,
       "grad_attr_sign": -1,
@@ -2987,6 +3755,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 145795,
       "frequency": 0.10185185185185185,
       "grad_attr_sign": 1,
@@ -3007,6 +3776,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 152260,
       "frequency": 0.6388888888888888,
       "grad_attr_sign": -1,
@@ -3027,6 +3797,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 0,
       "feature_idx": 41804,
       "frequency": 0.21296296296296297,
       "grad_attr_sign": -1,
@@ -3047,6 +3818,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 130590,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -3067,6 +3839,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 4,
       "feature_idx": 25394,
       "frequency": 0.5833333333333334,
       "grad_attr_sign": -1,
@@ -3087,6 +3860,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 41536,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -3107,6 +3881,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 44438,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": -1,
@@ -3127,6 +3902,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 94584,
       "frequency": 0.35185185185185186,
       "grad_attr_sign": -1,
@@ -3147,6 +3923,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 117855,
       "frequency": 0.8333333333333334,
       "grad_attr_sign": -1,
@@ -3167,6 +3944,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 4,
       "feature_idx": 18705,
       "frequency": 0.8333333333333334,
       "grad_attr_sign": -1,
@@ -3187,6 +3965,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 72939,
       "frequency": 0.35185185185185186,
       "grad_attr_sign": 1,
@@ -3207,6 +3986,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 74959,
       "frequency": 0.8518518518518519,
       "grad_attr_sign": 1,
@@ -3227,6 +4007,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 80071,
       "frequency": 0.23148148148148148,
       "grad_attr_sign": -1,
@@ -3247,6 +4028,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 4,
       "feature_idx": 12280,
       "frequency": 0.5833333333333334,
       "grad_attr_sign": 1,
@@ -3267,6 +4049,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 157518,
       "frequency": 0.7037037037037037,
       "grad_attr_sign": 1,
@@ -3287,6 +4070,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 53078,
       "frequency": 0.3055555555555556,
       "grad_attr_sign": -1,
@@ -3307,6 +4091,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 56012,
       "frequency": 0.2037037037037037,
       "grad_attr_sign": -1,
@@ -3327,6 +4112,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 99203,
       "frequency": 0.25,
       "grad_attr_sign": -1,
@@ -3347,6 +4133,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 4,
       "feature_idx": 110496,
       "frequency": 0.8518518518518519,
       "grad_attr_sign": 1,
@@ -3367,6 +4154,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 1,
       "feature_idx": 113311,
       "frequency": 0.8333333333333334,
       "grad_attr_sign": -1,
@@ -3387,6 +4175,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 133148,
       "frequency": 0.6296296296296297,
       "grad_attr_sign": 1,
@@ -3407,6 +4196,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 28148,
       "frequency": 0.6203703703703703,
       "grad_attr_sign": 1,
@@ -3427,6 +4217,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 5,
       "feature_idx": 93236,
       "frequency": 0.5648148148148148,
       "grad_attr_sign": 1,
@@ -3447,6 +4238,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 1,
       "feature_idx": 109767,
       "frequency": 0.7314814814814815,
       "grad_attr_sign": -1,
@@ -3467,6 +4259,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 140107,
       "frequency": 0.4166666666666667,
       "grad_attr_sign": -1,
@@ -3487,6 +4280,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 161196,
       "frequency": 0.5740740740740741,
       "grad_attr_sign": -1,
@@ -3507,6 +4301,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 71067,
       "frequency": 0.7222222222222222,
       "grad_attr_sign": 1,
@@ -3527,6 +4322,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 83556,
       "frequency": 0.7777777777777778,
       "grad_attr_sign": 1,
@@ -3547,6 +4343,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 18943,
       "frequency": 0.5555555555555556,
       "grad_attr_sign": 1,
@@ -3567,6 +4364,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 249,
       "frequency": 0.8888888888888888,
       "grad_attr_sign": 1,
@@ -3587,6 +4385,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 52031,
       "frequency": 0.5740740740740741,
       "grad_attr_sign": 1,
@@ -3607,6 +4406,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 60777,
       "frequency": 0.7129629629629629,
       "grad_attr_sign": -1,
@@ -3627,6 +4427,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 88968,
       "frequency": 0.5370370370370371,
       "grad_attr_sign": 1,
@@ -3647,6 +4448,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 105937,
       "frequency": 0.5092592592592593,
       "grad_attr_sign": -1,
@@ -3667,6 +4469,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 110282,
       "frequency": 0.6574074074074074,
       "grad_attr_sign": 1,
@@ -3687,6 +4490,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 126439,
       "frequency": 0.2777777777777778,
       "grad_attr_sign": 1,
@@ -3707,6 +4511,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 142075,
       "frequency": 0.12962962962962962,
       "grad_attr_sign": -1,
@@ -3727,6 +4532,7 @@
     },
     {
       "causal_status": "output_attributed",
+      "community": 2,
       "feature_idx": 71226,
       "frequency": 0.6759259259259259,
       "grad_attr_sign": 1,
@@ -3746,14 +4552,17 @@
       "type": "feature"
     },
     {
+      "community": 0,
       "id": "input",
       "type": "input"
     },
     {
+      "community": 0,
       "id": "output_correct",
       "type": "output"
     },
     {
+      "community": 0,
       "id": "output_incorrect",
       "type": "output"
     }
