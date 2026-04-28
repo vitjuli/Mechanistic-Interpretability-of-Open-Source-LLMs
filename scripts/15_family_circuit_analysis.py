@@ -10,7 +10,7 @@ Answers:
   3. Family-specific vs universal features: does the circuit split by family?
 
 Usage:
-    python scripts/15_family_circuit_analysis.py [--ui_run <run_id>] [--top_n 15]
+    python scripts/15_family_circuit_analysis.py [--ui_run <run_id>] [--split train|test] [--top_n 15]
 """
 
 import argparse
@@ -22,7 +22,6 @@ import pandas as pd
 
 BEHAVIOUR = "physics_decay_type"
 PROJECT_ROOT = Path(__file__).parent.parent
-PROMPTS_FILE = PROJECT_ROOT / "data" / "prompts" / f"{BEHAVIOUR}_train.jsonl"
 
 # Approximate circuit features from top ablation results (CSD3 circuit on remote).
 # These are the top 11 features by disruption signal that match the known circuit.
@@ -42,10 +41,10 @@ def bold(s): return f"{ANSI['bold']}{s}{ANSI['reset']}"
 def cyan(s): return f"{ANSI['cyan']}{s}{ANSI['reset']}"
 
 
-def load_data(ui_run_dir: Path):
+def load_data(ui_run_dir: Path, prompts_file: Path):
     prompts = {
         i: json.loads(l)
-        for i, l in enumerate(PROMPTS_FILE.read_text().splitlines())
+        for i, l in enumerate(prompts_file.read_text().splitlines())
         if l.strip()
     }
     abl = pd.read_csv(ui_run_dir / "raw_sources" / f"intervention_ablation_{BEHAVIOUR}.csv")
@@ -259,6 +258,10 @@ def analysis_failures(abl: pd.DataFrame, prompts: dict) -> None:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ui_run", default=None)
+    parser.add_argument("--split", default=None, choices=["train", "test"],
+                        help="Which split's prompt file to use. Auto-detected from run name if omitted.")
+    parser.add_argument("--prompts_file", default=None,
+                        help="Explicit path to the prompts JSONL (overrides --split).")
     parser.add_argument("--top_n", type=int, default=15)
     args = parser.parse_args()
 
@@ -275,9 +278,20 @@ def main():
             return
         ui_run_dir = candidates[-1]
 
-    print(cyan(f"Run: {ui_run_dir.name}"))
+    # Resolve prompts file
+    if args.prompts_file:
+        prompts_file = Path(args.prompts_file)
+    elif args.split:
+        prompts_file = PROJECT_ROOT / "data" / "prompts" / f"{BEHAVIOUR}_{args.split}.jsonl"
+    else:
+        # Auto-detect from run name: contains "_test_" or "_train_"
+        split = "test" if "_test_" in ui_run_dir.name else "train"
+        prompts_file = PROJECT_ROOT / "data" / "prompts" / f"{BEHAVIOUR}_{split}.jsonl"
 
-    abl, prompts = load_data(ui_run_dir)
+    print(cyan(f"Run: {ui_run_dir.name}"))
+    print(cyan(f"Prompts: {prompts_file.name}"))
+
+    abl, prompts = load_data(ui_run_dir, prompts_file)
     analysis_family_overview(abl)
     analysis_family_by_layer(abl)
     analysis_circuit_features(abl, args.top_n)

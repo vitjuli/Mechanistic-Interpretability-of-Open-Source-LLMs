@@ -47,7 +47,30 @@ KNOWN = {
         "circuit_n_features_expected": 11,
         "circuit_n_edges_expected": 16,
         "circuit_n_paths_expected": 10,
-    }
+        "_prompts_file": "physics_decay_type_train.jsonl",
+    },
+    "physics_decay_type_test": {
+        "n_prompts": 36,
+        "n_alpha": 18,
+        "n_beta": 18,
+        "families": {"F0": 8, "F1": 10, "F2": 8, "F3": 6, "F4": 4},
+        "keyword_free_family": "F1",
+        "keywords_banned": ["alpha", "beta", "helium", "electron"],
+        # Base model test baseline: 83.3% (30/36); Instruct: 91.7%
+        "baseline_sign_acc_min": 0.70,
+        "baseline_sign_acc_expected": 0.833,
+        "ablation_rows_expected": 1440,  # 40 features × 36 prompts
+        "graph_n_prompts": 108,          # uses train graph
+        "graph_n_nodes_roleaware_static": 69,
+        "graph_n_edges_roleaware_static": 472,
+        "graph_vw_edges_roleaware_static": 265,
+        "graph_n_communities_min": 4,
+        "circuit_necessity_min": None,
+        "circuit_n_features_expected": None,
+        "circuit_n_edges_expected": None,
+        "circuit_n_paths_expected": None,
+        "_prompts_file": "physics_decay_type_test.jsonl",
+    },
 }
 
 PASS = "\033[32mPASS\033[0m"
@@ -75,7 +98,8 @@ def check(label: str, ok: bool, detail: str = "", warn_only: bool = False) -> bo
 
 def validate_prompts(behaviour: str, project_root: Path, cfg: dict) -> None:
     print("\n── 1. Prompt file ─────────────────────────────────────────────")
-    prompt_path = project_root / "data" / "prompts" / f"{behaviour}_train.jsonl"
+    prompt_path = cfg.get("_resolved_prompts_path",
+                          project_root / "data" / "prompts" / f"{behaviour}_train.jsonl")
     check("prompt file exists", prompt_path.exists(), str(prompt_path))
     if not prompt_path.exists():
         return
@@ -217,7 +241,12 @@ def validate_graphs(behaviour: str, project_root: Path, cfg: dict, ui_run_dir: P
 
 def validate_ablation(behaviour: str, project_root: Path, cfg: dict, ui_run_dir: Path) -> None:
     print("\n── 3. Ablation CSV ────────────────────────────────────────────")
+    # Script 07 saves using the base behaviour name regardless of split;
+    # fall back to the base name if the variant-specific file doesn't exist.
+    base_behaviour = behaviour.replace("_test", "")
     csv_path = ui_run_dir / "raw_sources" / f"intervention_ablation_{behaviour}.csv"
+    if not csv_path.exists():
+        csv_path = ui_run_dir / "raw_sources" / f"intervention_ablation_{base_behaviour}.csv"
     check("ablation CSV exists", csv_path.exists(), str(csv_path.name))
     if not csv_path.exists():
         return
@@ -269,8 +298,10 @@ def validate_ablation(behaviour: str, project_root: Path, cfg: dict, ui_run_dir:
     for fid, count in feature_disruption.head(5).items():
         print(f"      {fid}: {count} flips ({count/cfg['n_prompts']*100:.1f}% of prompts)")
 
-    # Summary JSON
+    # Summary JSON (falls back to base name for test variant)
     summary_path = ui_run_dir / "raw_sources" / f"intervention_ablation_{behaviour}_summary.json"
+    if not summary_path.exists():
+        summary_path = ui_run_dir / "raw_sources" / f"intervention_ablation_{base_behaviour}_summary.json"
     check("ablation summary JSON exists", summary_path.exists())
     if summary_path.exists():
         s = json.load(open(summary_path))
@@ -349,8 +380,11 @@ def validate_ui(behaviour: str, ui_run_dir: Path, cfg: dict) -> None:
     check("run_manifest.json exists", manifest_path.exists())
     if manifest_path.exists():
         m = json.load(open(manifest_path))
-        check("manifest: behaviour matches", m.get("parameters", {}).get("behaviour") == behaviour,
-              m.get("parameters", {}).get("behaviour"))
+        manifest_behaviour = m.get("parameters", {}).get("behaviour")
+        base_behaviour = behaviour.replace("_test", "")
+        check("manifest: behaviour matches",
+              manifest_behaviour in (behaviour, base_behaviour),
+              manifest_behaviour)
 
 
 # ─── 5. Circuit JSON (optional) ──────────────────────────────────────────────
@@ -437,27 +471,39 @@ def main():
     )
     args = parser.parse_args()
 
-    behaviour = args.behaviour
     project_root = Path(__file__).parent.parent
     ui_offline_root = project_root / "data" / "ui_offline"
+
+    # Auto-detect test variant: if ui_run contains "_test_", use *_test config
+    behaviour = args.behaviour
+    if args.ui_run and "_test_" in args.ui_run and f"{behaviour}_test" in KNOWN:
+        behaviour = f"{behaviour}_test"
+    elif args.ui_run is None:
+        # For auto-detected run, check if it's test split
+        pass
 
     if behaviour not in KNOWN:
         print(f"No known config for behaviour '{behaviour}'. Add it to KNOWN dict.")
         sys.exit(1)
 
     cfg = KNOWN[behaviour]
+    # Use the correct prompts file for this variant
+    prompts_filename = cfg.get("_prompts_file", f"{args.behaviour}_train.jsonl")
+    # Monkey-patch PROMPTS_FILE into project_root for validate_prompts
+    cfg["_resolved_prompts_path"] = project_root / "data" / "prompts" / prompts_filename
 
     # Find UI run dir
+    base_behaviour = args.behaviour  # without _test suffix, for directory search
     if args.ui_run:
         ui_run_dir = ui_offline_root / args.ui_run
     else:
         candidates = sorted(
             [d for d in ui_offline_root.iterdir()
-             if d.is_dir() and f"_{behaviour}_" in d.name],
+             if d.is_dir() and f"_{base_behaviour}_" in d.name],
             key=lambda d: d.name,
         )
         if not candidates:
-            print(f"No UI run dirs found for '{behaviour}' under {ui_offline_root}")
+            print(f"No UI run dirs found for '{base_behaviour}' under {ui_offline_root}")
             sys.exit(1)
         ui_run_dir = candidates[-1]
 

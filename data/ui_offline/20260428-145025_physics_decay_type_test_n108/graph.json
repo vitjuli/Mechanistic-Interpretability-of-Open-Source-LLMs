@@ -3167,7 +3167,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 80002,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -3461,7 +3461,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 15507,
       "frequency": 0.14814814814814814,
       "grad_attr_sign": 1,
@@ -3482,7 +3482,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 64857,
       "frequency": 0.5462962962962963,
       "grad_attr_sign": -1,
@@ -3503,7 +3503,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 89707,
       "frequency": 0.16666666666666666,
       "grad_attr_sign": -1,
@@ -3524,7 +3524,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 14097,
       "frequency": 0.1388888888888889,
       "grad_attr_sign": -1,
@@ -3545,7 +3545,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 33974,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": -1,
@@ -3566,7 +3566,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 46637,
       "frequency": 0.25,
       "grad_attr_sign": -1,
@@ -3587,7 +3587,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 53285,
       "frequency": 0.1574074074074074,
       "grad_attr_sign": -1,
@@ -3608,7 +3608,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 82587,
       "frequency": 0.32407407407407407,
       "grad_attr_sign": -1,
@@ -3629,7 +3629,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 111674,
       "frequency": 0.10185185185185185,
       "grad_attr_sign": -1,
@@ -3650,7 +3650,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 122323,
       "frequency": 0.1574074074074074,
       "grad_attr_sign": -1,
@@ -3671,7 +3671,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 153539,
       "frequency": 0.6574074074074074,
       "grad_attr_sign": 1,
@@ -3692,7 +3692,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 63126,
       "frequency": 0.3611111111111111,
       "grad_attr_sign": 1,
@@ -3713,7 +3713,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 6720,
       "frequency": 0.16666666666666666,
       "grad_attr_sign": 1,
@@ -3734,7 +3734,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 108180,
       "frequency": 0.5370370370370371,
       "grad_attr_sign": -1,
@@ -3755,7 +3755,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 145795,
       "frequency": 0.10185185185185185,
       "grad_attr_sign": 1,
@@ -3776,7 +3776,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 152260,
       "frequency": 0.6388888888888888,
       "grad_attr_sign": -1,
@@ -3797,7 +3797,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 2,
+      "community": 0,
       "feature_idx": 41804,
       "frequency": 0.21296296296296297,
       "grad_attr_sign": -1,
@@ -3818,7 +3818,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 130590,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -3860,7 +3860,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 41536,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": 1,
@@ -3881,7 +3881,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 44438,
       "frequency": 0.1111111111111111,
       "grad_attr_sign": -1,
@@ -3902,7 +3902,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 94584,
       "frequency": 0.35185185185185186,
       "grad_attr_sign": -1,
@@ -3923,7 +3923,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 117855,
       "frequency": 0.8333333333333334,
       "grad_attr_sign": -1,
@@ -3965,7 +3965,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 72939,
       "frequency": 0.35185185185185186,
       "grad_attr_sign": 1,
@@ -3986,7 +3986,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 74959,
       "frequency": 0.8518518518518519,
       "grad_attr_sign": 1,
@@ -4007,7 +4007,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 80071,
       "frequency": 0.23148148148148148,
       "grad_attr_sign": -1,
@@ -4028,7 +4028,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 1,
+      "community": 4,
       "feature_idx": 12280,
       "frequency": 0.5833333333333334,
       "grad_attr_sign": 1,
@@ -4049,7 +4049,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 157518,
       "frequency": 0.7037037037037037,
       "grad_attr_sign": 1,
@@ -4070,7 +4070,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 53078,
       "frequency": 0.3055555555555556,
       "grad_attr_sign": -1,
@@ -4091,7 +4091,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 56012,
       "frequency": 0.2037037037037037,
       "grad_attr_sign": -1,
@@ -4112,7 +4112,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 99203,
       "frequency": 0.25,
       "grad_attr_sign": -1,
@@ -4133,7 +4133,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 1,
+      "community": 4,
       "feature_idx": 110496,
       "frequency": 0.8518518518518519,
       "grad_attr_sign": 1,
@@ -4175,7 +4175,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 133148,
       "frequency": 0.6296296296296297,
       "grad_attr_sign": 1,
@@ -4196,7 +4196,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 28148,
       "frequency": 0.6203703703703703,
       "grad_attr_sign": 1,
@@ -4217,7 +4217,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 4,
+      "community": 5,
       "feature_idx": 93236,
       "frequency": 0.5648148148148148,
       "grad_attr_sign": 1,
@@ -4259,7 +4259,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 140107,
       "frequency": 0.4166666666666667,
       "grad_attr_sign": -1,
@@ -4280,7 +4280,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 161196,
       "frequency": 0.5740740740740741,
       "grad_attr_sign": -1,
@@ -4301,7 +4301,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 71067,
       "frequency": 0.7222222222222222,
       "grad_attr_sign": 1,
@@ -4322,7 +4322,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 83556,
       "frequency": 0.7777777777777778,
       "grad_attr_sign": 1,
@@ -4343,7 +4343,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 18943,
       "frequency": 0.5555555555555556,
       "grad_attr_sign": 1,
@@ -4364,7 +4364,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 249,
       "frequency": 0.8888888888888888,
       "grad_attr_sign": 1,
@@ -4385,7 +4385,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 52031,
       "frequency": 0.5740740740740741,
       "grad_attr_sign": 1,
@@ -4406,7 +4406,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 60777,
       "frequency": 0.7129629629629629,
       "grad_attr_sign": -1,
@@ -4427,7 +4427,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 88968,
       "frequency": 0.5370370370370371,
       "grad_attr_sign": 1,
@@ -4448,7 +4448,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 105937,
       "frequency": 0.5092592592592593,
       "grad_attr_sign": -1,
@@ -4469,7 +4469,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 110282,
       "frequency": 0.6574074074074074,
       "grad_attr_sign": 1,
@@ -4490,7 +4490,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 126439,
       "frequency": 0.2777777777777778,
       "grad_attr_sign": 1,
@@ -4511,7 +4511,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 142075,
       "frequency": 0.12962962962962962,
       "grad_attr_sign": -1,
@@ -4532,7 +4532,7 @@
     },
     {
       "causal_status": "output_attributed",
-      "community": 0,
+      "community": 2,
       "feature_idx": 71226,
       "frequency": 0.6759259259259259,
       "grad_attr_sign": 1,
@@ -4552,17 +4552,17 @@
       "type": "feature"
     },
     {
-      "community": 2,
+      "community": 0,
       "id": "input",
       "type": "input"
     },
     {
-      "community": 2,
+      "community": 0,
       "id": "output_correct",
       "type": "output"
     },
     {
-      "community": 2,
+      "community": 0,
       "id": "output_incorrect",
       "type": "output"
     }

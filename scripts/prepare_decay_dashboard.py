@@ -66,8 +66,10 @@ def copy_ui_files(ui_run_dir: Path, dst: Path) -> None:
         print(f"  WARNING: {len(missing)} files not found: {missing}")
 
 
-def generate_prompts_json(dst: Path) -> None:
-    prompts_jsonl = PROJECT_ROOT / "data" / "prompts" / f"{BEHAVIOUR}_train.jsonl"
+def generate_prompts_json(dst: Path, ui_run_dir: Path) -> None:
+    # Auto-detect split from run name
+    split = "test" if "_test_" in ui_run_dir.name else "train"
+    prompts_jsonl = PROJECT_ROOT / "data" / "prompts" / f"{BEHAVIOUR}_{split}.jsonl"
     if not prompts_jsonl.exists():
         print(f"  WARNING: {prompts_jsonl} not found — skipping prompts.json")
         return
@@ -153,7 +155,7 @@ def main():
     print()
 
     copy_ui_files(ui_run_dir, DASHBOARD_DATA)
-    generate_prompts_json(DASHBOARD_DATA)
+    generate_prompts_json(DASHBOARD_DATA, ui_run_dir)
     generate_circuit_json(DASHBOARD_DATA)
     generate_community_labels(DASHBOARD_DATA)
 
