@@ -61,11 +61,14 @@ run_section() {
     echo "████████████████████████████████████████████████████████"
     echo "  SECTION ${label}: starting at $(date)"
     echo "████████████████████████████████████████████████████████"
-    if $fn; then
+    # Run in a subshell so set -e inside the function works correctly.
+    # Calling via `if fn` disables set -e — the subshell avoids this.
+    ( $fn )
+    local rc=$?
+    if [ $rc -eq 0 ]; then
         section_results+=("PASS:${label}")
         echo "  ✓ Section ${label} PASSED at $(date)"
     else
-        local rc=$?
         section_results+=("FAIL:${label}  (exit ${rc})")
         echo "  ✗ Section ${label} FAILED (exit ${rc}) at $(date) — continuing"
     fi
@@ -171,6 +174,14 @@ else:
     echo ""
     echo "---- [A3] Step 07: Ablation on test split ----"
     date
+    # Script 07 constructs the graph path as attribution_graph_{split}_n{N}... so
+    # for test split it would look for attribution_graph_test_n108... which doesn't
+    # exist. Symlink the train graph under the test split name before running.
+    local GRAPH_DIR="data/results/attribution_graphs/${BEHAVIOUR}"
+    ln -sf "$(pwd)/${GRAPH_DIR}/attribution_graph_${TRAIN_SPLIT}_n${TRAIN_N}${GRAPH_SUFFIX}.json" \
+           "${GRAPH_DIR}/attribution_graph_${TEST_SPLIT}_n${TRAIN_N}${GRAPH_SUFFIX}.json"
+    echo "  Symlinked train graph for test split lookup"
+
     python -u scripts/07_run_interventions.py \
         --behaviour "$BEHAVIOUR" \
         --split "$SPLIT" \
@@ -301,11 +312,13 @@ if not p.exists():
 d = json.load(open(p))
 s = d.get('summary', {})
 print('  Path Validation Summary:')
-print(f'    propagation_consistency : {s.get(\"propagation_consistency\", \"?\"):.4f}')
-print(f'    mean_delta_act_B        : {s.get(\"mean_delta_act_B\", \"?\"):.4f}')
-print(f'    mean_delta_logit        : {s.get(\"mean_delta_logit\", \"?\"):.4f}')
+for key in ['propagation_consistency', 'mean_delta_act_B', 'mean_delta_logit']:
+    val = s.get(key, '?')
+    print(f'    {key} : {val:.4f}' if isinstance(val, float) else f'    {key} : {val}')
 for i, pr in enumerate(d.get('paths', [])[:3]):
-    print(f'    Path {i+1}: {pr.get(\"path\",[])} | consistency={pr.get(\"propagation_consistency\",\"?\"):.3f}')
+    pc = pr.get('propagation_consistency', '?')
+    pc_str = f'{pc:.3f}' if isinstance(pc, float) else str(pc)
+    print(f'    Path {i+1}: {pr.get(\"path\",[])} | consistency={pc_str}')
 " || true
 }
 
