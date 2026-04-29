@@ -1,0 +1,134 @@
+{
+  "git_commit": "a6c0f406f56a3e968abd0e769755e9b52ff66987",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:56:07",
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_ablation_physics_decay_type_probe.csv",
+      "size_bytes": 5515010
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:56:08",
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_ablation_physics_decay_type_probe_summary.json",
+      "size_bytes": 935
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_patching_physics_decay_type_probe.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_patching_physics_decay_type_probe_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_steering_physics_decay_type_probe.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_steering_physics_decay_type_probe_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-26T02:26:19",
+      "path": "data/results/attribution_graphs/physics_decay_type_probe/attribution_graph_train_n108_roleaware_static.json",
+      "size_bytes": 136159
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:56:08",
+      "path": "data/results/interventions/physics_decay_type_probe/layer_coverage_ablation_physics_decay_type_probe.csv",
+      "size_bytes": 502
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:11",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/interventions.csv",
+      "size_bytes": 6597045
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:11",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/common_prompt_idx.json",
+      "size_bytes": 4304
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/audit.json",
+      "size_bytes": 720284
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/interventions_layer_agg.csv",
+      "size_bytes": 3565
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/interventions_prompt_agg.csv",
+      "size_bytes": 66948
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/interventions_feature_agg.csv",
+      "size_bytes": 8599
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/layer_coverage.csv",
+      "size_bytes": 662
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/supernodes.json",
+      "size_bytes": 1398
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:12",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/supernodes_summary.csv",
+      "size_bytes": 512
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:53",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/supernodes_effect.json",
+      "size_bytes": 807
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:53",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/supernodes_effect_summary.csv",
+      "size_bytes": 276
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T15:57:53",
+      "path": "data/ui_offline/20260429-155655_physics_decay_type_probe_train_n108/graph.json",
+      "size_bytes": 134847
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_decay_type_probe",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 108,
+    "raw_sources_copied": [
+      "attribution_graph_train_n108_roleaware_static.json",
+      "intervention_ablation_physics_decay_type_probe.csv",
+      "intervention_ablation_physics_decay_type_probe_summary.json"
+    ],
+    "run_id": "20260429-155655_physics_decay_type_probe_train_n108",
+    "split": "train",
+    "timestamp": "2026-04-29T15:56:55.368996"
+  },
+  "timestamp": "2026-04-29T15:57:53.989572"
+}

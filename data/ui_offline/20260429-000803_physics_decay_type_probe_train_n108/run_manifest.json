@@ -1,0 +1,74 @@
+{
+  "git_commit": "973cb48ee40a4cddb99952098a7d906b0f92114f",
+  "inputs": [
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_ablation_physics_decay_type_probe.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_ablation_physics_decay_type_probe_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_patching_physics_decay_type_probe.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_patching_physics_decay_type_probe_summary.json"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_steering_physics_decay_type_probe.csv"
+    },
+    {
+      "exists": false,
+      "path": "data/results/interventions/physics_decay_type_probe/intervention_steering_physics_decay_type_probe_summary.json"
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-26T02:26:19",
+      "path": "data/results/attribution_graphs/physics_decay_type_probe/attribution_graph_train_n108_roleaware_static.json",
+      "size_bytes": 136159
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-04-29T00:08:19",
+      "path": "data/ui_offline/20260429-000803_physics_decay_type_probe_train_n108/audit.json",
+      "size_bytes": 2
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T00:08:19",
+      "path": "data/ui_offline/20260429-000803_physics_decay_type_probe_train_n108/supernodes.json",
+      "size_bytes": 1385
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T00:08:19",
+      "path": "data/ui_offline/20260429-000803_physics_decay_type_probe_train_n108/supernodes_summary.csv",
+      "size_bytes": 470
+    },
+    {
+      "exists": true,
+      "modified": "2026-04-29T00:08:19",
+      "path": "data/ui_offline/20260429-000803_physics_decay_type_probe_train_n108/graph.json",
+      "size_bytes": 134847
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_decay_type_probe",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 108,
+    "raw_sources_copied": [
+      "attribution_graph_train_n108_roleaware_static.json"
+    ],
+    "run_id": "20260429-000803_physics_decay_type_probe_train_n108",
+    "split": "train",
+    "timestamp": "2026-04-29T00:08:03.633844"
+  },
+  "timestamp": "2026-04-29T00:08:20.036397"
+}
