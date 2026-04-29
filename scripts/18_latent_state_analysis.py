@@ -6,13 +6,22 @@ Full activation-based analysis (cosine similarity of raw transcoder activations)
 requires the transcoder feature files from Section B — see --activation_dir.
 
 Tests implemented here:
+  0. Baseline breakdown — per-level and per-group accuracy from Section A CSV
   1. SE test   — within-group sign_flip_rate variance across wording variants
   2. IC test   — cross-group effect profile similarity (same concept, different cues)
   3. CP test   — differential feature activation between contrastive pair members
   4. KW test   — comparison of keyword-free vs keyword-present ablation effects
-  5. Baseline  — per-level and per-group accuracy (from Section A output if present)
 
 Usage:
+  # Baseline-only (no ablation needed, runs immediately after Section A):
+  python scripts/18_latent_state_analysis.py \
+    --behaviour physics_decay_type_probe --split train --baseline_only
+
+  # Core subset only (L1 + L2 + L3 anchors, n=350):
+  python scripts/18_latent_state_analysis.py \
+    --behaviour physics_decay_type_probe --split train --baseline_only --core_only
+
+  # Full analysis (requires ablation CSV from step 07):
   python scripts/18_latent_state_analysis.py \
     --behaviour physics_decay_type_probe --split train
 
@@ -22,10 +31,17 @@ Usage:
     --activation_dir data/results/transcoder_features
 
 Outputs:
-  data/results/grouping/probe_se_analysis.csv       — SE test per group
-  data/results/grouping/probe_ic_analysis.csv       — IC convergence per group pair
-  data/results/grouping/probe_cp_analysis.csv       — CP discriminating features
-  data/results/grouping/probe_summary.html          — interactive Plotly summary
+  data/results/grouping/probe_baseline_breakdown.csv — per-prompt with metadata
+  data/results/grouping/probe_level_summary.csv      — per-level accuracy stats
+  data/results/grouping/probe_group_summary.csv      — per-group accuracy stats
+  data/results/grouping/probe_se_analysis.csv        — SE test per group
+  data/results/grouping/probe_ic_analysis.csv        — IC convergence per group pair
+  data/results/grouping/probe_cp_analysis.csv        — CP discriminating features
+  data/results/grouping/probe_summary.html           — interactive Plotly summary
+
+Core set definition (--core_only):
+  level in [1, 2]  OR  group_id in ['L3-FA', 'L3-FB']
+  n=350: L1(160) + L2(174) + anchors(16)
 """
 
 import argparse
@@ -95,6 +111,152 @@ def load_baseline(behaviour: str, split: str) -> pd.DataFrame | None:
         print(f"  Loading baseline: {p}")
         return pd.read_csv(p)
     return None
+
+
+# Core set filter: level in [1,2] or L3 anchors
+CORE_GROUPS = {"L3-FA", "L3-FB"}
+
+def is_core(p: dict) -> bool:
+    lv = p.get("level")
+    return lv in (1, 2) or p.get("group_id") in CORE_GROUPS
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 0 — Baseline breakdown
+# ─────────────────────────────────────────────────────────────────────────────
+
+def run_baseline_breakdown(baseline_df: pd.DataFrame, prompts: list[dict],
+                           core_only: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Join baseline CSV with prompt metadata and compute per-group / per-level accuracy.
+
+    Returns:
+        detail_df   — per-prompt rows with metadata + accuracy
+        level_df    — per-level aggregated stats
+        group_df    — per-group aggregated stats
+    """
+    prompt_by_text = {p["prompt"]: p for p in prompts}
+
+    rows = []
+    for _, row in baseline_df.iterrows():
+        meta = prompt_by_text.get(row["prompt"], {})
+        lv   = meta.get("level")
+        lv_key = lv if lv is not None else "AUX"
+        diff = float(row["logprob_diff_normalized"])
+        rows.append({
+            "prompt_id":        meta.get("prompt_id", ""),
+            "level":            lv_key,
+            "group_id":         meta.get("group_id", "?"),
+            "correct_answer":   str(row.get("correct_answer", "")).strip(),
+            "logprob_diff":     round(diff, 4),
+            "sign_correct":     diff > 0,
+            "hard_correct":     diff > 0.5,
+            "difficulty":       meta.get("difficulty", "?"),
+            "keyword_free":     meta.get("keyword_free", True),
+            "is_anchor":        meta.get("is_anchor", False),
+            "is_auxiliary":     meta.get("is_auxiliary", False),
+            "is_kw_variant":    meta.get("is_kw_variant", False),
+            "cue_type":         meta.get("cue_type", ""),
+            "relation_type":    meta.get("relation_type", ""),
+            "concept_route":    meta.get("concept_route", ""),
+            "inference_steps":  meta.get("inference_steps", ""),
+            "contrastive_pair": meta.get("contrastive_pair_id", ""),
+            "contrastive_role": meta.get("contrastive_role", ""),
+            "is_core":          is_core(meta),
+        })
+
+    detail_df = pd.DataFrame(rows)
+    if core_only:
+        detail_df = detail_df[detail_df["is_core"]].copy()
+
+    def agg(sub, key_col, key_val):
+        if sub.empty:
+            return {}
+        return {
+            key_col:        key_val,
+            "n":            len(sub),
+            "sign_acc":     round(sub["sign_correct"].mean(), 4),
+            "hard_acc":     round(sub["hard_correct"].mean(), 4),
+            "mean_diff":    round(sub["logprob_diff"].mean(), 4),
+            "std_diff":     round(sub["logprob_diff"].std(), 4),
+            "n_fail_sign":  int((~sub["sign_correct"]).sum()),
+            "n_fail_hard":  int((~sub["hard_correct"]).sum()),
+        }
+
+    # Per-level
+    level_rows = []
+    for lv in ["1", "2", "3", "AUX"]:
+        sub = detail_df[detail_df["level"].astype(str) == lv]
+        r = agg(sub, "level", lv)
+        if r:
+            level_rows.append(r)
+    level_df = pd.DataFrame(level_rows)
+
+    # Per-group
+    group_rows = []
+    for gid, sub in detail_df.groupby("group_id"):
+        meta_row = sub.iloc[0]
+        r = agg(sub, "group_id", gid)
+        if r:
+            r["level"]         = meta_row["level"]
+            r["correct_answer"] = meta_row["correct_answer"]
+            r["cue_type"]      = meta_row["cue_type"]
+            r["relation_type"] = meta_row["relation_type"]
+            r["concept_route"] = meta_row["concept_route"]
+            r["is_core"]       = meta_row["is_core"]
+            group_rows.append(r)
+    group_df = pd.DataFrame(group_rows).sort_values(["level", "group_id"])
+
+    return detail_df, level_df, group_df
+
+
+def print_baseline_report(level_df: pd.DataFrame, group_df: pd.DataFrame,
+                           core_only: bool) -> None:
+    """Print formatted baseline breakdown to stdout."""
+    label = " [CORE ONLY]" if core_only else " [ALL PROMPTS]"
+    print(f"\n{'='*70}")
+    print(f"BASELINE BREAKDOWN{label}")
+    print(f"{'='*70}")
+
+    if not level_df.empty:
+        print(f"\n{'Level':<8} {'n':>5} {'sign_acc':>10} {'hard_acc':>10} {'mean_diff':>11} {'n_fail_sign':>12}")
+        print("-" * 60)
+        total_n = 0; total_sign = 0; total_hard = 0
+        for _, r in level_df.iterrows():
+            n = int(r['n'])
+            total_n += n
+            total_sign += int(r['sign_acc'] * n)
+            total_hard += int(r['hard_acc'] * n)
+            flag = "  ← WARN" if r['sign_acc'] < 0.80 else ""
+            print(f"  L{r['level']:<5} {n:>5}  {r['sign_acc']:>9.1%}  {r['hard_acc']:>9.1%}  {r['mean_diff']:>10.3f}{flag}")
+        print("-" * 60)
+        print(f"  {'TOTAL':<6} {total_n:>5}  {total_sign/total_n:>9.1%}  {total_hard/total_n:>9.1%}")
+
+    if not group_df.empty:
+        print(f"\n{'Group':<18} {'Lv':<4} {'n':>4} {'sign_acc':>9} {'hard_acc':>9} {'mean_diff':>10}  cue/route")
+        print("-" * 80)
+        for _, r in group_df.iterrows():
+            flag = " ✗" if r['sign_acc'] < 0.70 else (" △" if r['sign_acc'] < 0.85 else "")
+            cue = (r['concept_route'] or r['relation_type'] or r['cue_type'] or "")[:22]
+            print(f"  {r['group_id']:<16} L{r['level']:<3} {int(r['n']):>4}  {r['sign_acc']:>8.1%}  {r['hard_acc']:>8.1%}  {r['mean_diff']:>9.3f}  {cue}{flag}")
+
+    # Summary verdict
+    overall_sign = level_df["sign_acc"].mul(level_df["n"]).sum() / level_df["n"].sum() if not level_df.empty else 0
+    print(f"\n{'─'*70}")
+    if overall_sign >= 0.90:
+        verdict = "PASS (≥90%)"
+    elif overall_sign >= 0.85:
+        verdict = "PASS (≥85% gate)"
+    elif overall_sign >= 0.78:
+        verdict = "WARN_PASS (below gate but structured failures)"
+    else:
+        verdict = "FAIL — review failure pattern"
+    print(f"  Overall sign accuracy: {overall_sign:.1%}  →  {verdict}")
+    if not core_only:
+        core_n = group_df[group_df["is_core"]]["n"].sum() if "is_core" in group_df else 0
+        core_sign = (group_df[group_df["is_core"]]["sign_acc"] * group_df[group_df["is_core"]]["n"]).sum() / core_n if core_n > 0 else 0
+        print(f"  Core subset (L1+L2+anchors, n={int(core_n)}): {core_sign:.1%}")
+    print(f"{'─'*70}\n")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -467,82 +629,116 @@ def main():
     parser = argparse.ArgumentParser(description="Script 18: Latent-state probing analysis")
     parser.add_argument("--behaviour", default="physics_decay_type_probe")
     parser.add_argument("--split",     default="train")
+    parser.add_argument("--baseline_only", action="store_true",
+                        help="Run only the baseline breakdown (no ablation CSV required)")
+    parser.add_argument("--core_only", action="store_true",
+                        help="Restrict analysis to core subset: L1+L2+L3 anchors (n=350)")
     parser.add_argument("--activation_dir", type=Path, default=None,
-                        help="Path to transcoder_features directory (for future activation-based analysis)")
+                        help="Path to transcoder_features directory (for activation-based analysis)")
     parser.add_argument("--ui_run",    type=Path, default=None,
                         help="Explicit UI run directory to load ablation CSV from")
     args = parser.parse_args()
 
     print(f"=== Latent-State Probing Analysis: {args.behaviour} ===\n")
 
-    # Load data
     prompts = load_prompts(args.behaviour, args.split)
     print(f"Loaded {len(prompts)} prompts")
+    if args.core_only:
+        core_n = sum(1 for p in prompts if is_core(p))
+        print(f"  Core subset: {core_n} prompts (L1+L2+anchors)")
 
-    df = load_ablation(args.behaviour, ui_run_dir=args.ui_run)
-    print(f"Loaded {len(df)} ablation rows ({df['feature_id'].nunique()} features × {df['prompt_idx'].nunique()} prompts)")
-
+    # ── Test 0: baseline breakdown (always runs if CSV exists) ────────────────
     baseline = load_baseline(args.behaviour, args.split)
     if baseline is not None:
-        sign_acc = (baseline["logprob_diff_normalized"] > 0).mean()
-        print(f"Baseline accuracy: {sign_acc:.3f} ({int(sign_acc*len(baseline))}/{len(baseline)})")
-    else:
-        print("  [NOTE] Baseline CSV not found (Section A failed). Re-run with fixed config to get per-group accuracy.")
+        detail_df, level_df, group_df = run_baseline_breakdown(baseline, prompts, args.core_only)
+        print_baseline_report(level_df, group_df, args.core_only)
 
+        detail_out = OUT_DIR / "probe_baseline_breakdown.csv"
+        level_out  = OUT_DIR / "probe_level_summary.csv"
+        group_out  = OUT_DIR / "probe_group_summary.csv"
+        detail_df.to_csv(detail_out, index=False)
+        level_df.to_csv(level_out,  index=False)
+        group_df.to_csv(group_out,  index=False)
+        print(f"  Saved: {detail_out}")
+        print(f"  Saved: {level_out}")
+        print(f"  Saved: {group_out}")
+    else:
+        print("  [NOTE] Baseline CSV not found — run step 02 first, then rsync the CSV.")
+        if args.baseline_only:
+            print("  Nothing to do in --baseline_only mode without the CSV. Exiting.")
+            return
+
+    if args.baseline_only:
+        print("\n=== Done (baseline-only mode) ===")
+        return
+
+    # ── Full analysis: requires ablation CSV from step 07 ────────────────────
+    print()
+    try:
+        df = load_ablation(args.behaviour, ui_run_dir=args.ui_run)
+    except FileNotFoundError as e:
+        print(f"  [ERROR] {e}")
+        print("  Full analysis requires ablation CSV from step 07. Run the full pipeline first.")
+        return
+
+    print(f"Loaded {len(df)} ablation rows ({df['feature_id'].nunique()} features × {df['prompt_idx'].nunique()} prompts)")
     print()
 
-    # Run tests
+    # Filter prompts for core_only mode (ablation tests)
+    active_prompts = [p for p in prompts if is_core(p)] if args.core_only else prompts
+    active_indices = {i for i, p in enumerate(prompts) if not args.core_only or is_core(p)}
+    df_active = df[df["prompt_idx"].isin(active_indices)].copy() if args.core_only else df
+
+    # ── Test 1: SE ────────────────────────────────────────────────────────────
     print("--- Test 1: SE (semantic-equivalence) ---")
-    se_df = run_se_test(df, prompts)
+    se_df = run_se_test(df_active, prompts)
     se_out = OUT_DIR / "probe_se_analysis.csv"
     se_df.to_csv(se_out, index=False)
     print(f"  Groups: {len(se_df)}  Saved: {se_out}")
-    print("  Low cv_sfr groups (consistent within-group, SE likely PASS):")
-    low_cv = se_df[se_df["cv_sfr"] < 0.5].sort_values("cv_sfr")
-    for _, r in low_cv.head(10).iterrows():
-        print(f"    {r['group_id']:18s} L{r['level']} {r['concept'][:5]}  cv={r['cv_sfr']:.3f}  sfr={r['mean_sfr']:.4f}")
-    print("  High cv_sfr groups (inconsistent, wording-sensitive):")
-    high_cv = se_df[se_df["cv_sfr"] >= 0.5].sort_values("cv_sfr", ascending=False)
-    for _, r in high_cv.head(5).iterrows():
-        print(f"    {r['group_id']:18s} L{r['level']} {r['concept'][:5]}  cv={r['cv_sfr']:.3f}  sfr={r['mean_sfr']:.4f}")
+    print("  Low cv_sfr groups (consistent, SE likely PASS):")
+    for _, r in se_df[se_df["cv_sfr"] < 0.5].sort_values("cv_sfr").head(10).iterrows():
+        print(f"    {r['group_id']:18s} L{r['level']} cv={r['cv_sfr']:.3f}  sfr={r['mean_sfr']:.4f}")
+    print("  High cv_sfr groups (wording-sensitive):")
+    for _, r in se_df[se_df["cv_sfr"] >= 0.5].sort_values("cv_sfr", ascending=False).head(5).iterrows():
+        print(f"    {r['group_id']:18s} L{r['level']} cv={r['cv_sfr']:.3f}  sfr={r['mean_sfr']:.4f}")
 
+    # ── Test 2: IC ────────────────────────────────────────────────────────────
     print()
     print("--- Test 2: IC (inferential convergence) ---")
-    ic_df = run_ic_test(df, prompts)
+    ic_df = run_ic_test(df_active, prompts)
     ic_out = OUT_DIR / "probe_ic_analysis.csv"
     ic_df.to_csv(ic_out, index=False)
     print(f"  Comparisons: {len(ic_df)}  Saved: {ic_out}")
-    print("  Top IC convergence (highest similarity to anchor):")
+    print("  Top IC convergence (sim to anchor):")
     for _, r in ic_df.sort_values("sim_to_anchor", ascending=False).head(10).iterrows():
         print(f"    {r['group_id']:18s} L{r['level']} {r['concept'][:5]}  sim={r['sim_to_anchor']:.4f}")
-    print("  Lowest IC convergence (most divergent from anchor):")
+    print("  Lowest IC convergence:")
     for _, r in ic_df.sort_values("sim_to_anchor").head(5).iterrows():
         print(f"    {r['group_id']:18s} L{r['level']} {r['concept'][:5]}  sim={r['sim_to_anchor']:.4f}")
 
+    # ── Test 3: CP ────────────────────────────────────────────────────────────
     print()
     print("--- Test 3: CP (contrastive pairs) ---")
-    cp_df = run_cp_test(df, prompts)
+    cp_df = run_cp_test(df_active, prompts)
     cp_out = OUT_DIR / "probe_cp_analysis.csv"
     cp_df.to_csv(cp_out, index=False)
     print(f"  Pairs: {len(cp_df)}  Saved: {cp_out}")
     if not cp_df.empty:
-        print("  Top discriminating pairs:")
         for _, r in cp_df.sort_values("max_abs_diff", ascending=False).head(5).iterrows():
             print(f"    {r['cp_id']:12s}  max_diff={r['max_abs_diff']:.5f}  α-feat: {r['top_alpha_features'][:40]}")
 
+    # ── Test 4: KW ────────────────────────────────────────────────────────────
     print()
     print("--- Test 4: KW (keyword presence) ---")
-    kw_df = run_kw_test(df, prompts)
+    kw_df = run_kw_test(df_active, prompts)
     kw_out = OUT_DIR / "probe_kw_analysis.csv"
     kw_df.to_csv(kw_out, index=False)
     print(f"  KW pairs: {len(kw_df)}  Saved: {kw_out}")
     if not kw_df.empty:
-        print("  Profile similarity (keyword-free vs keyword):")
         for _, r in kw_df.iterrows():
-            delta = f"Δsfr={r['sfr_delta']:+.4f}"
-            print(f"    {r['kw_pair_id']:12s}  sim={r['profile_sim']:.4f}  {delta}")
+            print(f"    {r['kw_pair_id']:12s}  sim={r['profile_sim']:.4f}  Δsfr={r['sfr_delta']:+.4f}")
 
-    # Build summary HTML
+    # ── Summary HTML ──────────────────────────────────────────────────────────
     print()
     print("--- Building summary HTML ---")
     html = make_summary_html(se_df, ic_df, cp_df, kw_df)
@@ -553,17 +749,14 @@ def main():
     if args.activation_dir:
         print()
         print(f"  [NOTE] --activation_dir specified: {args.activation_dir}")
-        print("         Activation-based cosine similarity analysis (raw transcoder vectors)")
-        print("         is not yet implemented in this script version.")
+        print("         Raw transcoder activation analysis is not yet implemented.")
         print("         The ablation-based SE/IC tests above use effect profiles as proxies.")
 
     print("\n=== Done ===")
     print(f"Outputs in {OUT_DIR}:")
-    print(f"  probe_se_analysis.csv   — SE test per group")
-    print(f"  probe_ic_analysis.csv   — IC convergence per group")
-    print(f"  probe_cp_analysis.csv   — CP discriminating features")
-    print(f"  probe_kw_analysis.csv   — KW shortcut test")
-    print(f"  probe_summary.html      — interactive summary")
+    print("  probe_baseline_breakdown.csv  probe_level_summary.csv  probe_group_summary.csv")
+    print("  probe_se_analysis.csv  probe_ic_analysis.csv  probe_cp_analysis.csv")
+    print("  probe_kw_analysis.csv  probe_summary.html")
 
 
 if __name__ == "__main__":
