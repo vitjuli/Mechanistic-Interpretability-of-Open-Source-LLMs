@@ -115,6 +115,18 @@ behaviours:
     # Circuit hypothesis: x → z_particle=(Z,A) → z_signature → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 
+  physics_decay_type_probe:
+    train_size: 470
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Latent-state probing corpus for physics_decay_type. Three-level hierarchy: L1 atomic cues, L2 relations/processes, L3 concept-equivalence. Answer format: x_or_y."
+    # Answers: ' alpha' (token 8287) / ' beta' (token 13440) — same tokens as physics_decay_type.
+    # 470 prompts: 160 Level-1, 174 Level-2, 80 Level-3, 56 auxiliary.
+    # Design: docs/latent_probing_corpus_phase2.md
+    # Generator: scripts/generate_physics_decay_type_probe.py
+    # Gate: sign_accuracy >= 0.85 (lower threshold; L3/auxiliary prompts are harder).
+
   physics_intensive_extensive:
     train_size: 5
     test_size: 0

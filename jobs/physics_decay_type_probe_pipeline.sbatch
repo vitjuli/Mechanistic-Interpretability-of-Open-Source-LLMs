@@ -234,33 +234,39 @@ section_b() {
 
     echo ""
     echo "  Verifying output..."
+    # Script 04 saves to data/results/transcoder_features/layer_{n}/ (shared dirs).
+    # The behaviour-specific position_map is the reliable indicator of a successful run.
     python3 -c "
 from pathlib import Path
 import json
 
-out_dir = Path('data/results/transcoder_features/${BEHAVIOUR}')
-if not out_dir.exists():
-    print('  [ERROR] Output directory not found')
+# Check for position_map — saved with behaviour prefix, confirms this run completed.
+posmap = Path('data/results/transcoder_features/${BEHAVIOUR}_${SPLIT}_position_map.json')
+layer_dir = Path('data/results/transcoder_features/layer_10')
+if not posmap.exists():
+    print(f'  [ERROR] Position map not found: {posmap}')
     exit(1)
 
-files = list(out_dir.glob('*.json')) + list(out_dir.glob('*.h5')) + list(out_dir.glob('*.hdf5'))
-files += list(out_dir.glob('*.csv')) + list(out_dir.glob('*.npz'))
-print(f'  Output files: {len(files)} in {out_dir}')
-if files:
-    print(f'  First 3: {[f.name for f in sorted(files)[:3]]}')
-    # Try to read metadata
-    meta_files = [f for f in out_dir.glob('*metadata*')]
-    if meta_files:
-        try:
-            meta = json.load(open(meta_files[0]))
-            print(f'  Metadata: n_prompts={meta.get(\"n_prompts\",\"?\")} n_layers={meta.get(\"n_layers\",\"?\")}')
-        except Exception: pass
-else:
-    print('  [WARN] No output files found — check step 04 for errors')
+pm = json.load(open(posmap))
+n_prompts = len(set(e['prompt_idx'] for e in pm)) if isinstance(pm, list) else len(pm)
+print(f'  Position map: {posmap.name}  ({n_prompts} prompts)')
+
+# Count feature files in layer dirs
+n_layers = sum(1 for l in range(10, 26) if (layer_dir.parent / f'layer_{l}').exists())
+print(f'  Layer directories present: {n_layers}/16')
+
+# Check layer_10 has probe files (top_k_indices file named with behaviour)
+probe_files = list(layer_dir.glob('*probe*')) if layer_dir.exists() else []
+print(f'  Layer_10 probe files: {len(probe_files)}')
+if not probe_files:
+    print('  [NOTE] Layer files not behaviour-prefixed — features are in shared layer_N/ dirs.')
+    print('         rsync: data/results/transcoder_features/ from CSD3 for local analysis.')
+print('  Verification OK')
 "
     echo ""
-    echo "  Section B output: data/results/transcoder_features/${BEHAVIOUR}/"
-    echo "  IMPORTANT: rsync this directory for local SE/IC analysis with script 18."
+    echo "  Section B output: data/results/transcoder_features/layer_10 ... layer_25/"
+    echo "  Position map   : data/results/transcoder_features/${BEHAVIOUR}_${SPLIT}_position_map.json"
+    echo "  IMPORTANT: rsync data/results/transcoder_features/ to local for script 18."
 }
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -302,12 +308,18 @@ section_c() {
     echo "    data/results/interventions/${BEHAVIOUR}/intervention_ablation_${BEHAVIOUR}_${SPLIT}.csv"
 
     # Quick ablation summary
+    # Script 07 names the file without _{split} suffix for probe behaviour.
     python3 -c "
 import pandas as pd
 from pathlib import Path
-p = Path('data/results/interventions/${BEHAVIOUR}/intervention_ablation_${BEHAVIOUR}_${SPLIT}.csv')
-if not p.exists():
-    print('  Output CSV not found'); exit()
+# Try both naming conventions (with and without split suffix)
+candidates = [
+    Path('data/results/interventions/${BEHAVIOUR}/intervention_ablation_${BEHAVIOUR}_${SPLIT}.csv'),
+    Path('data/results/interventions/${BEHAVIOUR}/intervention_ablation_${BEHAVIOUR}.csv'),
+]
+p = next((c for c in candidates if c.exists()), None)
+if p is None:
+    print('  Output CSV not found (tried:', [str(c) for c in candidates], ')'); exit()
 df = pd.read_csv(p)
 print(f'  Ablation rows: {len(df)}')
 print(f'  Unique features: {df[\"feature_id\"].nunique()}')
