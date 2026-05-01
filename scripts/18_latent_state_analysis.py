@@ -237,7 +237,8 @@ def print_baseline_report(level_df: pd.DataFrame, group_df: pd.DataFrame,
         print("-" * 80)
         for _, r in group_df.iterrows():
             flag = " ✗" if r['sign_acc'] < 0.70 else (" △" if r['sign_acc'] < 0.85 else "")
-            cue = (r['concept_route'] or r['relation_type'] or r['cue_type'] or "")[:22]
+            def _s(v): return v if isinstance(v, str) else ""
+            cue = (_s(r['concept_route']) or _s(r['relation_type']) or _s(r['cue_type']))[:22]
             print(f"  {r['group_id']:<16} L{r['level']:<3} {int(r['n']):>4}  {r['sign_acc']:>8.1%}  {r['hard_acc']:>8.1%}  {r['mean_diff']:>9.3f}  {cue}{flag}")
 
     # Summary verdict
