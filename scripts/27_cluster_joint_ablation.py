@@ -70,8 +70,11 @@ def compute_logit_diff(model: ModelWrapper, prompt: str,
 
 def get_mlp_input(model: ModelWrapper, inputs: dict,
                   layer_idx: int, token_pos: int = -1) -> torch.Tensor:
-    """Extract post_attention_layernorm output at token_pos."""
-    blocks = model.model.model.layers
+    """Extract post_attention_layernorm output at token_pos (matches script 04 point)."""
+    try:
+        blocks = model.model.model.layers
+    except AttributeError:
+        blocks = model.model.transformer.h
     hook_mod = blocks[layer_idx].post_attention_layernorm
     captured = {}
 
@@ -91,8 +94,11 @@ def get_mlp_input(model: ModelWrapper, inputs: dict,
 @contextlib.contextmanager
 def patch_mlp_layer(model_hf, layer_idx: int, token_pos: int,
                     new_mlp_input: torch.Tensor):
-    """Context manager: inject modified MLP input at one layer."""
-    block    = model_hf.model.layers[layer_idx]
+    """Context manager: inject modified MLP input at one layer (Qwen3/Llama style)."""
+    try:
+        block = model_hf.model.layers[layer_idx]
+    except AttributeError:
+        block = model_hf.transformer.h[layer_idx]
     hook_mod = block.post_attention_layernorm
     called   = {"n": 0}
 
@@ -147,7 +153,7 @@ def run_joint_ablation(
     with contextlib.ExitStack() as stack:
         for layer_idx, mod_input in modified_per_layer.items():
             stack.enter_context(
-                patch_mlp_layer(model, layer_idx, token_pos, mod_input)
+                patch_mlp_layer(model.model, layer_idx, token_pos, mod_input)
             )
         with torch.no_grad():
             joint_out = model.model(**inputs, use_cache=False)
@@ -238,38 +244,56 @@ def main():
 
     # ── Load model and transcoders ────────────────────────────────────────
     logger.info("Loading model and transcoders…")
-    cfg_path   = ROOT / "configs/experiment_config.yaml"
-    tc_cfg     = ROOT / "configs/transcoder_config.yaml"
-    with open(cfg_path) as f:
-        exp_cfg = yaml.safe_load(f)
-    with open(tc_cfg) as f:
+    tc_cfg_path = ROOT / "configs/transcoder_config.yaml"
+    with open(tc_cfg_path) as f:
         tc_cfgd = yaml.safe_load(f)
 
-    # Determine which layers we need
+    model_size   = tc_cfgd.get("model_size", "4b")
+    model_name   = tc_cfgd["transcoders"][model_size]["model_name"]
     needed_layers = sorted(set(l for by_l in cluster_by_layer.values() for l in by_l))
-    logger.info(f"Need transcoder layers: {needed_layers}")
+    logger.info(f"Model: {model_name}  |  Transcoder layers needed: {needed_layers}")
 
+    # Load model first (matches script 07 pattern)
     model = ModelWrapper(
-        model_name_or_path=exp_cfg.get("model_name","Qwen/Qwen3-4B"),
-        device=args.device,
-        dtype=torch.bfloat16,
+        model_name=model_name,
+        dtype="bfloat16",
+        device="auto",
+        trust_remote_code=True,
     )
+    try:
+        device = next(model.model.parameters()).device
+    except StopIteration:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"Model loaded on device: {device}")
+
+    # Then load transcoders on the same device
     transcoder_set = load_transcoder_set(
-        tc_cfgd["transcoder_dir"],
+        model_size=model_size,
+        device=device,
+        dtype=torch.bfloat16,
+        lazy_load=True,
         layers=needed_layers,
-        device=args.device,
     )
-    logger.info("Model + transcoders loaded.")
+    logger.info("Transcoders loaded.")
 
     # ── Run joint ablation ────────────────────────────────────────────────
     results = []
     t0 = time.time()
 
+    # Build prompt_id → prompt_idx mapping from contributions CSV
+    pid_to_idx = dict(zip(
+        contrib["prompt_id"] if "prompt_id" in contrib.columns else pd.Series([], dtype=str),
+        contrib["prompt_idx"]
+    )) if "prompt_id" in contrib.columns else {}
+
     for p_i, p in enumerate(tqdm(prompts_all, desc="Prompts")):
-        prompt_text = p["prompt"]
-        prompt_idx  = p.get("prompt_idx", p_i)
-        correct_tok = " " + p.get("correct_answer", p.get("answer_matching","alpha"))
-        incorrect_tok=" " + p.get("incorrect_answer",p.get("answer_not_matching","beta"))
+        prompt_text   = p["prompt"]
+        prompt_id     = p.get("prompt_id", str(p_i))
+        # Use prompt_idx from contributions table; fall back to ordinal index
+        prompt_idx    = int(pid_to_idx.get(prompt_id, p_i))
+        # Answers already have leading space in JSONL (e.g. " alpha")
+        correct_tok   = p.get("correct_answer",   " alpha")
+        incorrect_tok = p.get("incorrect_answer",  " beta")
 
         # Validate tokens (skip multi-token answers)
         try:
