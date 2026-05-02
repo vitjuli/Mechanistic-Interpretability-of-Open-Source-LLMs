@@ -105,12 +105,6 @@ print(df.groupby('cluster_id').agg(
 ).round(3).to_string())
 " || true
 
-# ── Section B: Analysis (runs on the output) ──────────────────────────────────
-echo ""
-echo "████  ANALYSIS (27b)  $(date)"
-
-python -u scripts/27b_analyse_joint_ablation.py
-
 echo ""
 echo "========================================================"
 echo "  DONE — Job $SLURM_JOB_ID — $(date)"
@@ -118,7 +112,7 @@ echo ""
 echo "  Key outputs:"
 ls -lh data/results/cluster_joint_ablation/ 2>/dev/null || true
 echo ""
-echo "  After rsync to local:"
-echo "    python scripts/27b_analyse_joint_ablation.py   (re-runs for dashboard JSON)"
-echo "  Then reload dashboard_probe to see the Cluster Semantics tab update."
+echo "  Next steps (on local Mac):"
+echo "    rsync -av iv294@login.hpc.cam.ac.uk:/rds/user/iv294/hpc-work/thesis/project/data/results/cluster_joint_ablation/ data/results/cluster_joint_ablation/"
+echo "    python scripts/27b_analyse_joint_ablation.py"
 echo "========================================================"
