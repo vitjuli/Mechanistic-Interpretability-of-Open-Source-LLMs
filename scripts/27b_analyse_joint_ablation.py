@@ -305,6 +305,15 @@ for _, row in syn_df.iterrows():
         [["prompt_idx","baseline_logit_diff","joint_effect","individual_sum","interaction_ratio"]]
         .round(4).to_dict(orient="records")
     )
+    # Per-answer ratios from inter_ans
+    ratio_by_ans = {}
+    for ans in ["alpha", "beta"]:
+        ans_rows = inter_ans[(inter_ans.cluster_id == cid) & (inter_ans.correct_answer == ans)]
+        ratio_by_ans[f"ratio_{ans}"] = (
+            float(ans_rows.mean_interaction_ratio.iloc[0])
+            if len(ans_rows) > 0 and not pd.isna(ans_rows.mean_interaction_ratio.iloc[0])
+            else None
+        )
     per_cluster_json.append({
         "cluster_id":          cid,
         "name":                CLUSTER_NAMES.get(cid, f"C{cid}"),
@@ -320,6 +329,7 @@ for _, row in syn_df.iterrows():
         "sign_flip_pred":      float(row.pred_sign_flip_rate),
         "ttest_p":             float(row.ttest_vs_additive_p),
         "top_redundant":       redundant_examples,
+        **ratio_by_ans,
     })
 
 out_json = {

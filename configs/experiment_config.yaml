@@ -151,6 +151,22 @@ behaviours:
     # Circuit hypothesis: x → z_gauge_equiv ∈ {equivalent, inequivalent} → y.
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
 
+  physics_e1_selection:
+    train_size: 84
+    test_size: 16
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "E1 electric dipole selection rule: allowed (Δl=±1) vs forbidden (Δl≠±1). Type 2: Selection Rule."
+    # Answers: ' allowed' (token 5420) / ' forbidden' (token 36813) — both single-token (verified 2026-05-03).
+    # 8 transition groups: sp,ps,pd,dp (allowed) + ss,pp,dd,sd (forbidden). Perfectly balanced 42/42.
+    # 4 wording families: F1=orbital_name, F2=quantum_number, F3=standard_notation, F4=explicit_Δl.
+    # Train: F1/F2/F3 v1-v3 + F4 all = 84 prompts. Test: F1/F3 v4 = 16 prompts.
+    # Contrastive pairs: sp_vs_ss, pd_vs_pp, dp_vs_dd, sp_vs_sd.
+    # Mechanistic hypothesis: model extracts l₁,l₂ → computes |Δl| → applies filter |Δl|=1.
+    # Generator: scripts/30_generate_physics_e1_selection_prompts.py
+    # Analysis: scripts/31_analyze_physics_e1_selection.py
+    # Gate: sign_accuracy ≥ 0.85 overall; F4 (explicit Δl) ≥ 0.95; allowed_acc ≈ forbidden_acc.
+
   physics_conservation:
     train_size: 150
     test_size: 50
