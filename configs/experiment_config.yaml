@@ -167,7 +167,36 @@ behaviours:
     # Analysis: scripts/31_analyze_physics_e1_selection.py
     # Gate: sign_accuracy ≥ 0.85 overall; F4 (explicit Δl) ≥ 0.95; allowed_acc ≈ forbidden_acc.
 
-  # ── Candidate-set screening mini-behaviours (screening only, no full pipeline) ──
+  # ── Round-2 candidate-set screening (2026-05-04) ────────────────────────────
+  physics_spin_statistics_v2_mini:
+    train_size: 32
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Round-2: spin-statistics with novel spin values (F2_novel) and hybrid prompts (F4). Answers: ' boson'/' fermion'."
+    # 4 families: F1=particle_name, F2=novel_spin (hypothetical particles, s=3/2 etc.),
+    # F3=spin_descriptor (textbook verbal), F4=hybrid (spin_value + explicit integer label).
+    # Key comparison: F2 vs F4 localises the symbolic rule bottleneck.
+
+  physics_relativistic_regime_v2_mini:
+    train_size: 24
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.75
+    description: "Round-2: classical vs relativistic regime, Yes/No framing. Answers: ' Yes'/' No'."
+    # Fix for round-1 failure: ' classical' token prior dominated. Yes/No is symmetric.
+    # Classical: v/c ∈ {0.001, 0.005, 0.01, 0.03}; Relativistic: v/c ∈ {0.7, 0.85, 0.95, 0.99}.
+
+  physics_conductor_insulator_mini:
+    train_size: 24
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Round-2: conductor vs insulator, Yes/No framing. Answers: ' Yes'/' No'."
+    # New behaviour. F1=named_material (recall), F2=conductivity_value (threshold), F3=band_structure (verbal).
+    # Cross-family convergence test: do F1 and F2 activate same intermediate features?
+
+  # ── Round-1 candidate-set screening mini-behaviours (screening only, no full pipeline) ──
   physics_parity_rule_mini:
     train_size: 32
     test_size: 0
