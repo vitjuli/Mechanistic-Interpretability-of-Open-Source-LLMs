@@ -186,12 +186,14 @@ def compute_metrics(df: pd.DataFrame) -> dict:
         + SCREENING_SCORE_WEIGHTS["balance_score"]     * balance
     )
 
-    # Per-family breakdown
-    family_accs = {}
-    if "wording_family" in df.columns:
-        for fam, sub in df.groupby("wording_family"):
-            sub_valid = sub["logprob_diff_normalized"].replace([np.inf, -np.inf], np.nan).dropna()
-            family_accs[fam] = float((sub_valid > 0).mean()) if len(sub_valid) else np.nan
+    def _group_acc(df, col):
+        accs = {}
+        if col not in df.columns:
+            return accs
+        for key, sub in df.groupby(col):
+            sv = sub["logprob_diff_normalized"].replace([np.inf, -np.inf], np.nan).dropna()
+            accs[str(key)] = float((sv > 0).mean()) if len(sv) else np.nan
+        return accs
 
     return {
         "n": n,
@@ -202,7 +204,9 @@ def compute_metrics(df: pd.DataFrame) -> dict:
         "median_norm_diff": median_norm,
         "screening_score": screening_score,
         "balance_score": balance,
-        "family_accs": family_accs,
+        "family_accs":    _group_acc(df, "wording_family"),
+        "candidate_accs": _group_acc(df, "target_candidate"),
+        "filter_accs":    _group_acc(df, "filter_property"),
         "go": sign_acc >= GO_THRESHOLDS["sign_accuracy"] and mean_norm >= GO_THRESHOLDS["mean_norm_diff"],
     }
 
@@ -259,6 +263,15 @@ def build_report(
             for fam, acc in sorted(m["family_accs"].items()):
                 flag = " ← FAIL" if not np.isnan(acc) and acc < 0.70 else ""
                 lines.append(f"  - {fam}: {acc:.1%}{flag}")
+        if m.get("candidate_accs"):
+            lines.append(f"- Per-candidate accuracy:")
+            for cand, acc in sorted(m["candidate_accs"].items()):
+                lines.append(f"  - target={cand}: {acc:.1%}")
+        if m.get("filter_accs"):
+            lines.append(f"- Per-filter accuracy:")
+            for fp, acc in sorted(m["filter_accs"].items()):
+                flag = " ← FAIL" if not np.isnan(acc) and acc < 0.70 else ""
+                lines.append(f"  - filter={fp}: {acc:.1%}{flag}")
         lines.append("")
         lines.append(f"**Mechanistic notes:** {MECHANISTIC_NOTES.get(beh, '')}")
         lines.append("")
@@ -388,8 +401,17 @@ def main():
         print(f"  Mean norm diff: {metrics['mean_norm_diff']:.3f}")
         print(f"  Verdict:        {v}")
         if metrics["family_accs"]:
+            print("  Family breakdown:")
             for fam, acc in sorted(metrics["family_accs"].items()):
                 print(f"    {fam}: {acc:.1%}")
+        if metrics.get("candidate_accs"):
+            print("  Per-candidate:")
+            for cand, acc in sorted(metrics["candidate_accs"].items()):
+                print(f"    target={cand}: {acc:.1%}")
+        if metrics.get("filter_accs"):
+            print("  Per-filter:")
+            for fp, acc in sorted(metrics["filter_accs"].items()):
+                print(f"    filter={fp}: {acc:.1%}")
         print()
 
     if not all_metrics:

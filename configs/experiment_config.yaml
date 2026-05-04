@@ -167,6 +167,26 @@ behaviours:
     # Analysis: scripts/31_analyze_physics_e1_selection.py
     # Gate: sign_accuracy ≥ 0.85 overall; F4 (explicit Δl) ≥ 0.95; allowed_acc ≈ forbidden_acc.
 
+  # ── Candidate-state pilot (2026-05-04) ──────────────────────────────────────
+  physics_particle_candidate_selection_mini:
+    train_size: 32
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Pilot: candidate-state selection — 3-particle set + filter → selected particle. Answers: particle names (1-token)."
+    # 8 base cases × 4 families = 32 prompts.
+    # Filter properties: charge, lepton/boson type, rest mass, decay role.
+    # Candidate ordering varies across families (positional balance).
+
+  physics_decay_product_selection_mini:
+    train_size: 32
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Pilot: decay-product candidate selection — decay context + filter → selected product. Answers: electron/proton/neutron/positron (1-token)."
+    # 8 decay cases (4×beta-minus, 4×beta-plus) × 4 families = 32 prompts.
+    # antineutrino/neutrino appear in prompt text only (multi-token); never as answer tokens.
+
   # ── Round-3 candidate-set screening (2026-05-04) ────────────────────────────
   physics_spin_statistics_v3_mini:
     train_size: 32
