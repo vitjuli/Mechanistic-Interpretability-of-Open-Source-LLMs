@@ -92,20 +92,30 @@ def evaluate_behaviour(
     prompts: list[dict],
     min_logit_diff: float = 0.5,
 ) -> pd.DataFrame:
-    """Teacher-forced logprob evaluation — same logic as script 02."""
+    """Teacher-forced logprob evaluation — mirrors script 02 logic exactly."""
     records = []
+    n_errors = 0
     for item in tqdm(prompts, leave=False):
-        prompt_text     = item["prompt"]
-        correct_answer  = item["correct_answer"]
+        prompt_text      = item["prompt"]
+        correct_answer   = item["correct_answer"]
         incorrect_answer = item["incorrect_answer"]
         try:
-            correct_lp, correct_len     = model.get_token_log_prob(prompt_text, correct_answer)
-            incorrect_lp, incorrect_len = model.get_token_log_prob(prompt_text, incorrect_answer)
+            log_probs, token_lengths = model.get_sequence_log_probs(
+                [prompt_text],
+                target_sequences=[correct_answer, incorrect_answer],
+            )
+            correct_lp   = log_probs[0, 0].item()
+            incorrect_lp = log_probs[0, 1].item()
+
+            if token_lengths.ndim == 1:
+                correct_len   = int(token_lengths[0])
+                incorrect_len = int(token_lengths[1])
+            else:
+                correct_len   = int(token_lengths[0, 0])
+                incorrect_len = int(token_lengths[0, 1])
 
             logprob_diff            = correct_lp - incorrect_lp
-            correct_lp_norm         = correct_lp   / max(correct_len,   1)
-            incorrect_lp_norm       = incorrect_lp / max(incorrect_len, 1)
-            logprob_diff_normalized = correct_lp_norm - incorrect_lp_norm
+            logprob_diff_normalized = (correct_lp / max(correct_len, 1)) - (incorrect_lp / max(incorrect_len, 1))
             success                 = logprob_diff_normalized > min_logit_diff
 
             records.append({
@@ -125,6 +135,9 @@ def evaluate_behaviour(
                 "hard_correct": bool(success),
             })
         except Exception as exc:
+            n_errors += 1
+            if n_errors <= 3:
+                print(f"\n  [ERROR] prompt #{n_errors}: {exc!r}")
             records.append({
                 **{k: v for k, v in item.items()
                    if k not in ("prompt", "correct_answer", "incorrect_answer")},
@@ -142,6 +155,8 @@ def evaluate_behaviour(
                 "hard_correct": False,
                 "error": str(exc),
             })
+    if n_errors > 0:
+        print(f"  [WARN] {n_errors}/{len(prompts)} prompts errored — check first error above")
     return pd.DataFrame(records)
 
 
@@ -303,6 +318,10 @@ def main():
         "--min_logit_diff", type=float, default=0.5,
         help="Threshold for hard_correct (default: 0.5)",
     )
+    parser.add_argument(
+        "--device", type=str, default=None,
+        help="Override device from config (cuda, cpu). Auto-detects CUDA if not specified.",
+    )
     args = parser.parse_args()
 
     prompt_dir = Path(args.prompt_dir)
@@ -321,12 +340,21 @@ def main():
     print(f"\nBehaviours: {args.behaviours}")
     print(f"Timestamp:  {timestamp}\n")
 
+    # Resolve device: CLI flag > auto-detect CUDA > config
+    if args.device:
+        device = args.device
+    elif torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = config["model"]["device"]
+    print(f"Device: {device}\n")
+
     # Load model ONCE
     print("Loading model...")
     model = ModelWrapper(
         model_name=config["model"]["name"],
-        dtype=config["model"]["dtype"],
-        device=config["model"]["device"],
+        dtype="bfloat16" if device == "cuda" else config["model"]["dtype"],
+        device=device,
         trust_remote_code=config["model"].get("trust_remote_code", True),
     )
     print("Model loaded.\n")

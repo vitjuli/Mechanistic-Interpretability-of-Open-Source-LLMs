@@ -97,7 +97,8 @@ echo "████  SCREENING BASELINE  $(date)"
 echo ""
 
 python -u scripts/33_run_candidate_set_screening.py \
-    --split train
+    --split train \
+    --device cuda
 
 RC=$?
 echo ""
