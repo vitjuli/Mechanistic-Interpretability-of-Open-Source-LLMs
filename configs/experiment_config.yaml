@@ -167,6 +167,19 @@ behaviours:
     # Analysis: scripts/31_analyze_physics_e1_selection.py
     # Gate: sign_accuracy ≥ 0.85 overall; F4 (explicit Δl) ≥ 0.95; allowed_acc ≈ forbidden_acc.
 
+  # ── Candidate-state large (2026-05-04) ──────────────────────────────────────
+  physics_particle_candidate_selection:
+    train_size: 311
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "Candidate-state: select particle from explicit set using filter. 4 experiments: core/distractor_sensitivity/counterfactual/set_size. Answers: particle names (1-tok)."
+    # Generator: scripts/38_generate_candidate_state_large.py
+    # Evaluator: scripts/39_evaluate_candidate_state.py (multi-candidate logprobs)
+    # Analysis:  scripts/40_analyze_candidate_state.py (H1 vs H2, distractor sensitivity)
+    # Key experiment: F5_no_set vs F1_explicit_list (same filter, different context)
+    # → tests whether model uses explicit candidate set or retrieves directly
+
   # ── Candidate-state pilot (2026-05-04) ──────────────────────────────────────
   physics_particle_candidate_selection_mini:
     train_size: 32
