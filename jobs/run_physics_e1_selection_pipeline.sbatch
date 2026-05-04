@@ -83,13 +83,16 @@ RC=$?
 echo "Baseline exit code: $RC  ($(date))"
 [ $RC -ne 0 ] && { echo "[FATAL] Baseline failed"; exit 1; }
 
-# Quick gate check
+# Quick gate check — exits 1 if accuracy is at or near chance level
 python3 -c "
 import pandas as pd, sys
 bl = pd.read_csv('data/results/baseline_${BEHAVIOUR}_${SPLIT}.csv')
 acc = bl['sign_correct'].mean()
 print(f'Baseline sign accuracy: {acc:.3f} ({bl.sign_correct.sum()}/{len(bl)})')
-if acc < 0.70:
+if acc < 0.55:
+    print('[FATAL] Accuracy < 0.55 — at or near chance level. Stopping pipeline.')
+    sys.exit(1)
+elif acc < 0.70:
     print('[WARN] Accuracy < 0.70 — behaviour may not be reliable. Proceeding anyway.')
 elif acc >= 0.85:
     print('[PASS] Accuracy >= 0.85 — proceed.')
@@ -100,7 +103,9 @@ else:
 if 'wording_family' in bl.columns:
     for fam, sub in bl.groupby('wording_family'):
         print(f'  {fam}: {sub.sign_correct.mean():.3f}  (n={len(sub)})')
-" || true
+"
+RC=$?
+[ $RC -ne 0 ] && { echo "[FATAL] Baseline gate check failed — accuracy too low. Stopping."; exit 1; }
 
 # ── Section B: Feature extraction ────────────────────────────────────────────
 echo ""

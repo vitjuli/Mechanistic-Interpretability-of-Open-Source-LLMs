@@ -166,6 +166,8 @@ def evaluate_behaviour(
                 "logprob_diff": logprob_diff,
                 "logprob_diff_normalized": logprob_diff_normalized,
                 "success": success,
+                "sign_correct": bool(logprob_diff_normalized > 0),
+                "hard_correct": bool(success),
                 "generated": generated_text.strip(),
                 "score_method": "teacher_forced_logprob",  # How computed
                 "success_metric": "normalized_per_token",  # What used for success
@@ -188,6 +190,8 @@ def evaluate_behaviour(
                 "logprob_diff": np.nan,
                 "logprob_diff_normalized": np.nan,
                 "success": False,
+                "sign_correct": False,
+                "hard_correct": False,
                 "generated": "ERROR",
                 "score_method": "teacher_forced_logprob",
                 "success_metric": "normalized_per_token",
@@ -620,8 +624,11 @@ def main():
 
         print(f"Loaded {len(prompts)} prompts")
 
-        # Get behaviour config
-        behaviour_config = config["behaviours"][behaviour]
+        # Get behaviour config (fall back to sensible defaults for new behaviours)
+        behaviour_config = config["behaviours"].get(behaviour, {
+            "min_logit_diff": 0.5,
+            "success_threshold": 0.85,
+        })
         # IMPORTANT: Config uses name "min_logit_diff" for backward compatibility,
         # but we interpret it as NORMALIZED logprob diff threshold (per-token scale)
         # This is NOT the same as raw logit difference!

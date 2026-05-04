@@ -167,6 +167,45 @@ behaviours:
     # Analysis: scripts/31_analyze_physics_e1_selection.py
     # Gate: sign_accuracy ≥ 0.85 overall; F4 (explicit Δl) ≥ 0.95; allowed_acc ≈ forbidden_acc.
 
+  # ── Candidate-set screening mini-behaviours (screening only, no full pipeline) ──
+  physics_parity_rule_mini:
+    train_size: 32
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Screening: orbital parity (even/odd) by (-1)^l rule. Answers: ' even'/' odd'."
+    # 8 orbital instances (1s,3s,2p,4p,3d,5d,4f,5f) × 4 families = 32 prompts.
+    # F1=orbital_name, F2=l_value, F3=spectroscopic_label, F4=context_sentence.
+    # Rule: l even → even parity; l odd → odd parity.
+
+  physics_spin_statistics_mini:
+    train_size: 24
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Screening: boson vs fermion by integer/half-integer spin. Answers: ' boson'/' fermion'."
+    # 8 particles (4 bosons: photon/W/gluon/pion, 4 fermions: e/p/n/muon) × 3 families = 24 prompts.
+    # F1=particle_name, F2=explicit_spin_value, F3=integer_descriptor.
+
+  physics_approximation_regime_mini:
+    train_size: 24
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.80
+    description: "Screening: classical vs relativistic regime from v/c. Answers: ' classical'/' relativistic'."
+    # 4 classical velocities (0.001c-0.02c) + 4 relativistic (0.7c-0.99c) × 3 families = 24 prompts.
+    # F1=decimal_fraction, F2=percentage, F3=Lorentz_factor.
+
+  physics_e1_selection_mini:
+    train_size: 16
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.85
+    description: "Screening: E1 selection rule (cross-shell only). Answers: ' allowed'/' forbidden'."
+    # 8 cross-shell transitions (no same-n) × 2 families = 16 prompts.
+    # F3=spectroscopic_notation, F4=explicit_delta_l.
+    # Cross-shell only to remove same-n energy ambiguity.
+
   physics_conservation:
     train_size: 150
     test_size: 50

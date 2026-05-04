@@ -584,6 +584,12 @@ def main():
         action="store_true",
         help="Save full feature activations (large files, for PCA/distribution analysis)",
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="Device to use (cuda, cpu). Auto-detected if not specified.",
+    )
     args = parser.parse_args()
 
     # Load configs
@@ -628,7 +634,10 @@ def main():
 
     # Load transcoder set
     print(f"\nLoading pre-trained transcoders for Qwen3-{model_size}...")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     transcoder_set = load_transcoder_set(
         model_size=model_size,
