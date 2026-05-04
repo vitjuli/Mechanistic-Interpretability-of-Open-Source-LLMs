@@ -321,9 +321,10 @@ def _print_summary(df: pd.DataFrame, out_dir: Path, timestamp: str):
     print(f"Saved: {report_path}")
 
     # Also print key stats
+    rank_str   = f"{mean_rank:.2f}"   if mean_rank   is not None else "n/a"
+    margin_str = f"{mean_margin:.3f}" if mean_margin is not None else "n/a"
     print(f"\nOverall: sign_acc={sign_acc:.1%}  hard_acc={hard_acc:.1%}  "
-          f"mean_nd={mean_nd:.3f}  mean_rank={mean_rank:.2f if mean_rank else 'n/a'}  "
-          f"mean_margin={mean_margin:.3f}")
+          f"mean_nd={mean_nd:.3f}  mean_rank={rank_str}  mean_margin={margin_str}")
 
 
 if __name__ == "__main__":
