@@ -180,6 +180,17 @@ behaviours:
     # Key experiment: F5_no_set vs F1_explicit_list (same filter, different context)
     # → tests whether model uses explicit candidate set or retrieves directly
 
+  # ── Candidate-state v3 — scaled 500 (2026-05-05) ───────────────────────────
+  physics_particle_candidate_selection_v3:
+    train_size: 505
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "Candidate-state v3: scaled to 505 prompts. Same 6 filters as v2. 14 core families/set (7F1+3F2+4F3), expanded distractor sensitivity, set-size for negative_charge+lepton."
+    # Generator: scripts/38_generate_candidate_state_v3.py
+    # Evaluator: scripts/39_evaluate_candidate_state.py
+    # Analysis:  scripts/40_analyze_candidate_state.py
+
   # ── Candidate-state v2 — cleaned (2026-05-05) ──────────────────────────────
   physics_particle_candidate_selection_v2:
     train_size: 224
