@@ -373,7 +373,10 @@ def build_feature_agg(df: pd.DataFrame) -> pd.DataFrame:
         exploded["feature_id"] = exploded["feature_id"].astype(int)
     else:
         # Bundled mode: explode list of feature indices.
-        exploded = df.explode("feature_indices").rename(
+        # Drop any pre-existing feature_id column (all-NaN in bundled CSVs) to avoid
+        # duplicate columns after rename, which would make pd.to_numeric receive a DataFrame.
+        cols_to_explode = df.drop(columns=["feature_id"], errors="ignore")
+        exploded = cols_to_explode.explode("feature_indices").rename(
             columns={"feature_indices": "feature_id"}
         )
         exploded["feature_id"] = pd.to_numeric(exploded["feature_id"], errors="coerce")
