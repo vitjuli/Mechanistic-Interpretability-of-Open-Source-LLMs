@@ -1,0 +1,201 @@
+{
+  "git_commit": "25dd1425684d1530027f874591d59f01c46aaf47",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:18:44",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_ablation_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 21526
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:18:44",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_ablation_physics_particle_candidate_selection_v2_summary.json",
+      "size_bytes": 951
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:19:50",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_patching_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 16167
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:19:50",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_patching_physics_particle_candidate_selection_v2_summary.json",
+      "size_bytes": 925
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:24:02",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_steering_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 15058
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:24:02",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/intervention_steering_physics_particle_candidate_selection_v2_summary.json",
+      "size_bytes": 973
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T16:12:22",
+      "path": "data/results/attribution_graphs/physics_particle_candidate_selection_v2/attribution_graph_train_n100_roleaware.json",
+      "size_bytes": 81770
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:20:10",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_15.csv",
+      "size_bytes": 407
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:20:30",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_16.csv",
+      "size_bytes": 413
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:20:49",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_17.csv",
+      "size_bytes": 412
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:21:08",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_18.csv",
+      "size_bytes": 404
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:21:29",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_19.csv",
+      "size_bytes": 407
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:21:49",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/importance/feature_importance_layer_20.csv",
+      "size_bytes": 403
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:18:44",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/layer_coverage_ablation_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 252
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:19:50",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/layer_coverage_patching_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 252
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:24:02",
+      "path": "data/results/interventions/physics_particle_candidate_selection_v2/layer_coverage_steering_physics_particle_candidate_selection_v2.csv",
+      "size_bytes": 252
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/interventions.csv",
+      "size_bytes": 66671
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/common_prompt_idx.json",
+      "size_bytes": 125
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/audit.json",
+      "size_bytes": 20540
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/interventions_layer_agg.csv",
+      "size_bytes": 3357
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/interventions_prompt_agg.csv",
+      "size_bytes": 4683
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/interventions_feature_agg.csv",
+      "size_bytes": 9603
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/feature_importance.csv",
+      "size_bytes": 1654
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:11",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/layer_coverage.csv",
+      "size_bytes": 730
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:12",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/supernodes.json",
+      "size_bytes": 1000
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:25:12",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/supernodes_summary.csv",
+      "size_bytes": 404
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:29:12",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/supernodes_effect.json",
+      "size_bytes": 387
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:29:12",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/supernodes_effect_summary.csv",
+      "size_bytes": 257
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-05T17:29:12",
+      "path": "data/ui_offline/20260505-172449_physics_particle_candidate_selection_v2_train_n100/graph.json",
+      "size_bytes": 79995
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_particle_candidate_selection_v2",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 100,
+    "raw_sources_copied": [
+      "attribution_graph_train_n100_roleaware.json",
+      "attribution_graph_train_n100_roleaware_metadata.json",
+      "intervention_ablation_physics_particle_candidate_selection_v2.csv",
+      "intervention_patching_physics_particle_candidate_selection_v2.csv",
+      "intervention_steering_physics_particle_candidate_selection_v2.csv",
+      "intervention_ablation_physics_particle_candidate_selection_v2_summary.json",
+      "intervention_patching_physics_particle_candidate_selection_v2_summary.json",
+      "intervention_steering_physics_particle_candidate_selection_v2_summary.json"
+    ],
+    "run_id": "20260505-172449_physics_particle_candidate_selection_v2_train_n100",
+    "split": "train",
+    "timestamp": "2026-05-05T17:24:49.128562"
+  },
+  "timestamp": "2026-05-05T17:30:35.604839"
+}
