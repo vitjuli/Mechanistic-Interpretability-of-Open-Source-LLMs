@@ -182,8 +182,7 @@ echo "████  SECTION E: INTERVENTIONS  $(date)"
 
 python -u scripts/07_run_interventions.py \
     --behaviour "$BEHAVIOUR" \
-    --split     "$SPLIT" \
-    --device    cuda
+    --split     "$SPLIT"
 
 RC=$?
 echo "Interventions exit code: $RC  ($(date))"
