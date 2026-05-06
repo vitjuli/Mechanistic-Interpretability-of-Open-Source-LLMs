@@ -180,6 +180,28 @@ behaviours:
     # Key experiment: F5_no_set vs F1_explicit_list (same filter, different context)
     # → tests whether model uses explicit candidate set or retrieves directly
 
+  # ── Internal candidate selection v2 — scaled 500 (2026-05-06) ──────────────
+  physics_internal_candidate_selection_v2:
+    train_size: 487
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.90
+    description: "Internal candidate-state v2: NO explicit candidate list. Strategy B clean internal-only. 6 single-token filters (~447 prompts, main corpus) + 2 multi-token generalisation filters (40 prompts, placed last). Removed: beta_minus_charged_product, atomic_number_carrier. Redesigned: massless_em_mediator (6 F1 only)."
+    # Generator: scripts/39_generate_internal_candidate_v2.py
+    # Graph/interventions use --n_prompts 447 to exclude multi-token appendix
+    # Correct answers: electron(80), proton(80), neutron(135), photon(152) + positron(20), muon(20)
+    # explicit v3 (505 prompts) serves as the external explicit-list control
+
+  # ── Internal candidate selection mini — pilot (2026-05-05) ─────────────────
+  physics_internal_candidate_selection_mini:
+    train_size: 122
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.80
+    description: "Internal candidate-state mini: NO explicit candidate list. Model must activate implicit candidate pool from physics context. 10 filter/target pairs, 4 wording families. 18/122 multi-token (positron/muon — skipped by script 07)."
+    # Generator: scripts/38_generate_internal_candidate_mini.py
+    # Key distinction: explicit_candidate_set=false — more Anthropic-like
+
   # ── Candidate-state v3 — scaled 500 (2026-05-05) ───────────────────────────
   physics_particle_candidate_selection_v3:
     train_size: 505
