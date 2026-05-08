@@ -296,12 +296,18 @@ def run_analysis(
     all_rows: list[dict] = []
     missing_layers: list[int] = []
 
+    n_prompts = len(prompts)   # 447 single-token
+
     for layer in LAYERS:
         result = load_layer_features(behaviour, split, layer, paths["feature_dir"])
         if result is None:
             missing_layers.append(layer)
             continue
         indices, values = result
+        # Slice to single-token prompts only (they are always indices 0..n_prompts-1
+        # by dataset design — multi-token are appended at the end)
+        indices = indices[:n_prompts]
+        values  = values[:n_prompts]
         print(f"\nLayer {layer}: indices={indices.shape}, values={values.shape}")
 
         # Determine which features to analyse at this layer
@@ -441,12 +447,15 @@ def compute_per_prompt_scores(
             for _, r in sub.iterrows():
                 cand_feats[particle][int(r["layer"])].append(int(r["feature_idx"]))
 
+    n_prompts = len(prompts)
     score_rows = []
     for layer in LAYERS:
         result = load_layer_features(behaviour, split, layer, paths["feature_dir"])
         if result is None:
             continue
         indices, values = result
+        indices = indices[:n_prompts]
+        values  = values[:n_prompts]
 
         particle_scores: dict[str, np.ndarray] = {}
         for particle in PARTICLES:

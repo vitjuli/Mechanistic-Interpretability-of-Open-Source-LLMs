@@ -1,0 +1,224 @@
+#!/bin/bash
+#SBATCH -A MPHIL-DIS-SL2-GPU
+#SBATCH --job-name=int-v2-cont
+#SBATCH --partition=ampere
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=48G
+#SBATCH --time=12:00:00
+#SBATCH --output=logs/int-v2-cont-%j.out
+#SBATCH --error=logs/int-v2-cont-%j.out
+
+# ── Continuation of int-v2-pipe (job 28925300 timed out at Section E) ─────────
+#
+# Sections A-D completed cleanly in job 28925300:
+#   A: baseline PASS (sign=96.3%, hard=95.1%, ND=5.006) ✓
+#   B: multi-candidate eval ✓
+#   C: feature extraction ✓  (all 16 layers, 487 prompts)
+#   D: attribution graph ✓   (80 nodes, 527 edges, n120_roleaware.json)
+#
+# Timeout cause: script 08 Phase 4 ablation ran 56 sources × 487 prompts
+# = ~6.8h alone. Combined with sections A-D (~1.5h), total was ~9.2h > 8h limit.
+# Job was cancelled at source 50/56. Circuits JSON was NOT written.
+#
+# This job runs only sections E-H, fully, on all prompts (no shortcuts):
+#   E: 08_causal_edges    — full 487 prompts, all phases including S1/S1.5/S2
+#   F: 07 interventions   — 100 prompts
+#   G: 14 path validation — 10 paths
+#   H: 09 offline UI prep
+#
+# Time budget:
+#   E: Phase 3 (cache) ~1h + Phase 4 (ablation 56×487) ~6.8h + S1/S1.5 ~0.5h = ~8.3h
+#   F: ~0.5h   G: ~0.2h   H: ~0.1h
+#   Total: ~9.1h  →  12h limit gives 2.9h headroom
+#
+# sbatch jobs/run_internal_v2_continuation.sbatch
+
+set -euo pipefail
+
+BEHAVIOUR=physics_internal_candidate_selection_v2
+SPLIT=train
+GRAPH_N=120
+INTERVENTION_N=100
+GRAPH_SUFFIX=_roleaware
+
+GRAPH_DIR="data/results/attribution_graphs/${BEHAVIOUR}"
+GRAPH_JSON="${GRAPH_DIR}/attribution_graph_${SPLIT}_n${GRAPH_N}${GRAPH_SUFFIX}.json"
+CIRCUITS_JSON="data/results/circuits_${BEHAVIOUR}_${SPLIT}${GRAPH_SUFFIX}.json"
+INTERV_DIR="data/results/interventions/${BEHAVIOUR}"
+PATH_VAL_DIR="data/results/path_validation/${BEHAVIOUR}"
+PATH_VAL_JSON="${PATH_VAL_DIR}/path_validation_${BEHAVIOUR}_${SPLIT}.json"
+
+cd /rds/user/iv294/hpc-work/thesis/project
+
+module purge
+module load rhel8/default-amp 2>/dev/null || module load rhel8/default-gpu 2>/dev/null || true
+source venv/bin/activate
+
+export ATEN_CPU_CAPABILITY=avx2
+export MKL_ENABLE_INSTRUCTIONS=AVX2
+export NPY_DISABLE_CPU_FEATURES="AVX512F AVX512CD AVX512VL AVX512BW AVX512DQ"
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export TOKENIZERS_PARALLELISM=false
+export PYTHONUNBUFFERED=1
+
+echo "========================================================"
+echo "  ${BEHAVIOUR} — CONTINUATION (Sections E–H)"
+echo "  Job ${SLURM_JOB_ID}  Node $(hostname)  $(date)"
+echo "  Sections A-D already complete from job 28925300."
+echo "========================================================"
+python --version
+nvidia-smi | head -4 || true
+
+mkdir -p logs "$INTERV_DIR" "$PATH_VAL_DIR"
+
+# ── Pre-flight: verify graph from job 28925300 exists ─────────────────────────
+[ ! -f "$GRAPH_JSON" ] && {
+    echo "[FATAL] Graph not found: $GRAPH_JSON"
+    echo "  This continuation requires the graph built in job 28925300."
+    exit 1
+}
+echo "  [OK] Graph confirmed: $GRAPH_JSON  ($(du -sh "$GRAPH_JSON" | cut -f1))"
+
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "████  SECTION E: CIRCUIT EXTRACTION  $(date)"
+# ══════════════════════════════════════════════════════════════════════════════
+# Full run on all 487 prompts (no --max_prompts shortcut).
+# Estimated: Phase 3 ~1h + Phase 4 ~6.8h + sufficiency ~0.5h = ~8.3h.
+# Output: $CIRCUITS_JSON
+
+python -u scripts/08_causal_edges.py \
+    --behaviour       "$BEHAVIOUR" \
+    --split           "$SPLIT" \
+    --graph_json      "$GRAPH_JSON" \
+    --n_paths         50 \
+    --circuits_output "$CIRCUITS_JSON"
+
+echo "Circuit extraction exit code: $?  ($(date))"
+
+[ ! -f "$CIRCUITS_JSON" ] && {
+    echo "[FATAL] Circuit JSON not written: $CIRCUITS_JSON"
+    ls data/results/circuits_*.json 2>/dev/null || echo "  (no circuit files found)"
+    exit 1
+}
+echo "  [OK] Circuit: $CIRCUITS_JSON  ($(du -sh "$CIRCUITS_JSON" | cut -f1))"
+
+python3 -c "
+import json
+with open('${CIRCUITS_JSON}') as f:
+    c = json.load(f)
+feats = c.get('features', [])
+edges = c.get('edges',    [])
+paths = c.get('paths',    [])
+nec   = c.get('necessity', None)
+print(f'  {len(feats)} features, {len(edges)} edges, {len(paths)} paths')
+if nec is not None:
+    print(f'  necessity={nec:.3f}')
+if paths:
+    p0 = paths[0]
+    print(f'  top path: {\" → \".join(str(x) for x in p0.get(\"path\", []))}')
+    print(f'  top path score: {p0.get(\"score\", \"N/A\")}')
+" || echo "  [WARN] Could not summarise circuit JSON"
+
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "████  SECTION F: INTERVENTIONS  $(date)"
+# ══════════════════════════════════════════════════════════════════════════════
+
+python -u scripts/07_run_interventions.py \
+    --behaviour       "$BEHAVIOUR" \
+    --split           "$SPLIT" \
+    --graph_n_prompts "$GRAPH_N" \
+    --graph_suffix    "$GRAPH_SUFFIX" \
+    --n_prompts       "$INTERVENTION_N" \
+    && RC07=0 || RC07=$?
+echo "Interventions exit code: $RC07  ($(date))"
+[ $RC07 -ne 0 ] && echo "[WARN] Interventions non-zero exit — check log for skipped layers"
+
+ls -lh "$INTERV_DIR"/ 2>/dev/null | head -8 || echo "  (no outputs found)"
+
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "████  SECTION G: PATH VALIDATION  $(date)"
+# ══════════════════════════════════════════════════════════════════════════════
+
+python -u scripts/14_path_validation.py \
+    --behaviour     "$BEHAVIOUR" \
+    --split         "$SPLIT" \
+    --circuits_json "$CIRCUITS_JSON" \
+    --n_paths       10 \
+    --epsilon       0.01 \
+    --max_prompts   50 \
+    && RC14=0 || RC14=$?
+echo "Path validation exit code: $RC14  ($(date))"
+[ $RC14 -ne 0 ] && echo "[WARN] Path validation failed — continuing"
+
+if [ -f "$PATH_VAL_JSON" ]; then
+    python3 -c "
+import json
+with open('${PATH_VAL_JSON}') as f:
+    pv = json.load(f)
+summary   = pv.get('summary', {})
+paths     = pv.get('paths',   [])
+confirmed = sum(1 for p in paths if p.get('confirmed', False))
+print(f'  {len(paths)} paths validated, {confirmed} confirmed')
+print(f'  propagation_consistency: {summary.get(\"propagation_consistency\", \"N/A\")}')
+print(f'  mean_delta_logit:        {summary.get(\"mean_delta_logit\", \"N/A\")}')
+" || true
+fi
+
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "████  SECTION H: OFFLINE UI PREP  $(date)"
+# ══════════════════════════════════════════════════════════════════════════════
+
+python -u scripts/09_prepare_offline_ui.py \
+    --behaviour       "$BEHAVIOUR" \
+    --split           "$SPLIT" \
+    --graph_n_prompts "$GRAPH_N" \
+    --graph_suffix    "$GRAPH_SUFFIX" \
+    > /tmp/int_v2_cont_ui.txt 2>&1 \
+    && RC09=0 || RC09=$?
+cat /tmp/int_v2_cont_ui.txt
+
+if grep -qi "no graph found\|graph not found\|FileNotFoundError\|No such file" \
+        /tmp/int_v2_cont_ui.txt; then
+    echo "[FATAL] UI prep could not locate graph: $GRAPH_JSON"
+    exit 1
+fi
+[ $RC09 -ne 0 ] && echo "[WARN] UI prep non-zero exit"
+
+UI_DIR=$(ls -td data/ui_offline/*${BEHAVIOUR}* 2>/dev/null | head -1 || echo "(not found)")
+echo "  UI bundle: $UI_DIR"
+
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "========================================================"
+echo "  DONE — ${BEHAVIOUR} CONTINUATION"
+echo "  Job ${SLURM_JOB_ID} — $(date)"
+echo "========================================================"
+
+echo ""
+echo "  ── Key outputs ──"
+ls -lh "data/results/baseline_${BEHAVIOUR}_${SPLIT}.csv" 2>/dev/null || true
+ls -lh "data/results/attribution_graphs/${BEHAVIOUR}/attribution_graph_${SPLIT}_n${GRAPH_N}${GRAPH_SUFFIX}.json" 2>/dev/null || true
+ls -lh "$CIRCUITS_JSON"  2>/dev/null || echo "  circuit:      (not found)"
+ls -lh "$INTERV_DIR"/    2>/dev/null | head -4 || echo "  interventions:(not found)"
+ls -lh "$PATH_VAL_JSON"  2>/dev/null || echo "  path val:     (not found)"
+echo "  UI: $UI_DIR"
+
+echo ""
+echo "  ── Rsync all v2 outputs to local Mac ──"
+BASE="iv294@login.hpc.cam.ac.uk:/rds/user/iv294/hpc-work/thesis/project"
+echo "  rsync -av ${BASE}/data/results/baseline_${BEHAVIOUR}_${SPLIT}.csv data/results/"
+echo "  rsync -av ${BASE}/data/results/baseline_metrics_${BEHAVIOUR}_${SPLIT}.json data/results/"
+echo "  rsync -av ${BASE}/data/results/candidate_set_large_${BEHAVIOUR}/ data/results/candidate_set_large_${BEHAVIOUR}/"
+echo "  rsync -av ${BASE}/data/results/attribution_graphs/${BEHAVIOUR}/ data/results/attribution_graphs/${BEHAVIOUR}/"
+echo "  rsync -av ${BASE}/${CIRCUITS_JSON} data/results/"
+echo "  rsync -av ${BASE}/${INTERV_DIR}/ data/results/interventions/${BEHAVIOUR}/"
+echo "  rsync -av ${BASE}/${PATH_VAL_DIR}/ data/results/path_validation/${BEHAVIOUR}/"
+echo "  rsync -av \"${BASE}/${UI_DIR}/\" \"data/ui_offline/$(basename "$UI_DIR" 2>/dev/null || echo INT_V2_UI)/\""
+echo "========================================================"
