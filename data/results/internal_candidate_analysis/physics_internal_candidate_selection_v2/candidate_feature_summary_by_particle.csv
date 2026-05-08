@@ -1,0 +1,5 @@
+particle,n_strong_candidate_features,n_partial_candidate_features,mean_candidate_specificity,mean_competitor_presence,mean_IPR,top5_strong_features
+electron,0,0,,,1.050576249109593,[]
+neutron,1,3,0.03903192359131652,0.12202447652816772,1.0591418272672555,"[{""feature_id"": ""L24_F84940"", ""layer"": 24, ""candidate_specificity"": 4.998695373535156, ""competitor_presence"": 2.726827621459961, ""internal_presence_ratio"": 0.7788762166803781}]"
+photon,0,0,-0.19345246777906047,,,[]
+proton,0,0,,,1.025180252520536,[]

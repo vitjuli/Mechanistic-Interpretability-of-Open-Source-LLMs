@@ -1,0 +1,58 @@
+{
+  "electron": {
+    "strong_candidate_features": [],
+    "partial_candidate_features": []
+  },
+  "proton": {
+    "strong_candidate_features": [],
+    "partial_candidate_features": []
+  },
+  "neutron": {
+    "strong_candidate_features": [
+      {
+        "feature_id": "L24_F84940",
+        "layer": 24,
+        "candidate_specificity": 4.998695373535156,
+        "competitor_presence": 2.726827621459961,
+        "internal_presence_ratio": 0.7788762166803781,
+        "target_mean": 10.274189949035645,
+        "competitor_mean": 8.00232219696045,
+        "background_mean": 5.275494575500488,
+        "cohen_d_TC": 0.6233530709112806,
+        "cohen_d_CB": 0.7792287159205962,
+        "mw_p_TC_adj": 8.19759983353694e-07,
+        "mw_p_CB_adj": 2.063914162940329e-07
+      }
+    ],
+    "partial_candidate_features": [
+      {
+        "feature_id": "L21_F31790",
+        "layer": 21,
+        "candidate_specificity": 0.1879417896270752,
+        "target_mean": 4.077792167663574,
+        "competitor_mean": 4.1667985916137695,
+        "background_mean": 3.889850378036499
+      },
+      {
+        "feature_id": "L17_F149790",
+        "layer": 17,
+        "candidate_specificity": 0.1827552318572998,
+        "target_mean": 1.0890182256698608,
+        "competitor_mean": 0.8209066390991211,
+        "background_mean": 0.906262993812561
+      },
+      {
+        "feature_id": "L19_F39488",
+        "layer": 19,
+        "candidate_specificity": 0.1770009994506836,
+        "target_mean": 2.810373306274414,
+        "competitor_mean": 2.444894313812256,
+        "background_mean": 2.6333723068237305
+      }
+    ]
+  },
+  "photon": {
+    "strong_candidate_features": [],
+    "partial_candidate_features": []
+  }
+}
