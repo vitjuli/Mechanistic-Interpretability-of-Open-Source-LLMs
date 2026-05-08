@@ -105,25 +105,35 @@ def load_candidate_features(paths, min_specificity=0.0):
     """
     cand_feats: dict[str, dict[int, list]] = {p: {} for p in PARTICLES}
 
+    MIN_FEATS_PER_PARTICLE = 3  # need at least this many features per particle for useful trajectory
+
     if paths["candidate_table"].exists():
         df = pd.read_csv(paths["candidate_table"])
-        # Use strong features first
+
+        # Try strong (FDR-significant T>C>B) first
         strong = df[df["strong_candidate_feature"] == True]
-        if len(strong) == 0:
-            print("[WARN] No strong features in candidate_feature_table.csv — using all T>C>B ordering")
+        source = "strong"
+        if len(strong) < MIN_FEATS_PER_PARTICLE * len(PARTICLES):
+            print(f"[WARN] Only {len(strong)} strong features — trying T>C>B ordering (no FDR)")
             strong = df[df["ordering_T_gt_C_gt_B"] == True]
-        if len(strong) == 0:
-            print("[WARN] No T>C>B features — falling back to top candidate_specificity")
-            strong = df[df["candidate_specificity"] > min_specificity]
+            source = "ordering"
+        if len(strong) < MIN_FEATS_PER_PARTICLE * len(PARTICLES):
+            print(f"[WARN] Still only {len(strong)} T>C>B features — using top by candidate_specificity")
+            # Top 5 per particle by candidate_specificity
+            strong = (df[df["candidate_specificity"] > min_specificity]
+                      .sort_values("candidate_specificity", ascending=False)
+                      .groupby("particle").head(5))
+            source = "specificity_top5"
 
         for _, row in strong.iterrows():
             p = row["particle"]
             l = int(row["layer"])
             f = int(row["feature_idx"])
             cand_feats[p].setdefault(l, []).append(f)
-        print(f"Loaded candidate features: "
-              f"{sum(len(v) for p in cand_feats.values() for v in p.values())} total")
-        return cand_feats, "script_41"
+
+        total = sum(len(v) for p in cand_feats.values() for v in p.values())
+        print(f"Loaded candidate features: {total} total (source={source})")
+        return cand_feats, f"script_41_{source}"
 
     # Fallback: graph features per layer, assigned to particle by highest target_mean
     # (without script 41 results, use specific_score as a rough proxy)
@@ -148,6 +158,10 @@ def load_candidate_features(paths, min_specificity=0.0):
 
 def compute_scores_at_layer(indices, values, cand_feats, layer, n_prompts):
     """Returns {particle: np.ndarray[n_prompts]} activation scores."""
+    # Always slice to n_prompts rows — ensures consistency even if caller
+    # didn't slice (e.g. arrays include multi-token prompts at end)
+    indices = indices[:n_prompts]
+    values  = values[:n_prompts]
     scores = {}
     for particle in PARTICLES:
         feat_list = cand_feats[particle].get(layer, [])
@@ -194,6 +208,9 @@ def run_trajectory(behaviour, split, paths, cand_feats):
             print(f"  L{layer}: missing features")
             continue
         indices, values = result
+        # Slice to single-token prompts (always indices 0..n-1 by dataset design)
+        indices = indices[:n]
+        values  = values[:n]
         scores = compute_scores_at_layer(indices, values, cand_feats, layer, n)
 
         # Stack (N, 4)

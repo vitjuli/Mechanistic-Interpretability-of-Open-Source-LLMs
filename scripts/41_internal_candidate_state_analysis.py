@@ -738,10 +738,10 @@ def main():
         print("  NONE found — check per_prompt scores and partial features")
     print(f"\nTop 10 features by competitor_presence:")
     print(
-        df[["feature_id", "particle", "layer", "target_mean", "competitor_mean",
-            "background_mean", "internal_presence_ratio", "ordering_T_gt_C_gt_B"]]
-        .sort_values("competitor_presence", ascending=False)
+        df.sort_values("competitor_presence", ascending=False)
         .head(10)
+        [["feature_id", "particle", "layer", "target_mean", "competitor_mean",
+          "background_mean", "internal_presence_ratio", "ordering_T_gt_C_gt_B"]]
         .to_string(index=False)
     )
 
