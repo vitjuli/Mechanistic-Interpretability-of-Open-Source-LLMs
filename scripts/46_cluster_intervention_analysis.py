@@ -5,46 +5,111 @@ For each feature cluster identified by script 45, tests causal selectivity by:
   A — Group ablation: zero all cluster features, measure ΔND per particle class
   B — Group steering: add decoder directions, measure logit shifts per particle
   C — Causal selectivity: ΔND_target − ΔND_non_target
-  D — Early vs late cluster comparison
 
-Reads cluster assignments from script 45 outputs.
-Requires GPU — run via: sbatch jobs/run_cluster_intervention.sbatch
+Reads cluster assignments from script 45 (feature_clusters_k{k}_{method}.csv).
+Uses same model loading / hook infrastructure as script 07.
 
 Usage:
-  python scripts/46_cluster_intervention_analysis.py --behaviour physics_internal_candidate_selection_v2
+  python scripts/46_cluster_intervention_analysis.py
+  python scripts/46_cluster_intervention_analysis.py --k 6 --n_prompts 100
 """
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 
-BEHAVIOUR  = "physics_internal_candidate_selection_v2"
-SPLIT      = "train"
-PARTICLES  = ["electron", "proton", "neutron", "photon"]
-N_ST       = 447
-DEFAULT_K  = 6
-DEFAULT_METHOD = "kmeans"
+# ── Project path (same pattern as all other scripts) ─────────────────────────
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.model_utils import ModelWrapper
+from src.transcoder import load_transcoder_set
+from scripts.script07_utils import get_mlp_input_activation, patch_mlp_input, ensure_single_token
+
+BEHAVIOUR   = "physics_internal_candidate_selection_v2"
+SPLIT       = "train"
+PARTICLES   = ["electron", "proton", "neutron", "photon"]
+N_ST        = 447
+MODEL_NAME  = "Qwen/Qwen3-4B"
+MODEL_SIZE  = "4b"
 STEERING_COEFF = 5.0
 
 
-def get_paths(behaviour, split, k=DEFAULT_K, method=DEFAULT_METHOD):
-    base  = Path("data")
-    adir  = base / "results" / "internal_candidate_analysis" / behaviour
+# ─── Locate helper functions from script 07 ───────────────────────────────────
+# Rather than re-implementing hooks, import the tested functions directly.
+
+def _import_script07_utils():
+    """Import hook utilities from script 07 by exec-ing the relevant functions."""
+    import importlib.util, ast
+
+    script07 = Path(__file__).parent / "07_run_interventions.py"
+    # We only need: patch_mlp_input, get_mlp_input_activation, ensure_single_token
+    # These are pure functions; import them by loading the module.
+    spec = importlib.util.spec_from_file_location("script07", script07)
+    mod  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.patch_mlp_input, mod.get_mlp_input_activation, mod.ensure_single_token
+
+
+try:
+    patch_mlp_input, get_mlp_input_activation, ensure_single_token = _import_script07_utils()
+except Exception as e:
+    print(f"[WARN] Could not import from script 07: {e}")
+    print("       Falling back to inline implementations.")
+    # Inline fallbacks (simpler, less robust than script 07's version)
+    from contextlib import contextmanager
+
+    def ensure_single_token(model, tok):
+        ids = model.tokenizer.encode(tok, add_special_tokens=False)
+        assert len(ids) == 1, f"Token '{tok}' is multi-token: {ids}"
+        return ids[0]
+
+    def get_mlp_input_activation(model, inputs, layer_idx, token_pos=-1):
+        captured = {}
+        blocks = model.model.model.layers
+        # Try post_attention_layernorm (Qwen3 architecture)
+        norm = blocks[layer_idx].post_attention_layernorm
+        def hook(module, inp, out):
+            captured["x"] = (out[0] if isinstance(out, tuple) else out).detach()
+        h = norm.register_forward_hook(hook)
+        with torch.no_grad():
+            model.model(**inputs, use_cache=False)
+        h.remove()
+        assert "x" in captured, f"Hook didn't fire at layer {layer_idx}"
+        return captured["x"][:, token_pos, :]  # (batch=1, d_model)
+
+    @contextmanager
+    def patch_mlp_input(model_inner, layer_idx, token_pos, new_mlp_input):
+        blocks = model_inner.model.layers
+        norm   = blocks[layer_idx].post_attention_layernorm
+        def hook(module, inp, out):
+            if isinstance(out, tuple):
+                lst = list(out); lst[0][:, token_pos] = new_mlp_input; return tuple(lst)
+            out[:, token_pos] = new_mlp_input; return out
+        h = norm.register_forward_hook(hook)
+        try:
+            yield
+        finally:
+            h.remove()
+
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+
+def get_paths(behaviour, split, k, method):
+    base = Path("data")
+    adir = base / "results" / "internal_candidate_analysis" / behaviour
     return {
-        "prompts":      base / "prompts" / f"{behaviour}_{split}.jsonl",
-        "graph_json":   base / "results" / "attribution_graphs" / behaviour
-                             / f"attribution_graph_{split}_n120_roleaware.json",
-        "cluster_csv":  adir / f"feature_clusters_k{k}_{method}.csv",
-        "cluster_idx":  adir / "cluster_feature_index.csv",
-        "output_dir":   adir,
+        "prompts":     base / "prompts" / f"{behaviour}_{split}.jsonl",
+        "cluster_csv": adir / f"feature_clusters_k{k}_{method}.csv",
+        "output_dir":  adir,
     }
 
 
-# ─── Data loading ────────────────────────────────────────────────────────────
+# ─── Data loading ─────────────────────────────────────────────────────────────
 
 def load_prompts(paths):
     with open(paths["prompts"]) as f:
@@ -56,14 +121,13 @@ def load_prompts(paths):
 
 
 def load_clusters(paths, k, method):
-    """Returns {cluster_id: [(layer, feat_idx), ...]}."""
-    csv_path = paths["output_dir"] / f"feature_clusters_k{k}_{method}.csv"
+    csv_path = paths["cluster_csv"]
     if not csv_path.exists():
         raise FileNotFoundError(
             f"Cluster CSV not found: {csv_path}\n"
             f"Run script 45 first: python scripts/45_candidate_feature_clustering.py"
         )
-    df = pd.read_csv(csv_path)
+    df  = pd.read_csv(csv_path)
     col = f"cluster_k{k}_{method}"
     clusters = {}
     for _, row in df.iterrows():
@@ -72,169 +136,145 @@ def load_clusters(paths, k, method):
     return clusters
 
 
-def load_transcoder(model_size="4b"):
-    from src.transcoder.load import load_transcoders
-    return load_transcoders(model_size=model_size)
+# ─── Logit diff baseline ──────────────────────────────────────────────────────
+
+def compute_logit_diff(model, inputs, device, correct_token, incorrect_token):
+    with torch.no_grad():
+        out    = model.model(**inputs, use_cache=False)
+        logits = out.logits[0, -1, :]
+    log_p = torch.log_softmax(logits, dim=0)
+    cid   = ensure_single_token(model, correct_token)
+    iid   = ensure_single_token(model, incorrect_token)
+    return (log_p[cid] - log_p[iid]).item()
 
 
-def load_model(model_size="4b"):
-    from src.model_utils import load_model as _load_model
-    return _load_model(model_size=model_size, instruct=False)
+# ─── Part A: Group ablation ────────────────────────────────────────────────────
 
+def run_group_ablation(model, transcoder_set, device, clusters, prompts,
+                       n_prompts=80, rng_seed=42):
+    from contextlib import ExitStack
 
-# ─── Prompt utilities ─────────────────────────────────────────────────────────
-
-def get_group_masks(prompts):
-    """Returns {particle: {'target':mask, 'competitor':mask, 'background':mask}}."""
-    n = len(prompts)
-    masks = {}
-    for p in PARTICLES:
-        t = np.array([r["_correct"] == p for r in prompts])
-        c = np.array([p in r["_pool"] and r["_correct"] != p for r in prompts])
-        b = np.array([p not in r["_pool"] for r in prompts])
-        masks[p] = {"target": t, "competitor": c, "background": b}
-    return masks
-
-
-# ─── Inference with hooks ─────────────────────────────────────────────────────
-
-@torch.no_grad()
-def run_logprob_diff(model, tokenizer, prompt, correct_token, incorrect_token,
-                     ablation_hooks=None, device="cuda"):
-    """Returns (ND_baseline, ND_ablated) given ablation hook functions."""
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
-
-    def forward(hooks_to_register):
-        handles = []
-        if hooks_to_register:
-            for layer_idx, hook_fn in hooks_to_register:
-                handle = model.model.layers[layer_idx].mlp.register_forward_hook(hook_fn)
-                handles.append(handle)
-        out = model(**inputs)
-        for h in handles:
-            h.remove()
-        return out.logits[0, -1, :]
-
-    # Baseline
-    logits = forward([])
-    correct_id   = tokenizer(correct_token,   add_special_tokens=False)["input_ids"][0]
-    incorrect_id = tokenizer(incorrect_token, add_special_tokens=False)["input_ids"][0]
-    nd_base = float(logits[correct_id] - logits[incorrect_id])
-
-    # Ablated
-    if ablation_hooks:
-        logits_abl = forward(ablation_hooks)
-        nd_abl = float(logits_abl[correct_id] - logits_abl[incorrect_id])
-    else:
-        nd_abl = nd_base
-
-    return nd_base, nd_abl
-
-
-def make_ablation_hook(transcoder, feat_indices, layer_idx):
-    """Returns a hook that zeros the transcoder activations for feat_indices."""
-    def hook(module, input, output):
-        # Transcoder operates on MLP input → get features
-        x = input[0]
-        with torch.no_grad():
-            acts = transcoder[layer_idx].encode(x)
-            acts[:, :, feat_indices] = 0.0
-            patched_output = transcoder[layer_idx].decode(acts)
-        return patched_output
-    return hook
-
-
-def make_steering_hook(transcoder, feat_indices, layer_idx, coeff=STEERING_COEFF):
-    """Returns a hook that adds scaled decoder vectors for feat_indices."""
-    def hook(module, input, output):
-        x = input[0]
-        with torch.no_grad():
-            # Get decoder vectors for these features and add them
-            W_dec = transcoder[layer_idx].W_dec[:, feat_indices]  # [d_model, n_feats]
-            steering_vec = W_dec.sum(dim=1) * coeff
-            patched_output = output + steering_vec.unsqueeze(0).unsqueeze(0)
-        return patched_output
-    return hook
-
-
-# ─── Part A: Group ablation ───────────────────────────────────────────────────
-
-def run_group_ablation(model, tokenizer, transcoder, clusters, prompts,
-                       group_masks, n_prompts=80, device="cuda"):
-    """
-    For each cluster: zero all its features, measure ΔND per prompt.
-    Returns DataFrame with one row per (cluster, prompt_idx).
-    """
+    rng  = np.random.default_rng(rng_seed)
+    idxs = rng.choice(N_ST, min(n_prompts, N_ST), replace=False)
     rows = []
-    sample_idx = np.random.choice(N_ST, min(n_prompts, N_ST), replace=False)
 
     for cluster_id, feat_list in sorted(clusters.items()):
-        # Group features by layer
         by_layer = {}
         for (layer, fidx) in feat_list:
             by_layer.setdefault(layer, []).append(fidx)
 
-        print(f"  Cluster {cluster_id}: {len(feat_list)} features across {len(by_layer)} layers")
+        print(f"  C{cluster_id}: {len(feat_list)} feats, layers {sorted(by_layer)}")
 
-        # Build hook functions
-        ablation_hooks = []
-        for layer_idx, feat_indices in by_layer.items():
-            fidx_tensor = torch.tensor(feat_indices, dtype=torch.long, device=device)
-            hook_fn = make_ablation_hook(transcoder, fidx_tensor, layer_idx)
-            # Map transcoder layer to model layer (transcoder covers L10-L25)
-            model_layer = layer_idx  # adjust if needed
-            ablation_hooks.append((model_layer, hook_fn))
+        for i in idxs:
+            prompt = prompts[i]
+            inputs = model.tokenize([prompt["prompt"]])
+            inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        for i in sample_idx:
-            prompt   = prompts[i]
-            nd_base, nd_abl = run_logprob_diff(
-                model, tokenizer,
-                prompt["prompt"], prompt["correct_answer"], prompt["incorrect_answer"],
-                ablation_hooks=ablation_hooks, device=device
-            )
-            delta_nd   = nd_abl - nd_base
-            sign_flip  = bool(nd_base > 0 and nd_abl <= 0)
+            nd_base = compute_logit_diff(model, inputs, device,
+                                         prompt["correct_answer"], prompt["incorrect_answer"])
+            nd_abl  = nd_base
+
+            try:
+                # Step 1: capture baseline MLP inputs at all cluster layers
+                baseline_acts = {}
+                for layer_idx in sorted(by_layer):
+                    baseline_acts[layer_idx] = get_mlp_input_activation(
+                        model, inputs, layer_idx
+                    )
+
+                # Step 2: compute ablated MLP inputs (zero cluster features)
+                ablated_inputs = {}
+                for layer_idx, feat_indices in sorted(by_layer.items()):
+                    tc   = transcoder_set[layer_idx]
+                    act  = baseline_acts[layer_idx]
+                    feats = tc.encode(act.to(tc.dtype))
+                    feats[:, feat_indices] = 0.0
+                    ablated_inputs[layer_idx] = tc.decode(feats).to(act.dtype)
+
+                # Step 3: single forward pass with all patches active simultaneously
+                with ExitStack() as stack:
+                    for layer_idx, new_mlp in sorted(ablated_inputs.items()):
+                        stack.enter_context(
+                            patch_mlp_input(model.model, layer_idx, -1, new_mlp)
+                        )
+                    with torch.no_grad():
+                        out_abl = model.model(**inputs, use_cache=False)
+
+                log_p_abl = torch.log_softmax(out_abl.logits[0, -1, :], dim=0)
+                cid   = ensure_single_token(model, prompt["correct_answer"])
+                iid   = ensure_single_token(model, prompt["incorrect_answer"])
+                nd_abl = (log_p_abl[cid] - log_p_abl[iid]).item()
+
+            except Exception as exc:
+                print(f"    [WARN] prompt {i} C{cluster_id}: {exc}")
+
             rows.append({
-                "cluster":        cluster_id,
-                "prompt_idx":     int(i),
-                "correct_answer": prompt["_correct"],
+                "cluster":         cluster_id,
+                "prompt_idx":      int(i),
+                "correct_answer":  prompt["_correct"],
                 "filter_property": prompt.get("filter_property", ""),
-                "wording_family": prompt.get("wording_family", ""),
-                "nd_baseline":    float(nd_base),
-                "nd_ablated":     float(nd_abl),
-                "delta_nd":       float(delta_nd),
-                "abs_delta_nd":   float(abs(delta_nd)),
-                "sign_flip":      sign_flip,
+                "wording_family":  prompt.get("wording_family", ""),
+                "nd_baseline":     float(nd_base),
+                "nd_ablated":      float(nd_abl),
+                "delta_nd":        float(nd_abl - nd_base),
+                "abs_delta_nd":    float(abs(nd_abl - nd_base)),
+                "sign_flip":       bool(nd_base > 0 and nd_abl <= 0),
             })
+
+        abl_rows = [r for r in rows if r["cluster"] == cluster_id]
+        print(f"    mean_ΔND={np.mean([r['delta_nd'] for r in abl_rows]):.3f}  "
+              f"sign_flip={np.mean([r['sign_flip'] for r in abl_rows]):.3f}")
 
     return pd.DataFrame(rows)
 
 
-# ─── Part B: Group steering ───────────────────────────────────────────────────
+# ─── Part B: Group steering ────────────────────────────────────────────────────
 
-def run_group_steering(model, tokenizer, transcoder, clusters, prompts,
-                       n_prompts=80, device="cuda", coeff=STEERING_COEFF):
+def run_group_steering(model, transcoder_set, device, clusters, prompts,
+                       n_prompts=80, rng_seed=42, coeff=STEERING_COEFF):
+    rng  = np.random.default_rng(rng_seed + 1)
+    idxs = rng.choice(N_ST, min(n_prompts, N_ST), replace=False)
     rows = []
-    sample_idx = np.random.choice(N_ST, min(n_prompts, N_ST), replace=False)
 
     for cluster_id, feat_list in sorted(clusters.items()):
         by_layer = {}
         for (layer, fidx) in feat_list:
             by_layer.setdefault(layer, []).append(fidx)
 
-        steering_hooks = []
-        for layer_idx, feat_indices in by_layer.items():
-            fidx_tensor = torch.tensor(feat_indices, dtype=torch.long, device=device)
-            hook_fn = make_steering_hook(transcoder, fidx_tensor, layer_idx, coeff=coeff)
-            steering_hooks.append((layer_idx, hook_fn))
-
-        for i in sample_idx:
+        for i in idxs:
             prompt = prompts[i]
-            nd_base, nd_steered = run_logprob_diff(
-                model, tokenizer,
-                prompt["prompt"], prompt["correct_answer"], prompt["incorrect_answer"],
-                ablation_hooks=steering_hooks, device=device
-            )
+            inputs = model.tokenize([prompt["prompt"]])
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            nd_base = compute_logit_diff(model, inputs, device,
+                                          prompt["correct_answer"], prompt["incorrect_answer"])
+            nd_steered = nd_base
+
+            try:
+                from contextlib import ExitStack
+                steered_inputs = {}
+                for layer_idx, feat_indices in sorted(by_layer.items()):
+                    tc      = transcoder_set[layer_idx]
+                    mlp_act = get_mlp_input_activation(model, inputs, layer_idx)
+                    feats   = tc.encode(mlp_act.to(tc.dtype))
+                    feats[:, feat_indices] += coeff
+                    steered_inputs[layer_idx] = tc.decode(feats).to(mlp_act.dtype)
+
+                with ExitStack() as stack:
+                    for layer_idx, new_mlp in sorted(steered_inputs.items()):
+                        stack.enter_context(
+                            patch_mlp_input(model.model, layer_idx, -1, new_mlp)
+                        )
+                    with torch.no_grad():
+                        out_s = model.model(**inputs, use_cache=False)
+                log_p_s    = torch.log_softmax(out_s.logits[0, -1, :], dim=0)
+                cid        = ensure_single_token(model, prompt["correct_answer"])
+                iid        = ensure_single_token(model, prompt["incorrect_answer"])
+                nd_steered = (log_p_s[cid] - log_p_s[iid]).item()
+
+            except Exception as exc:
+                print(f"    [WARN] Steering failed prompt {i} cluster {cluster_id}: {exc}")
+
             rows.append({
                 "cluster":        cluster_id,
                 "prompt_idx":     int(i),
@@ -249,63 +289,62 @@ def run_group_steering(model, tokenizer, transcoder, clusters, prompts,
     return pd.DataFrame(rows)
 
 
-# ─── Part C: Causal selectivity ──────────────────────────────────────────────
+# ─── Part C: Causal selectivity ───────────────────────────────────────────────
 
 def compute_selectivity(ablation_df):
     """
-    selectivity(cluster, particle) = mean_ΔND over target prompts
-                                   - mean_ΔND over non-target prompts
-
-    Negative selectivity = ablating this cluster hurts this particle more than others.
+    selectivity(cluster, particle) = mean_ΔND(target) − mean_ΔND(other particles)
+    Negative = ablation hurts this particle more than others (particle-selective).
     """
     rows = []
-    for (cluster, particle), grp in ablation_df.groupby(["cluster", "correct_answer"]):
-        target_delta  = grp["delta_nd"].mean()
-        non_target    = ablation_df[
-            (ablation_df["cluster"] == cluster) &
-            (ablation_df["correct_answer"] != particle)
-        ]["delta_nd"].mean()
-        selectivity   = float(target_delta - non_target)
-        sign_flip_rate = float(grp["sign_flip"].mean())
-        rows.append({
-            "cluster":          cluster,
-            "particle":         particle,
-            "mean_delta_nd_target": float(target_delta),
-            "mean_delta_nd_other":  float(non_target),
-            "selectivity":      selectivity,
-            "sign_flip_rate":   sign_flip_rate,
-            "n_target_prompts": len(grp),
-        })
+    for cluster in ablation_df["cluster"].unique():
+        sub = ablation_df[ablation_df["cluster"] == cluster]
+        for particle in PARTICLES:
+            t_mask = sub["correct_answer"] == particle
+            o_mask = sub["correct_answer"] != particle
+            if t_mask.sum() < 3:
+                continue
+            target_delta = sub[t_mask]["delta_nd"].mean()
+            other_delta  = sub[o_mask]["delta_nd"].mean() if o_mask.sum() >= 3 else float("nan")
+            selectivity  = float(target_delta - other_delta) if not np.isnan(other_delta) else float("nan")
+            rows.append({
+                "cluster":              int(cluster),
+                "particle":             particle,
+                "mean_delta_nd_target": float(target_delta),
+                "mean_delta_nd_other":  float(other_delta),
+                "selectivity":          selectivity,
+                "sign_flip_rate":       float(sub[t_mask]["sign_flip"].mean()),
+                "n_target_prompts":     int(t_mask.sum()),
+            })
     return pd.DataFrame(rows)
 
 
 # ─── Report ───────────────────────────────────────────────────────────────────
 
-def write_intervention_report(ablation_df, selectivity_df, steering_df, output_dir):
+def write_report(ablation_df, selectivity_df, steering_df, output_dir):
     lines = [
-        "# Cluster Intervention Analysis Report",
+        "# Cluster Intervention Analysis",
         f"## {BEHAVIOUR} | {SPLIT}",
         "",
-        "## Part A: Group Ablation Summary",
+        "## Part A: Group Ablation",
         "",
     ]
 
     if ablation_df is not None and len(ablation_df):
         agg = ablation_df.groupby("cluster").agg(
-            mean_delta_nd=("delta_nd", "mean"),
-            mean_abs_delta=("abs_delta_nd", "mean"),
-            sign_flip_rate=("sign_flip", "mean"),
-            n_prompts=("prompt_idx", "count"),
+            mean_delta_nd  =("delta_nd",     "mean"),
+            mean_abs_delta =("abs_delta_nd", "mean"),
+            sign_flip_rate =("sign_flip",    "mean"),
+            n              =("prompt_idx",   "count"),
         ).reset_index()
         lines += [
-            "| Cluster | mean ΔND | mean |ΔND| | sign_flip_rate | n_prompts |",
+            "| Cluster | mean ΔND | mean |ΔND| | sign_flip% | n |",
             "|---|---|---|---|---|",
         ]
         for _, r in agg.sort_values("mean_abs_delta", ascending=False).iterrows():
             lines.append(
-                f"| C{int(r['cluster'])} | {r['mean_delta_nd']:.3f} | "
-                f"{r['mean_abs_delta']:.3f} | {r['sign_flip_rate']:.3f} | "
-                f"{int(r['n_prompts'])} |"
+                f"| C{int(r['cluster'])} | {r['mean_delta_nd']:+.3f} | "
+                f"{r['mean_abs_delta']:.3f} | {r['sign_flip_rate']:.1%} | {int(r['n'])} |"
             )
 
     if selectivity_df is not None and len(selectivity_df):
@@ -313,36 +352,37 @@ def write_intervention_report(ablation_df, selectivity_df, steering_df, output_d
             "",
             "## Part C: Causal Selectivity",
             "",
-            "Selectivity = mean_ΔND(target) − mean_ΔND(other).",
-            "Negative = ablation hurts target particle more than others (particle-selective).",
+            "Negative selectivity = ablation hurts this particle more than others.",
             "",
             "| Cluster | Particle | ΔND_target | ΔND_other | Selectivity | sign_flip% |",
             "|---|---|---|---|---|---|",
         ]
         for _, r in selectivity_df.sort_values("selectivity").iterrows():
-            flag = " ◀" if r["selectivity"] < -0.2 else ""
+            flag = " ◀" if not np.isnan(r["selectivity"]) and r["selectivity"] < -0.15 else ""
             lines.append(
                 f"| C{int(r['cluster'])} | {r['particle']} | "
-                f"{r['mean_delta_nd_target']:.3f} | {r['mean_delta_nd_other']:.3f} | "
-                f"**{r['selectivity']:.3f}**{flag} | {r['sign_flip_rate']:.1%} |"
+                f"{r['mean_delta_nd_target']:+.3f} | "
+                f"{r['mean_delta_nd_other']:+.3f} | "
+                f"**{r['selectivity']:+.3f}**{flag} | "
+                f"{r['sign_flip_rate']:.1%} |"
             )
 
     (output_dir / "report_cluster_intervention.md").write_text("\n".join(lines))
-    print(f"  Report: report_cluster_intervention.md")
+    print(f"  Saved: report_cluster_intervention.md")
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--behaviour",   default=BEHAVIOUR)
-    ap.add_argument("--split",       default=SPLIT)
-    ap.add_argument("--k",           type=int, default=DEFAULT_K)
-    ap.add_argument("--method",      default=DEFAULT_METHOD)
-    ap.add_argument("--n_prompts",   type=int, default=80)
+    ap.add_argument("--behaviour",      default=BEHAVIOUR)
+    ap.add_argument("--split",          default=SPLIT)
+    ap.add_argument("--k",              type=int, default=6)
+    ap.add_argument("--method",         default="kmeans")
+    ap.add_argument("--n_prompts",      type=int, default=80)
     ap.add_argument("--steering_coeff", type=float, default=STEERING_COEFF)
     ap.add_argument("--skip_steering",  action="store_true")
-    ap.add_argument("--device",      default="cuda")
+    ap.add_argument("--device",         default="cuda")
     args = ap.parse_args()
 
     paths = get_paths(args.behaviour, args.split, args.k, args.method)
@@ -351,49 +391,68 @@ def main():
 
     prompts  = load_prompts(paths)
     clusters = load_clusters(paths, args.k, args.method)
-    masks    = get_group_masks(prompts)
 
     print(f"Clusters loaded: {len(clusters)}")
     for c, feats in sorted(clusters.items()):
-        print(f"  C{c}: {len(feats)} features")
+        layers = sorted(set(l for l, _ in feats))
+        print(f"  C{c}: {len(feats)} features, layers {layers}")
 
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    print("\nLoading model and transcoders...")
-    model, tokenizer = load_model()
-    model = model.to(device)
-    model.eval()
-    transcoder = load_transcoder()
+    print("\nLoading model...")
+    model = ModelWrapper(
+        model_name=MODEL_NAME,
+        device=str(device),
+        dtype=torch.bfloat16,
+    )
+    model.model.eval()
 
-    # Part A: ablation
-    print("\n── Part A: Group ablation ──")
+    # Collect all layers used across clusters
+    all_layers = sorted(set(l for feats in clusters.values() for l, _ in feats))
+    print(f"Loading transcoders for layers {all_layers}...")
+    transcoder_set = load_transcoder_set(
+        model_size=MODEL_SIZE,
+        device=device,
+        dtype=torch.bfloat16,
+        lazy_load=True,
+        layers=all_layers,
+    )
+    print("Ready.\n")
+
+    # Part A
+    print("── Part A: Group ablation ──")
     ablation_df = run_group_ablation(
-        model, tokenizer, transcoder, clusters, prompts,
-        masks, n_prompts=args.n_prompts, device=str(device)
+        model, transcoder_set, device, clusters, prompts,
+        n_prompts=args.n_prompts,
     )
     ablation_df.to_csv(out / f"cluster_ablation_k{args.k}_{args.method}.csv", index=False)
-    print(f"  Saved ablation results: {len(ablation_df)} rows")
+    print(f"  Saved {len(ablation_df)} rows → cluster_ablation_k{args.k}_{args.method}.csv")
 
-    # Part C: selectivity
+    # Part C
     print("\n── Part C: Causal selectivity ──")
-    selectivity_df = compute_selectivity(ablation_df)
-    selectivity_df.to_csv(out / f"cluster_selectivity_k{args.k}_{args.method}.csv", index=False)
-    print(selectivity_df[["cluster", "particle", "selectivity", "sign_flip_rate"]].to_string(index=False))
+    sel_df = compute_selectivity(ablation_df)
+    sel_df.to_csv(out / f"cluster_selectivity_k{args.k}_{args.method}.csv", index=False)
+    print(sel_df[["cluster", "particle", "selectivity", "sign_flip_rate"]].to_string(index=False))
 
-    # Part B: steering
+    # Part B
     steering_df = None
     if not args.skip_steering:
         print("\n── Part B: Group steering ──")
         steering_df = run_group_steering(
-            model, tokenizer, transcoder, clusters, prompts,
-            n_prompts=args.n_prompts, device=str(device), coeff=args.steering_coeff
+            model, transcoder_set, device, clusters, prompts,
+            n_prompts=args.n_prompts, coeff=args.steering_coeff,
         )
         steering_df.to_csv(out / f"cluster_steering_k{args.k}_{args.method}.csv", index=False)
-        print(f"  Saved steering results: {len(steering_df)} rows")
+        print(f"  Saved {len(steering_df)} rows → cluster_steering_k{args.k}_{args.method}.csv")
 
-    write_intervention_report(ablation_df, selectivity_df, steering_df, out)
+    write_report(ablation_df, sel_df, steering_df, out)
+
     print(f"\nAll outputs in: {out}")
+    print("\n  Rsync to local Mac:")
+    BASE = "iv294@login.hpc.cam.ac.uk:/rds/user/iv294/hpc-work/thesis/project"
+    ADIR = f"data/results/internal_candidate_analysis/{args.behaviour}"
+    print(f"  rsync -av \"{BASE}/{ADIR}/\" /path/to/local/{ADIR}/")
 
 
 if __name__ == "__main__":
