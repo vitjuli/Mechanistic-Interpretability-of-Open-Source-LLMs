@@ -113,10 +113,11 @@ def get_activations_for_features(indices, values, feat_idx_list):
 
 # ─── Build feature matrix ─────────────────────────────────────────────────────
 
-def build_feature_matrix(behaviour, split, paths, layers, use_circuit_only=False):
+def build_feature_matrix(behaviour, split, paths, layers, use_circuit_only=False, n_single_token=None):
     """
     Returns (X [n_prompts, n_features], feature_names [list]) where each column
     is the activation of one (layer, feature_idx) pair.
+    n_single_token: if set, slices arrays to first n rows (excludes multi-token prompts).
     """
     graph_feats   = load_graph_feature_indices(paths)
     circuit_feats = load_circuit_feature_indices(paths)
@@ -131,6 +132,10 @@ def build_feature_matrix(behaviour, split, paths, layers, use_circuit_only=False
             missing_layers.append(layer)
             continue
         indices, values = result
+        # Slice to single-token prompts (always first n_single_token rows by dataset design)
+        if n_single_token is not None:
+            indices = indices[:n_single_token]
+            values  = values[:n_single_token]
         n_prompts = indices.shape[0]
 
         feat_list = []
@@ -211,7 +216,7 @@ def run_clustering(behaviour, split, paths, layer_group_name, use_circuit_only=F
     layers = LAYER_GROUPS.get(layer_group_name, LAYERS)
     print(f"\nLayer group '{layer_group_name}': {layers}")
 
-    X, col_names = build_feature_matrix(behaviour, split, paths, layers, use_circuit_only)
+    X, col_names = build_feature_matrix(behaviour, split, paths, layers, use_circuit_only, n_single_token=n)
     if X is None:
         print(f"  No feature data — skipping")
         return None
