@@ -28,7 +28,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.model_utils import ModelWrapper
 from src.transcoder import load_transcoder_set
-from scripts.script07_utils import get_mlp_input_activation, patch_mlp_input, ensure_single_token
 
 BEHAVIOUR   = "physics_internal_candidate_selection_v2"
 SPLIT       = "train"
