@@ -135,16 +135,49 @@ def load_clusters(paths, k, method):
     return clusters
 
 
-# ─── Logit diff baseline ──────────────────────────────────────────────────────
+# ─── Efficient single-pass baseline + MLP input capture ──────────────────────
 
-def compute_logit_diff(model, inputs, device, correct_token, incorrect_token):
+def _get_norm_module(model_inner, layer_idx):
+    """Return the post_attention_layernorm (MLP input hook point) for a layer."""
+    block = model_inner.model.layers[layer_idx]
+    for attr in ("post_attention_layernorm", "ln_2"):
+        if hasattr(block, attr):
+            return getattr(block, attr)
+    raise AttributeError(f"No layernorm found at layer {layer_idx}")
+
+
+def capture_and_logdiff(model, inputs, device, correct_token, incorrect_token,
+                        capture_layers=()):
+    """
+    Single forward pass that simultaneously:
+      - Computes logit diff (correct - incorrect)
+      - Captures MLP input activations at all requested layers
+
+    Returns (nd_baseline, {layer_idx: mlp_input_tensor})
+    """
+    captured = {}
+    handles  = []
+
+    for layer_idx in capture_layers:
+        norm = _get_norm_module(model.model, layer_idx)
+        def _hook(module, inp, out, _l=layer_idx):
+            x = out[0] if isinstance(out, tuple) else out
+            captured[_l] = x[:, -1, :].detach()   # last token, (1, d_model)
+        handles.append(norm.register_forward_hook(_hook))
+
     with torch.no_grad():
         out    = model.model(**inputs, use_cache=False)
         logits = out.logits[0, -1, :]
+
+    for h in handles:
+        h.remove()
+
     log_p = torch.log_softmax(logits, dim=0)
     cid   = ensure_single_token(model, correct_token)
     iid   = ensure_single_token(model, incorrect_token)
-    return (log_p[cid] - log_p[iid]).item()
+    nd    = (log_p[cid] - log_p[iid]).item()
+
+    return nd, captured
 
 
 # ─── Part A: Group ablation ────────────────────────────────────────────────────
@@ -169,28 +202,25 @@ def run_group_ablation(model, transcoder_set, device, clusters, prompts,
             inputs = model.tokenize([prompt["prompt"]])
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
-            nd_base = compute_logit_diff(model, inputs, device,
-                                         prompt["correct_answer"], prompt["incorrect_answer"])
-            nd_abl  = nd_base
+            # Single pass: get baseline ND + all MLP inputs at cluster layers
+            nd_base, baseline_acts = capture_and_logdiff(
+                model, inputs, device,
+                prompt["correct_answer"], prompt["incorrect_answer"],
+                capture_layers=tuple(sorted(by_layer)),
+            )
+            nd_abl = nd_base
 
             try:
-                # Step 1: capture baseline MLP inputs at all cluster layers
-                baseline_acts = {}
-                for layer_idx in sorted(by_layer):
-                    baseline_acts[layer_idx] = get_mlp_input_activation(
-                        model, inputs, layer_idx
-                    )
-
-                # Step 2: compute ablated MLP inputs (zero cluster features)
+                # Compute ablated MLP inputs (zero cluster features)
                 ablated_inputs = {}
                 for layer_idx, feat_indices in sorted(by_layer.items()):
-                    tc   = transcoder_set[layer_idx]
-                    act  = baseline_acts[layer_idx]
+                    tc    = transcoder_set[layer_idx]
+                    act   = baseline_acts[layer_idx]
                     feats = tc.encode(act.to(tc.dtype))
                     feats[:, feat_indices] = 0.0
                     ablated_inputs[layer_idx] = tc.decode(feats).to(act.dtype)
 
-                # Step 3: single forward pass with all patches active simultaneously
+                # Single forward pass with all patches active simultaneously
                 with ExitStack() as stack:
                     for layer_idx, new_mlp in sorted(ablated_inputs.items()):
                         stack.enter_context(
@@ -245,19 +275,22 @@ def run_group_steering(model, transcoder_set, device, clusters, prompts,
             inputs = model.tokenize([prompt["prompt"]])
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
-            nd_base = compute_logit_diff(model, inputs, device,
-                                          prompt["correct_answer"], prompt["incorrect_answer"])
+            nd_base, baseline_acts_s = capture_and_logdiff(
+                model, inputs, device,
+                prompt["correct_answer"], prompt["incorrect_answer"],
+                capture_layers=tuple(sorted(by_layer)),
+            )
             nd_steered = nd_base
 
             try:
                 from contextlib import ExitStack
                 steered_inputs = {}
                 for layer_idx, feat_indices in sorted(by_layer.items()):
-                    tc      = transcoder_set[layer_idx]
-                    mlp_act = get_mlp_input_activation(model, inputs, layer_idx)
-                    feats   = tc.encode(mlp_act.to(tc.dtype))
+                    tc    = transcoder_set[layer_idx]
+                    act   = baseline_acts_s[layer_idx]
+                    feats = tc.encode(act.to(tc.dtype))
                     feats[:, feat_indices] += coeff
-                    steered_inputs[layer_idx] = tc.decode(feats).to(mlp_act.dtype)
+                    steered_inputs[layer_idx] = tc.decode(feats).to(act.dtype)
 
                 with ExitStack() as stack:
                     for layer_idx, new_mlp in sorted(steered_inputs.items()):
