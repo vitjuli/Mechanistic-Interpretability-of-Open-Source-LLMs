@@ -139,6 +139,21 @@ behaviours:
     # Gate: sign_accuracy >= 0.90, mean_norm_logprob_diff >= 0.5.
     # STATUS: RETIRED — Instruct model treats question format as reasoning task; base P(' intensive') ~10^-10.
 
+  physics_intensive_extensive_v1:
+    train_size: 384
+    test_size: 96
+    min_logit_diff: 0.3
+    success_threshold: 0.85
+    description: "Intensive vs extensive property classification (Type 3: Abstraction). Natural Q-format: 'Is X intensive or extensive? Answer:'"
+    # Answers: ' intensive' (token 36195) / ' extensive' (token 16376) — both single-token (confirmed 2026-05-10).
+    # 480 prompts total: 40 properties (20I+20E) × 4 wording families × 3 variants.
+    # Wordings: W0_combine, W2_split, W4_additive, W6_symbolic.
+    # Generator: scripts/63_generate_ie_prompts.py
+    # IMPORTANT: if baseline sign_accuracy < 0.65 on BASE model, switch to Yes/No format
+    # (re-run 63 with --yes_no flag and regenerate prompts).
+    # Transfer probe: 72.7% hidden-state transfer to cross-domain (L34), behavioural 45.5%.
+    # Target layers: L10-L35 (transcoder MLP inputs); L34 shows peak abstract signal.
+
   physics_gauge_equivalence:
     train_size: 24
     test_size: 0
