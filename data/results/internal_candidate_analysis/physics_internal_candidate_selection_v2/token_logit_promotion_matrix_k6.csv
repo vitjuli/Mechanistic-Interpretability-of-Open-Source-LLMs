@@ -1,0 +1,13 @@
+correct,promoted,n_promotions
+electron,proton,5
+electron,neutron,0
+electron,photon,7
+proton,electron,5
+proton,neutron,2
+proton,photon,9
+neutron,electron,10
+neutron,proton,15
+neutron,photon,15
+photon,electron,11
+photon,proton,57
+photon,neutron,22

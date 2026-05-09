@@ -1,0 +1,10 @@
+{
+  "n_pairs": 600,
+  "sign_flip_rate": 0.2633333333333333,
+  "n_sign_flips": 158,
+  "top_promoted": {
+    "correct": "photon",
+    "promoted": "proton",
+    "n_promotions": 57
+  }
+}
