@@ -235,7 +235,7 @@ def representation_analysis(df, hidden_mat, family_key, out_dir):
         scaler = StandardScaler()
         feats_s = scaler.fit_transform(feats_norm)
         clf = LogisticRegression(max_iter=500, C=1.0, solver="lbfgs",
-                                 multi_class="auto", random_state=42)
+                                 random_state=42)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             scores = cross_val_score(clf, feats_s, labels_cls, cv=min(5, len(set(labels_cls))+1),
