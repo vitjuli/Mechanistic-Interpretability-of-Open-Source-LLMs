@@ -223,13 +223,25 @@ def representation_analysis(df, hidden_mat, family_key, out_dir):
         print("  [SKIP] Only one abstraction class — skipping representation analysis")
         return None
 
-    ari_cls, ari_wf, probe_acc = [], [], []
+    ari_cls, ari_wf, probe_acc, degenerate = [], [], [], []
 
     for layer in range(n_layers):
         feats = X[:, layer, :]
 
+        # Skip degenerate layers (embedding layer and first 1-2 transformer layers
+        # often collapse all prompts to nearly the same point, causing spurious probe accuracy)
+        feat_std = float(feats.std())
+        is_degen = feat_std < 1.0   # threshold: meaningful layers have std >> 1
+        degenerate.append(is_degen)
+
         # Normalise
         feats_norm = feats / (np.linalg.norm(feats, axis=1, keepdims=True) + 1e-8)
+
+        if is_degen:
+            probe_acc.append(float("nan"))
+            ari_cls.append(float("nan"))
+            ari_wf.append(float("nan"))
+            continue
 
         # Linear probe: 5-fold CV
         scaler = StandardScaler()
@@ -243,13 +255,14 @@ def representation_analysis(df, hidden_mat, family_key, out_dir):
         probe_acc.append(float(scores.mean()))
 
         # ARI: cluster by abstraction class vs by wording family
-        # Use k-means with k = n_unique_classes for a fair comparison
         try:
             from sklearn.cluster import KMeans
             n_cls = len(set(labels_cls))
             n_wf  = len(set(labels_wf))
-            km_cls = KMeans(n_clusters=n_cls, random_state=42, n_init=5).fit(feats_norm)
-            km_wf  = KMeans(n_clusters=n_wf,  random_state=42, n_init=5).fit(feats_norm)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                km_cls = KMeans(n_clusters=n_cls, random_state=42, n_init=5).fit(feats_norm)
+                km_wf  = KMeans(n_clusters=n_wf,  random_state=42, n_init=5).fit(feats_norm)
             ari_cls.append(float(adjusted_rand_score(labels_cls, km_cls.labels_)))
             ari_wf.append(float(adjusted_rand_score(labels_wf,  km_wf.labels_)))
         except Exception:
@@ -261,36 +274,49 @@ def representation_analysis(df, hidden_mat, family_key, out_dir):
         "probe_acc":  probe_acc,
         "ari_cls":    ari_cls,
         "ari_wf":     ari_wf,
-        "ratio":      [a / (b + 1e-6) for a, b in zip(ari_cls, ari_wf)],
+        "degenerate": degenerate,
+        "ratio":      [a / (b + 1e-6) if not np.isnan(a) and not np.isnan(b) else float("nan")
+                       for a, b in zip(ari_cls, ari_wf)],
     })
 
     out_dir.mkdir(parents=True, exist_ok=True)
     rep_df.to_csv(out_dir / f"layer_representation_{family_key}.csv", index=False)
 
-    # Plot
+    # Plot (mask degenerate layers)
     if HAS_MPL:
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
+        layers     = rep_df["layer"].tolist()
+        valid_mask = ~rep_df["degenerate"].values
+        valid_layers = [l for l, v in zip(layers, valid_mask) if v]
+
         ax = axes[0]
-        layers = rep_df["layer"].tolist()
-        ax.plot(layers, rep_df["probe_acc"], color="#7c3aed", lw=2, label="Linear probe acc")
+        probe_valid = rep_df["probe_acc"].where(~rep_df["degenerate"]).tolist()
+        ax.plot(layers, probe_valid, color="#7c3aed", lw=2, label="Linear probe acc")
         ax.axhline(0.5, color="#aaa", lw=1, ls="--", label="Chance (binary)")
+        # Grey out degenerate layers
+        for l, degen in zip(layers, degenerate):
+            if degen:
+                ax.axvspan(l - 0.5, l + 0.5, alpha=0.15, color="#9ca3af")
         ax.set_xlabel("Layer"); ax.set_ylabel("Accuracy (5-fold CV)")
-        ax.set_title(f"Family {family_key}: Linear probe — abstraction class")
+        ax.set_title(f"Family {family_key}: Linear probe (grey=degenerate layers)")
         ax.legend(fontsize=8); ax.grid(alpha=0.3)
 
         ax = axes[1]
-        ax.plot(layers, rep_df["ari_cls"], color="#2563eb", lw=2, label="ARI: abstraction class")
-        ax.plot(layers, rep_df["ari_wf"],  color="#f97316", lw=2, label="ARI: wording family")
+        ari_cls_valid = rep_df["ari_cls"].where(~rep_df["degenerate"]).tolist()
+        ari_wf_valid  = rep_df["ari_wf"].where(~rep_df["degenerate"]).tolist()
+        ax.plot(layers, ari_cls_valid, color="#2563eb", lw=2, label="ARI: abstraction class")
+        ax.plot(layers, ari_wf_valid,  color="#f97316", lw=2, label="ARI: wording family")
         ax.axhline(0, color="#aaa", lw=0.8, ls="--")
         ax.set_xlabel("Layer"); ax.set_ylabel("ARI")
         ax.set_title(f"Family {family_key}: Feature clustering ARI")
         ax.legend(fontsize=8); ax.grid(alpha=0.3)
 
-        # Shade layers where abstraction ARI > wording ARI
+        # Shade layers where abstraction ARI > wording ARI (valid only)
         for i in range(len(layers) - 1):
-            if ari_cls[i] > ari_wf[i]:
-                ax.axvspan(layers[i] - 0.5, layers[i] + 0.5, alpha=0.15, color="#2563eb")
+            if not degenerate[i] and not np.isnan(ari_cls[i]) and not np.isnan(ari_wf[i]):
+                if ari_cls[i] > ari_wf[i]:
+                    ax.axvspan(layers[i] - 0.5, layers[i] + 0.5, alpha=0.15, color="#2563eb")
 
         fig.tight_layout()
         fig.savefig(out_dir / f"representation_{family_key}.png", dpi=150, bbox_inches="tight")
@@ -466,13 +492,17 @@ def write_report(summ, all_results, model_tag, model_name, out_dir, rep_results=
         for fk, rep_df in rep_results.items():
             if rep_df is None:
                 continue
-            peak_probe = int(rep_df["probe_acc"].idxmax())
-            peak_ari   = int(rep_df["ari_cls"].idxmax())
-            peak_ratio = int(rep_df["ratio"].idxmax())
+            valid = rep_df[~rep_df["degenerate"]] if "degenerate" in rep_df.columns else rep_df
+            valid = valid.dropna(subset=["probe_acc"])
+            if len(valid) == 0:
+                continue
+            peak_probe = int(valid["probe_acc"].idxmax())
+            peak_ari   = int(valid["ari_cls"].idxmax()) if not valid["ari_cls"].isna().all() else -1
+            peak_ratio = int(valid["ratio"].idxmax()) if not valid["ratio"].isna().all() else -1
             lines.append(
-                f"  Family {fk}: peak probe acc = L{peak_probe} ({rep_df['probe_acc'].max():.3f}) | "
-                f"peak ARI(cls) = L{peak_ari} ({rep_df['ari_cls'].max():.3f}) | "
-                f"peak ratio = L{peak_ratio} ({rep_df['ratio'].max():.2f}×)"
+                f"  Family {fk}: peak probe acc = L{peak_probe} ({valid['probe_acc'].max():.3f}) | "
+                f"peak ARI(cls) = L{peak_ari} ({valid['ari_cls'].max():.4f}) | "
+                f"peak ratio = L{peak_ratio} ({valid['ratio'].max():.2f}×)"
             )
 
     # Recommendation
@@ -569,8 +599,12 @@ def main():
             rep_df = representation_analysis(df, hidden_mat, fk, out_dir)
             rep_results[fk] = rep_df
             if rep_df is not None:
-                peak = rep_df["probe_acc"].idxmax()
-                print(f"  Peak probe: L{peak} = {rep_df['probe_acc'].max():.3f}")
+                valid = rep_df[~rep_df["degenerate"]]
+                if len(valid):
+                    peak = int(valid["probe_acc"].idxmax())
+                    print(f"  Peak probe (non-degenerate): L{peak} = {valid['probe_acc'].max():.3f}")
+                    peak_ari = int(valid["ari_cls"].idxmax()) if not valid["ari_cls"].isna().all() else "?"
+                    print(f"  Peak ARI(cls): L{peak_ari} = {valid['ari_cls'].max():.4f}")
         else:
             rep_results[fk] = None
 
