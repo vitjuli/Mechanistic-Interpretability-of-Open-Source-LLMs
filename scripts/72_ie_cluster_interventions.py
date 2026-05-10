@@ -72,12 +72,28 @@ def load_cluster_labels(behaviour, k, out_dir):
     return np.load(path)
 
 def load_feature_meta(behaviour, split):
-    feat_dir = Path("data/features") / f"{behaviour}_{split}"
-    meta_path = feat_dir / "feature_meta.json"
-    if not meta_path.exists():
-        meta_path = Path(f"data/results/internal_candidate_analysis/{behaviour}/feature_meta.json")
-    with open(meta_path) as f:
-        return json.load(f)
+    # Prefer meta saved by script 71 alongside cluster labels
+    saved = Path(f"data/results/abstraction_ie/{behaviour}/ie_feature_meta.json")
+    if saved.exists():
+        with open(saved) as f:
+            return json.load(f)
+    # Fallback: rebuild from per-layer transcoder_features output of script 04
+    tc_base = Path("data/results/transcoder_features")
+    layer_dirs = sorted(tc_base.glob("layer_*"), key=lambda p: int(p.name.split("_")[1]))
+    meta = []
+    for ld in layer_dirs:
+        idx_path = ld / f"{behaviour}_{split}_top_k_indices.npy"
+        if not idx_path.exists():
+            continue
+        layer_idx = int(ld.name.split("_")[1])
+        indices = np.load(idx_path)
+        for feat_idx in np.unique(indices):
+            meta.append({"feature_id": f"L{layer_idx}_F{feat_idx}",
+                         "layer": layer_idx, "feature_idx": int(feat_idx)})
+    if not meta:
+        raise FileNotFoundError(
+            f"Feature meta not found. Run script 71 first to generate ie_feature_meta.json.")
+    return meta
 
 
 # ── Ablation utilities ────────────────────────────────────────────────────────

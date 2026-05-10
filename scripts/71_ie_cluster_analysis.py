@@ -312,8 +312,10 @@ def main():
         print(stats_df[["cluster","n_features","mu_intensive","mu_extensive",
                          "selectivity","dominant","sig"]].to_string(index=False))
 
-        # Save cluster labels
+        # Save cluster labels and feature meta (for script 72)
         np.save(out_dir / f"ie_cluster_labels_k{args.k}.npy", cluster_labels)
+        with open(out_dir / "ie_feature_meta.json", "w") as f:
+            json.dump(feat_meta, f)
 
         # Robustness
         print("\nRobustness across k values…")
