@@ -323,7 +323,6 @@ def main():
 
         # Extract physics hidden states at probe layer for probe training
         print(f"  Extracting physics hidden states at L{args.probe_layer}…")
-        from scripts.script70_utils import collect   # if refactored; else inline
         # Inline extraction
         Xtr, ytr = [], []
         with torch.no_grad():

@@ -73,8 +73,9 @@ import sys, glob, pandas as pd
 from pathlib import Path
 
 behaviour = "$BEHAVIOUR"
-# Script 02 saves to data/results/baseline/{behaviour}/
-candidates = sorted(Path("data/results/baseline").rglob(f"*{behaviour}*train*.csv"))
+# Script 02 saves to data/results/baseline_{behaviour}_train.csv
+direct = Path(f"data/results/baseline_{behaviour}_train.csv")
+candidates = [direct] if direct.exists() else sorted(Path("data/results/baseline").rglob(f"*{behaviour}*train*.csv"))
 if not candidates:
     print("GATE: No baseline CSV found — cannot verify accuracy. Continuing.")
     sys.exit(0)
