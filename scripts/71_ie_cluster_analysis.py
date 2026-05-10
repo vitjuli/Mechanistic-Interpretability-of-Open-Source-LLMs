@@ -128,7 +128,7 @@ def cluster_features(act_matrix, k, seed=42):
     return km.labels_
 
 
-def compute_cluster_stats(act_matrix, cluster_labels, prompt_labels, prompts):
+def compute_cluster_stats(act_matrix, cluster_labels, prompt_labels, prompts, feature_meta=None):
     """
     For each cluster: compute T/I/E statistics (intensive vs extensive vs general).
     Returns DataFrame with one row per cluster.
@@ -168,10 +168,11 @@ def compute_cluster_stats(act_matrix, cluster_labels, prompt_labels, prompts):
             p_val = 1.0
 
         # Layer span
-        layers_in_cluster = [m["layer"] for fi, m in enumerate(feat_mask) if feat_mask[fi]]
-        # (feat_mask is over features, need to match feature indices to layers)
-        # Note: this needs feature_meta to be passed; simplified version:
-        layer_range = "unknown"
+        if feature_meta is not None:
+            layers_in_cluster = [feature_meta[fi]["layer"] for fi in range(len(feat_mask)) if feat_mask[fi]]
+            layer_range = f"L{min(layers_in_cluster)}-L{max(layers_in_cluster)}" if layers_in_cluster else "unknown"
+        else:
+            layer_range = "unknown"
 
         rows.append({
             "cluster":      int(c),
@@ -300,12 +301,13 @@ def main():
         print(f"  {e}")
         print("  Skipping feature clustering — running transfer analysis only")
         act_matrix = None
+        feat_meta = None
 
     # Feature clustering
     if act_matrix is not None:
         print(f"\nClustering features (k={args.k})…")
         cluster_labels = cluster_features(act_matrix, args.k)
-        stats_df = compute_cluster_stats(act_matrix, cluster_labels, None, phys_rows)
+        stats_df = compute_cluster_stats(act_matrix, cluster_labels, None, phys_rows, feature_meta=feat_meta)
         stats_df.to_csv(out_dir / f"ie_cluster_stats_k{args.k}.csv", index=False)
         print(stats_df[["cluster","n_features","mu_intensive","mu_extensive",
                          "selectivity","dominant","sig"]].to_string(index=False))
