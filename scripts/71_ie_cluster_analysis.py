@@ -68,37 +68,54 @@ def load_cross_domain():
 
 def load_feature_matrix(behaviour, split):
     """
-    Load feature activation matrix from script 04 output.
-    Expected shape: (n_features, n_prompts) or (n_prompts, n_features)
-    Also loads feature metadata: layer, feature_idx.
+    Assembles feature activation matrix from script 04 per-layer output.
+    Script 04 saves to data/results/transcoder_features/layer_{N}/{behaviour}_{split}_top_k_indices.npy
+    and top_k_values.npy (shape: n_prompts × top_k).
+
     Returns:
-        act_matrix: (n_features, n_prompts) float32
+        act_matrix: (n_features, n_prompts) float32  — one row per (layer, feature_idx) pair
         feature_meta: list of {feature_id, layer, feature_idx}
     """
-    feat_dir = FEAT_DIR / f"{behaviour}_{split}"
-    act_path = feat_dir / "feature_activation_matrix.npy"
-    meta_path = feat_dir / "feature_meta.json"
+    tc_base = Path("data/results/transcoder_features")
+    layer_dirs = sorted(tc_base.glob("layer_*"), key=lambda p: int(p.name.split("_")[1]))
 
-    if not act_path.exists():
-        # Try alternative path structure
-        act_path = Path(f"data/results/internal_candidate_analysis/{behaviour}/feature_activation_matrix.npy")
-        meta_path = Path(f"data/results/internal_candidate_analysis/{behaviour}/feature_meta.json")
+    rows, meta = [], []
+    for ld in layer_dirs:
+        idx_path = ld / f"{behaviour}_{split}_top_k_indices.npy"
+        val_path = ld / f"{behaviour}_{split}_top_k_values.npy"
+        if not idx_path.exists() or not val_path.exists():
+            continue
+        layer_idx = int(ld.name.split("_")[1])
+        indices = np.load(idx_path)   # (n_prompts, top_k)
+        values  = np.load(val_path)   # (n_prompts, top_k)
+        n_prompts, top_k = indices.shape
+        # Build dense rows: for each unique feature in this layer, activation = mean over prompts where it fires
+        unique_feats = np.unique(indices)
+        for feat_idx in unique_feats:
+            # vectorized: sum values where this feature appears (each feature appears at most once per prompt in top-k)
+            match = (indices == feat_idx)          # (n_prompts, top_k)
+            act_row = (values * match).sum(axis=1).astype(np.float32)  # (n_prompts,)
+            rows.append(act_row)
+            meta.append({"feature_id": f"L{layer_idx}_F{feat_idx}", "layer": layer_idx, "feature_idx": int(feat_idx)})
 
-    if not act_path.exists():
+    if not rows:
         raise FileNotFoundError(
-            f"Feature matrix not found at {act_path}. "
+            f"No transcoder feature files found under {tc_base} for {behaviour}/{split}. "
             f"Run scripts/04_extract_transcoder_features.py first."
         )
 
-    act = np.load(act_path)
-    with open(meta_path) as f:
-        meta = json.load(f)
+    act_matrix = np.stack(rows, axis=0).astype(np.float32)  # (n_features, n_prompts)
 
-    # Ensure shape is (n_features, n_prompts)
-    if act.shape[0] > act.shape[1]:
-        act = act.T   # transpose if rows > cols (likely n_prompts × n_features)
+    # Keep only features that fire on at least min_freq prompts (makes k-means tractable)
+    min_freq = max(5, int(0.02 * act_matrix.shape[1]))
+    freq = (act_matrix > 0).sum(axis=1)
+    keep = freq >= min_freq
+    act_matrix = act_matrix[keep]
+    meta = [m for m, k in zip(meta, keep) if k]
 
-    return act, meta
+    print(f"  Loaded feature matrix: {act_matrix.shape[0]} features × {act_matrix.shape[1]} prompts "
+          f"(filtered to freq≥{min_freq}; {keep.sum()} of {len(keep)} features kept)")
+    return act_matrix, meta
 
 
 # ── Feature clustering ────────────────────────────────────────────────────────
