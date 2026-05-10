@@ -186,15 +186,23 @@ def write_report(d2_rows, probe_df, old_d_probe, old_d_output,
         "",
         "## Probe Accuracy by Layer (Clean D-v2)",
         "",
-        probe_df.to_markdown(index=False),
+        "| layer | probe_acc |",
+        "|-------|-----------|",
+    ] + [f"| {int(r['layer'])} | {r['probe_acc']:.4f} |" for _, r in probe_df.iterrows()] + [
         "",
-        "## Behavioural Accuracy by Domain",
+        "## Accuracy by Domain",
         "",
-        pd.DataFrame(by_domain).T.to_markdown(),
+        "| domain | output_acc | probe_acc | rf_rate | n |",
+        "|--------|-----------|-----------|---------|---|",
+    ] + [f"| {d} | {s['output_acc']:.3f} | {s['probe_acc']:.3f} | {s['rf_rate']:.3f} | {s['n']} |"
+         for d, s in by_domain.items()] + [
         "",
-        "## Behavioural Accuracy by Wording Family",
+        "## Accuracy by Wording Family",
         "",
-        pd.DataFrame(by_wording).T.to_markdown(),
+        "| wording | output_acc | probe_acc | rf_rate | n |",
+        "|---------|-----------|-----------|---------|---|",
+    ] + [f"| {w} | {s['output_acc']:.3f} | {s['probe_acc']:.3f} | {s['rf_rate']:.3f} | {s['n']} |"
+         for w, s in by_wording.items()] + [
         "",
         "## Readout Failure Analysis",
         "",
@@ -241,6 +249,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--device",  default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--dtype",   default="bfloat16", choices=["float32","bfloat16","float16"])
+    ap.add_argument("--report_only", action="store_true",
+                    help="Skip model inference; regenerate report from saved CSVs")
     args = ap.parse_args()
 
     device = torch.device(args.device)
@@ -249,9 +259,28 @@ def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
+    d2_rows = load_jsonl(D2_PROMPT_PATH)
+
+    # ── Report-only mode: load saved CSVs and regenerate report ──────────────
+    if args.report_only:
+        results_df = pd.read_csv(OUT_DIR / "eval_results.csv")
+        probe_df   = pd.read_csv(OUT_DIR / "probe_by_layer.csv")
+        with open(OUT_DIR / "summary.json") as f:
+            summary = json.load(f)
+        by_domain  = summary["by_domain"]
+        by_wording = summary["by_wording"]
+        classification = summary["classification"]
+        result_rows = results_df.to_dict("records")
+        write_report(result_rows, probe_df,
+                     summary["old_d_probe_acc"], summary["old_d_output_acc"],
+                     summary["old_d_rf_rate"],   summary["output_acc"],
+                     summary["best_probe_acc"],  summary["rf_rate"],
+                     by_domain, by_wording, classification)
+        print("Report regenerated.")
+        return
+
     # ── Load prompts ─────────────────────────────────────────────────────────
     phys_rows = load_jsonl(PHYS_PROMPT_PATH)
-    d2_rows   = load_jsonl(D2_PROMPT_PATH)
     print(f"Physics train: {len(phys_rows)} | Clean D-v2: {len(d2_rows)}")
 
     phys_labels = np.array([LABEL_MAP[r["abstraction_class"]] for r in phys_rows])
