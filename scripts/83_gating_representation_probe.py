@@ -89,7 +89,7 @@ def extract_hs(model, tok, prompts, device, layers):
         if i % 60 == 0:
             print(f"    {i}/{len(prompts)}", end="\r", flush=True)
         inp = tok(row["prompt"], return_tensors="pt").to(device)
-        out = model.model(**inp, output_hidden_states=True, use_cache=False)
+        out = model(**inp, output_hidden_states=True, use_cache=False)
         for l in layers:
             hs[l].append(out.hidden_states[l][0, -1, :].float().cpu().numpy())
     print()

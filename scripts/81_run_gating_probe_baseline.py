@@ -68,7 +68,7 @@ def main():
                 print(f"  {i}/{len(prompts)}", end="\r", flush=True)
 
             inputs = tok(row["prompt"], return_tensors="pt").to(device)
-            out    = mdl.model(**inputs, use_cache=False)
+            out    = mdl(**inputs, use_cache=False)
             lp     = torch.log_softmax(out.logits[0, -1].float(), dim=-1)
 
             lp_yes = float(lp[YES_ID])
