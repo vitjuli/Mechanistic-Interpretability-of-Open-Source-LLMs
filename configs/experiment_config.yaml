@@ -355,6 +355,24 @@ behaviours:
     # F3=spectroscopic_notation, F4=explicit_delta_l.
     # Cross-shell only to remove same-n energy ambiguity.
 
+  # ── Entropy gate (2026-05-11) ─────────────────────────────────────────────
+  physics_entropy_gate_v1:
+    train_size: 276
+    test_size: 0
+    min_logit_diff: 0.5
+    success_threshold: 0.80
+    description: "Thermodynamic second-law gate: physically allowed vs blocked processes. Answer: ' Yes'/' No'. Type 3: Gate/Constraint."
+    # 20 minimal pairs (allow/block) × up to 8 wording families = ~300-320 prompts.
+    # Answer tokens: ' Yes' (7414) / ' No' (2308) — confirmed single-token (gating_probe_v1).
+    # Wording families: W0_direct, W1_spontaneous, W2_second_law, W3_questioning,
+    #   W4_symbolic, W5_adversarial, W6_minimal_pair, W7_experimental.
+    # Difficulty: easy/medium/hard/adversarial. All prompts have minimal_pair_id.
+    # Generator: scripts/85_generate_entropy_gate_prompts.py
+    # Baseline: scripts/86_run_entropy_gate_baseline.py
+    # Target: sign_acc 0.75-0.92, pair_flip_rate ≥ 0.70, AUC ≥ 0.85
+    # Key layers: L28 gate transition (from gating_probe_v1 Family A screen)
+    # Transcoder layers: L10-L35 (full Qwen3-4B coverage)
+
   physics_conservation:
     train_size: 150
     test_size: 50
