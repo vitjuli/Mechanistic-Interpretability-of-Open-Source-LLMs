@@ -1893,6 +1893,26 @@ def main():
             "and the script exits with an error if zero interventions are produced)."
         ),
     )
+    parser.add_argument(
+        "--output_subdir",
+        type=str,
+        default=None,
+        help=(
+            "Optional subdirectory under interventions/{behaviour}/ for saving results. "
+            "Use to create named run namespaces without overwriting the default output. "
+            "E.g. --output_subdir runB saves to interventions/{behaviour}/runB/. "
+            "Default: None (saves directly to interventions/{behaviour}/)."
+        ),
+    )
+    parser.add_argument(
+        "--require_n_graph_features",
+        type=int,
+        default=None,
+        help=(
+            "If set, abort with an error if the loaded attribution graph does not contain "
+            "exactly this many feature nodes. Guards against loading the wrong graph."
+        ),
+    )
     args = parser.parse_args()
 
     # ===== STRICT vs CONTROL MODE =====
@@ -2052,6 +2072,34 @@ def main():
             graph_suffix=args.graph_suffix,
         )
         
+        # --require_n_graph_features guard: abort if graph has wrong feature count.
+        if args.require_n_graph_features is not None:
+            if graph_data is None:
+                logger.error(
+                    f"--require_n_graph_features={args.require_n_graph_features} set "
+                    f"but no attribution graph was loaded. Aborting."
+                )
+                sys.exit(1)
+            n_feat_actual = sum(
+                1 for n in graph_data.get("nodes", []) if n.get("type") == "feature"
+            )
+            if n_feat_actual != args.require_n_graph_features:
+                logger.error(
+                    f"Graph feature count mismatch: expected {args.require_n_graph_features}, "
+                    f"got {n_feat_actual}. Aborting to prevent loading the wrong graph."
+                )
+                sys.exit(1)
+            logger.info(
+                f"Graph feature count check passed: {n_feat_actual} features "
+                f"(matches --require_n_graph_features={args.require_n_graph_features})"
+            )
+
+        # Build per-behaviour output directory (respects --output_subdir namespace).
+        behaviour_out = output_path / behaviour
+        if args.output_subdir:
+            behaviour_out = behaviour_out / args.output_subdir
+        behaviour_out.mkdir(parents=True, exist_ok=True)
+
         # Build per-layer feature index lists (unsigned and signed)
         top_features_by_layer: Dict[int, List[int]] = {}
         # (feature_idx, signed_mean_score_conditional) — for sign-aware ablation
@@ -2138,7 +2186,7 @@ def main():
 
         # Export token-feature examples if requested (before running experiments)
         if args.export_token_examples:
-            out_dir = output_path / behaviour / "token_feature_examples"
+            out_dir = behaviour_out / "token_feature_examples"
             print(f"\nExporting token-feature examples to {out_dir}...")
             export_token_feature_examples(
                 model=model,
@@ -2233,7 +2281,7 @@ def main():
                         importance_df["layer_has_graph_features"] = _fi_layer_has_graph
 
                     # Save importance results (create directory first!)
-                    imp_out_path = output_path / behaviour / "importance"
+                    imp_out_path = behaviour_out / "importance"
                     imp_out_path.mkdir(parents=True, exist_ok=True)
                     importance_df.to_csv(
                         imp_out_path / f"feature_importance_layer_{layer}.csv",
@@ -2285,13 +2333,13 @@ def main():
 
                 save_results(
                     steer_results,
-                    output_path / behaviour,
+                    behaviour_out,
                     behaviour,
                     "steering",
                     {**metadata, "steering_coeff": args.steering_coeff}
                 )
                 save_layer_coverage(
-                    output_path / behaviour, behaviour, "steering",
+                    behaviour_out, behaviour, "steering",
                     layers, _steer_src_by_layer, top_features_by_layer,
                 )
                 if not steer_results and not args.control_fallback:
@@ -2409,7 +2457,7 @@ def main():
                                 )
                                 continue
 
-                save_results(all_results, output_path / behaviour, behaviour, "ablation", metadata)
+                save_results(all_results, behaviour_out, behaviour, "ablation", metadata)
                 # Build layer-source map from results + skipped set, then write coverage file
                 _abl_src_map: Dict[int, str] = {}
                 for _lc in layers:
@@ -2421,7 +2469,7 @@ def main():
                             "skipped",
                         )
                 save_layer_coverage(
-                    output_path / behaviour, behaviour, "ablation",
+                    behaviour_out, behaviour, "ablation",
                     layers, _abl_src_map, top_features_by_layer,
                 )
                 if not all_results and not args.control_fallback:
@@ -2461,7 +2509,7 @@ def main():
 
                 if not pairs:
                     logger.warning("No pairs created! Check your prompts/margins.")
-                    save_results(results, output_path / behaviour, behaviour, patching_exp_type, metadata)
+                    save_results(results, behaviour_out, behaviour, patching_exp_type, metadata)
                     continue
 
                 for idx, (source, target) in enumerate(tqdm(pairs, desc="Patching")):
@@ -2565,7 +2613,7 @@ def main():
                                 )
                                 continue
 
-                save_results(results, output_path / behaviour, behaviour, patching_exp_type, metadata)
+                save_results(results, behaviour_out, behaviour, patching_exp_type, metadata)
                 # Build layer-source map from results + skipped set, then write coverage file
                 _patch_src_map: Dict[int, str] = {}
                 for _lc in layers:
@@ -2577,7 +2625,7 @@ def main():
                             "skipped",
                         )
                 save_layer_coverage(
-                    output_path / behaviour, behaviour, patching_exp_type,
+                    behaviour_out, behaviour, patching_exp_type,
                     layers, _patch_src_map, top_features_by_layer,
                 )
                 if not results and not args.control_fallback:

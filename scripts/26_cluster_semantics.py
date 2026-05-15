@@ -13,7 +13,7 @@ Outputs in data/results/cluster_semantics/:
 Outputs in dashboard_probe/public/data/:
   cluster_semantics.json
 """
-import json, warnings
+import argparse, json, warnings
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -23,9 +23,19 @@ from scipy.stats import fisher_exact
 warnings.filterwarnings("ignore")
 
 ROOT     = Path(__file__).parent.parent
-GROUPING = ROOT / "data/results/grouping"
-CLU      = ROOT / "data/results/clustering"
-OUT      = ROOT / "data/results/cluster_semantics"
+
+_p = argparse.ArgumentParser()
+_p.add_argument("--grouping_dir",   type=Path, default=None,
+                help="Input grouping dir. Defaults to data/results/grouping/.")
+_p.add_argument("--clustering_dir", type=Path, default=None,
+                help="Input clustering dir. Defaults to data/results/clustering/.")
+_p.add_argument("--out_dir",        type=Path, default=None,
+                help="Output dir. Defaults to data/results/cluster_semantics/.")
+_args, _ = _p.parse_known_args()
+
+GROUPING = Path(_args.grouping_dir)   if _args.grouping_dir   else ROOT / "data/results/grouping"
+CLU      = Path(_args.clustering_dir) if _args.clustering_dir else ROOT / "data/results/clustering"
+OUT      = Path(_args.out_dir)        if _args.out_dir        else ROOT / "data/results/cluster_semantics"
 OUT.mkdir(parents=True, exist_ok=True)
 DASH_OUT = ROOT / "dashboard_probe/public/data"
 

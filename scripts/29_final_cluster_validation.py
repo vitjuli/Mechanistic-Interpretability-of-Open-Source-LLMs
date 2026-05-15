@@ -12,7 +12,7 @@ Outputs:
   (figures written to docs/ by the main document writer)
 """
 
-import json
+import argparse, json
 import math
 import warnings
 import numpy as np
@@ -23,10 +23,22 @@ from scipy.stats import ttest_1samp
 warnings.filterwarnings("ignore")
 
 ROOT    = Path(__file__).resolve().parents[1]
-G       = ROOT / "data/results/grouping"
-CS      = ROOT / "data/results/cluster_semantics"
-CJ      = ROOT / "data/results/cluster_joint_ablation"
-CLUST   = ROOT / "data/results/clustering"
+
+_p = argparse.ArgumentParser()
+_p.add_argument("--grouping_dir",        type=Path, default=None,
+                help="Input grouping dir. Defaults to data/results/grouping/.")
+_p.add_argument("--cluster_semantics_dir", type=Path, default=None,
+                help="Input cluster_semantics dir. Defaults to data/results/cluster_semantics/.")
+_p.add_argument("--cluster_joint_dir",   type=Path, default=None,
+                help="Input cluster_joint_ablation dir. Defaults to data/results/cluster_joint_ablation/.")
+_p.add_argument("--clustering_dir",      type=Path, default=None,
+                help="Input clustering dir. Defaults to data/results/clustering/.")
+_args, _ = _p.parse_known_args()
+
+G     = Path(_args.grouping_dir)          if _args.grouping_dir          else ROOT / "data/results/grouping"
+CS    = Path(_args.cluster_semantics_dir) if _args.cluster_semantics_dir else ROOT / "data/results/cluster_semantics"
+CJ    = Path(_args.cluster_joint_dir)     if _args.cluster_joint_dir     else ROOT / "data/results/cluster_joint_ablation"
+CLUST = Path(_args.clustering_dir)        if _args.clustering_dir        else ROOT / "data/results/clustering"
 
 # ── Load data ──────────────────────────────────────────────────────────────────
 fp   = pd.read_csv(G / "feature_prompt_contributions.csv")

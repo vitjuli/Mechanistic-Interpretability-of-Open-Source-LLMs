@@ -173,16 +173,23 @@ def main():
     parser.add_argument("--n_prompts",    type=int, default=None,
                         help="Max prompts per cluster (None = all)")
     parser.add_argument("--device",       default="cuda")
-    parser.add_argument("--out_dir",      default=None)
+    parser.add_argument("--out_dir",        default=None,
+                        help="Full path to output CSV file (overrides --run_dir).")
+    parser.add_argument("--run_dir",        type=Path, default=None,
+                        help="Output directory. CSV named joint_ablation_{behaviour}_{split}.csv.")
+    parser.add_argument("--grouping_dir",   type=Path, default=None,
+                        help="Input grouping dir. Defaults to data/results/grouping/.")
+    parser.add_argument("--clustering_dir", type=Path, default=None,
+                        help="Input clustering dir. Defaults to data/results/clustering/.")
     args = parser.parse_args()
 
-    run_dir = ROOT / "data/results/cluster_joint_ablation"
+    run_dir = Path(args.run_dir) if args.run_dir else ROOT / "data/results/cluster_joint_ablation"
     run_dir.mkdir(parents=True, exist_ok=True)
     out_path = Path(args.out_dir) if args.out_dir else run_dir / f"joint_ablation_{args.behaviour}_{args.split}.csv"
 
     # ── Load cluster definitions ──────────────────────────────────────────
     import csv as csvlib
-    clu_dir = ROOT / "data/results/clustering"
+    clu_dir = Path(args.clustering_dir) if args.clustering_dir else ROOT / "data/results/clustering"
     with open(clu_dir / "cluster_labels.csv") as f:
         rows = list(csvlib.DictReader(f))
     coimp = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
@@ -225,7 +232,7 @@ def main():
     logger.info(f"Loaded {len(prompts_all)} prompts from {prompts_path.name}")
 
     # ── Load individual ablation effects (for comparison) ─────────────────
-    grouping_dir = ROOT / "data/results/grouping"
+    grouping_dir = Path(args.grouping_dir) if args.grouping_dir else ROOT / "data/results/grouping"
     contrib = pd.read_csv(grouping_dir / "feature_prompt_contributions.csv",
                           usecols=["prompt_idx","feature_id","effect_size","abs_effect_size",
                                    "baseline_logit_diff"])

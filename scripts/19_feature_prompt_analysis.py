@@ -151,11 +151,18 @@ def load_baseline(behaviour: str, split: str) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--behaviour", default="physics_decay_type_probe")
-    parser.add_argument("--split",     default="train")
-    parser.add_argument("--ui_run",    type=Path, default=None)
-    parser.add_argument("--top_k",     type=int, default=10, help="Top prompts per feature")
+    parser.add_argument("--behaviour",    default="physics_decay_type_probe")
+    parser.add_argument("--split",        default="train")
+    parser.add_argument("--ui_run",       type=Path, default=None)
+    parser.add_argument("--top_k",        type=int, default=10, help="Top prompts per feature")
+    parser.add_argument("--abl_csv",      type=Path, default=None,
+                        help="Direct path to ablation CSV. Bypasses auto-discovery from ui_run.")
+    parser.add_argument("--grouping_dir", type=Path, default=None,
+                        help="Output directory for grouping CSVs. Defaults to data/results/grouping/.")
     args = parser.parse_args()
+
+    out_dir = Path(args.grouping_dir) if args.grouping_dir else OUT
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Locate UI run ───────────────────────────────────────────────────────
     if args.ui_run is None:
@@ -177,12 +184,15 @@ def main():
     print(f"  {len(prompt_meta)} prompts")
 
     print("Loading ablation CSV...")
-    abl_candidates = list((args.ui_run / "raw_sources").glob(f"intervention_ablation_{args.behaviour}*.csv"))
-    if not abl_candidates:
-        abl_candidates = list((ROOT / f"data/results/interventions/{args.behaviour}").glob(f"intervention_ablation_{args.behaviour}*.csv"))
-    if not abl_candidates:
-        raise FileNotFoundError("Ablation CSV not found")
-    abl = pd.read_csv(abl_candidates[0])
+    if args.abl_csv is not None:
+        abl = pd.read_csv(args.abl_csv)
+    else:
+        abl_candidates = list((args.ui_run / "raw_sources").glob(f"intervention_ablation_{args.behaviour}*.csv"))
+        if not abl_candidates:
+            abl_candidates = list((ROOT / f"data/results/interventions/{args.behaviour}").glob(f"intervention_ablation_{args.behaviour}*.csv"))
+        if not abl_candidates:
+            raise FileNotFoundError("Ablation CSV not found")
+        abl = pd.read_csv(abl_candidates[0])
     print(f"  {len(abl)} rows, {abl['feature_id'].nunique()} features, {abl['prompt_idx'].nunique()} prompts")
 
     print("Loading baseline CSV...")
@@ -223,19 +233,19 @@ def main():
     # Sort
     contrib = contrib.sort_values(["feature_id", "prompt_idx"]).reset_index(drop=True)
 
-    out = OUT / "feature_prompt_contributions.csv"
+    out = out_dir / "feature_prompt_contributions.csv"
     contrib.to_csv(out, index=False)
     print(f"  Saved: {out}  ({len(contrib)} rows)")
 
     # ── Save feature_metadata.csv ────────────────────────────────────────────
-    feat_out = OUT / "feature_metadata.csv"
+    feat_out = out_dir / "feature_metadata.csv"
     feat_meta.to_csv(feat_out, index=False)
     print(f"  Saved: {feat_out}  ({len(feat_meta)} features)")
 
     # ── Save prompt_metadata.csv ─────────────────────────────────────────────
     if not baseline.empty:
         prompt_meta = prompt_meta.merge(baseline, on="prompt_idx", how="left")
-    pout = OUT / "prompt_metadata.csv"
+    pout = out_dir / "prompt_metadata.csv"
     prompt_meta.to_csv(pout, index=False)
     print(f"  Saved: {pout}  ({len(prompt_meta)} prompts)")
 
@@ -261,7 +271,7 @@ def main():
                 top_rows.append(r)
 
     top_df = pd.DataFrame(top_rows)
-    tpath = OUT / "feature_top_prompts.csv"
+    tpath = out_dir / "feature_top_prompts.csv"
     top_df.to_csv(tpath, index=False)
     print(f"  Saved: {tpath}  ({len(top_df)} rows, {args.top_k} prompts × 40 features × 2 metrics)")
 
@@ -290,7 +300,7 @@ def main():
     grp_info = contrib.groupby("group_id").first()[["level", "latent_state_target", "correct_answer", "cue_label"]].reset_index()
     fg = fg.merge(grp_info, on="group_id", how="left")
     fg = fg.sort_values(["feature_id", "level", "group_id"])
-    fg.to_csv(OUT / "feature_by_group_effect.csv", index=False)
+    fg.to_csv(out_dir / "feature_by_group_effect.csv", index=False)
     print(f"  Saved: feature_by_group_effect.csv  ({len(fg)} rows)")
 
     # feature × level
@@ -298,21 +308,21 @@ def main():
     for col in ["layer", "community", "grad_attr_sign", "role_label"]:
         fl[col] = fl["feature_id"].map(lambda fid: feat_dict.get(fid, {}).get(col))
     fl = fl.sort_values(["feature_id", "level"])
-    fl.to_csv(OUT / "feature_by_level_summary.csv", index=False)
+    fl.to_csv(out_dir / "feature_by_level_summary.csv", index=False)
     print(f"  Saved: feature_by_level_summary.csv  ({len(fl)} rows)")
 
     # feature × correct_answer
     fa = aggregate(contrib, ["feature_id", "correct_answer"], [])
     for col in ["layer", "community", "grad_attr_sign", "role_label"]:
         fa[col] = fa["feature_id"].map(lambda fid: feat_dict.get(fid, {}).get(col))
-    fa.to_csv(OUT / "feature_by_answer_summary.csv", index=False)
+    fa.to_csv(out_dir / "feature_by_answer_summary.csv", index=False)
     print(f"  Saved: feature_by_answer_summary.csv  ({len(fa)} rows)")
 
     # feature × latent_state_target (α vs β)
     ft = aggregate(contrib, ["feature_id", "latent_state_target"], [])
     for col in ["layer", "community", "grad_attr_sign", "role_label"]:
         ft[col] = ft["feature_id"].map(lambda fid: feat_dict.get(fid, {}).get(col))
-    ft.to_csv(OUT / "feature_by_target_summary.csv", index=False)
+    ft.to_csv(out_dir / "feature_by_target_summary.csv", index=False)
     print(f"  Saved: feature_by_target_summary.csv  ({len(ft)} rows)")
 
     # ── Heatmap matrices ─────────────────────────────────────────────────────
@@ -325,24 +335,24 @@ def main():
     pivot_effect = contrib.pivot_table(
         index="feature_id", columns="prompt_idx", values="effect_size", aggfunc="first"
     ).reindex(index=feat_ids, columns=prompt_ids)
-    pivot_effect.to_csv(OUT / "feature_prompt_effect_matrix.csv")
+    pivot_effect.to_csv(out_dir / "feature_prompt_effect_matrix.csv")
     print(f"  Saved: feature_prompt_effect_matrix.csv  ({pivot_effect.shape[0]} features × {pivot_effect.shape[1]} prompts)")
 
     # Feature × prompt (abs_effect_size)
     pivot_abs = contrib.pivot_table(
         index="feature_id", columns="prompt_idx", values="abs_effect_size", aggfunc="first"
     ).reindex(index=feat_ids, columns=prompt_ids)
-    pivot_abs.to_csv(OUT / "feature_prompt_abs_effect_matrix.csv")
+    pivot_abs.to_csv(out_dir / "feature_prompt_abs_effect_matrix.csv")
     print(f"  Saved: feature_prompt_abs_effect_matrix.csv")
 
     # Feature × group (mean_abs_effect)
     fg_pivot = fg.pivot_table(index="feature_id", columns="group_id", values="mean_abs_effect", aggfunc="first")
-    fg_pivot.to_csv(OUT / "feature_group_effect_matrix.csv")
+    fg_pivot.to_csv(out_dir / "feature_group_effect_matrix.csv")
     print(f"  Saved: feature_group_effect_matrix.csv  ({fg_pivot.shape[0]} features × {fg_pivot.shape[1]} groups)")
 
     # Feature × group (sfr)
     fg_sfr = fg.pivot_table(index="feature_id", columns="group_id", values="sfr", aggfunc="first")
-    fg_sfr.to_csv(OUT / "feature_group_sfr_matrix.csv")
+    fg_sfr.to_csv(out_dir / "feature_group_sfr_matrix.csv")
     print(f"  Saved: feature_group_sfr_matrix.csv")
 
     # ── Quick summary ─────────────────────────────────────────────────────────
@@ -367,7 +377,7 @@ def main():
               f"{r['mean_abs_effect']:>7.4f}  {r['max_abs_effect']:>7.4f}  {r['sfr']:>5.3f}  "
               f"{r['mean_effect_alpha']:>6.3f}  {r['mean_effect_beta']:>6.3f}")
 
-    print(f"\nAll outputs saved to: {OUT}")
+    print(f"\nAll outputs saved to: {out_dir}")
     print("\nNote: Activation values (top_k_values.npy) are on CSD3.")
     print("To add them locally, rsync:")
     print("  rsync -av iv294@login.hpc.cam.ac.uk:/rds/user/iv294/hpc-work/thesis/project/data/results/transcoder_features/layer_*/physics_decay_type_probe_train_top_k_values.npy data/results/transcoder_features/layer_*/")

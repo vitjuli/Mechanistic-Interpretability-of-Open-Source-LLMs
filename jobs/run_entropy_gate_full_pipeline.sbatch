@@ -667,7 +667,10 @@ def get_residuals(input_ids, layers):
     hooks = []
     def make_hook(l):
         def h(module, inp, out):
-            residuals[l] = out[0][0, -1].detach().clone()  # (hidden,)
+            # Newer transformers may return hidden_states as a bare Tensor rather
+            # than a (Tensor, ...) tuple — handle both.
+            hs = out[0] if isinstance(out, tuple) else out  # (batch, seq, hidden)
+            residuals[l] = hs[0, -1].detach().clone()
         return h
     for l in layers:
         hk = mdl.model.layers[l].register_forward_hook(make_hook(l))
@@ -688,11 +691,15 @@ def patch_nd(source_ids, target_ids, patch_layers):
         def make_patch_hook(pl):
             def h(module, inp, out):
                 if pl in src_residuals:
-                    tgt_len = out[0].shape[1]
-                    src_vec = src_residuals[pl].to(out[0].dtype)
-                    patched_out = out[0].clone()
-                    patched_out[0, -1] = src_vec
-                    return (patched_out,) + out[1:]
+                    # Newer transformers may return hidden_states as a bare Tensor
+                    # rather than a (Tensor, ...) tuple — handle both.
+                    hs = out[0] if isinstance(out, tuple) else out
+                    src_vec = src_residuals[pl].to(hs.dtype)
+                    patched = hs.clone()
+                    patched[0, -1] = src_vec
+                    if isinstance(out, tuple):
+                        return (patched,) + out[1:]
+                    return patched
                 return out
             return h
         hk = mdl.model.layers[patch_layer].register_forward_hook(make_patch_hook(patch_layer))

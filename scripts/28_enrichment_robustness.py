@@ -11,7 +11,7 @@ Outputs (all to data/results/cluster_semantics/):
   cluster_enrichment_curves.json         (to dashboard_probe/public/data/)
 """
 
-import json
+import argparse, json
 import warnings
 import numpy as np
 import pandas as pd
@@ -21,12 +21,21 @@ from scipy.stats import fisher_exact
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 ROOT     = Path(__file__).resolve().parents[1]
-CS_DIR   = ROOT / "data/results/cluster_semantics"
+
+_p = argparse.ArgumentParser()
+_p.add_argument("--grouping_dir",        type=Path, default=None,
+                help="Input grouping dir. Defaults to data/results/grouping/.")
+_p.add_argument("--cluster_semantics_dir", type=Path, default=None,
+                help="Input cluster_semantics dir. Defaults to data/results/cluster_semantics/.")
+_args, _ = _p.parse_known_args()
+
+GROUPING = Path(_args.grouping_dir)          if _args.grouping_dir          else ROOT / "data/results/grouping"
+CS_DIR   = Path(_args.cluster_semantics_dir) if _args.cluster_semantics_dir else ROOT / "data/results/cluster_semantics"
 DASH_OUT = ROOT / "dashboard_probe/public/data"
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 cps = pd.read_csv(CS_DIR / "cluster_prompt_scores.csv")   # 5170 rows
-pm  = pd.read_csv(ROOT / "data/results/grouping/prompt_metadata.csv")
+pm  = pd.read_csv(GROUPING / "prompt_metadata.csv")
 
 N_PROMPTS = pm["prompt_idx"].nunique()   # 470
 

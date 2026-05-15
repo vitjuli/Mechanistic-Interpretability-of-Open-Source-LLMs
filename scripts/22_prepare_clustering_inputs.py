@@ -51,17 +51,29 @@ def pearson_rows(X: np.ndarray) -> np.ndarray:
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--grouping_dir",   type=Path, default=None,
+                        help="Input grouping dir. Defaults to data/results/grouping/.")
+    parser.add_argument("--clustering_dir", type=Path, default=None,
+                        help="Output clustering dir. Defaults to data/results/clustering/.")
+    args = parser.parse_args()
+
+    grouping = Path(args.grouping_dir)   if args.grouping_dir   else GROUPING
+    out      = Path(args.clustering_dir) if args.clustering_dir else OUT
+    out.mkdir(parents=True, exist_ok=True)
+
     print("Loading source CSVs...")
-    abs_df  = pd.read_csv(GROUPING / "feature_prompt_abs_effect_matrix.csv",   index_col=0)
-    eff_df  = pd.read_csv(GROUPING / "feature_prompt_effect_matrix.csv",        index_col=0)
-    grp_eff = pd.read_csv(GROUPING / "feature_group_effect_matrix.csv",         index_col=0)
-    grp_sfr = pd.read_csv(GROUPING / "feature_group_sfr_matrix.csv",            index_col=0)
-    grp_act = pd.read_csv(GROUPING / "feature_group_activation_matrix.csv",     index_col=0)
-    pm      = pd.read_csv(GROUPING / "prompt_metadata.csv")
-    fm      = pd.read_csv(GROUPING / "feature_metadata.csv")
-    fa      = pd.read_csv(GROUPING / "feature_by_answer_summary.csv")
-    contrib = pd.read_csv(GROUPING / "feature_prompt_contributions.csv")
-    grp_sum = pd.read_csv(GROUPING / "probe_group_summary.csv")
+    abs_df  = pd.read_csv(grouping / "feature_prompt_abs_effect_matrix.csv",   index_col=0)
+    eff_df  = pd.read_csv(grouping / "feature_prompt_effect_matrix.csv",        index_col=0)
+    grp_eff = pd.read_csv(grouping / "feature_group_effect_matrix.csv",         index_col=0)
+    grp_sfr = pd.read_csv(grouping / "feature_group_sfr_matrix.csv",            index_col=0)
+    grp_act = pd.read_csv(grouping / "feature_group_activation_matrix.csv",     index_col=0)
+    pm      = pd.read_csv(grouping / "prompt_metadata.csv")
+    fm      = pd.read_csv(grouping / "feature_metadata.csv")
+    fa      = pd.read_csv(grouping / "feature_by_answer_summary.csv")
+    contrib = pd.read_csv(grouping / "feature_prompt_contributions.csv")
+    grp_sum = pd.read_csv(grouping / "probe_group_summary.csv")
 
     feat_ids   = list(abs_df.index)
     group_ids  = list(grp_eff.columns)
@@ -83,7 +95,7 @@ def main():
     # For group-level abs, derive from grp_eff carefully
     # feature_group_effect_matrix holds mean signed effect; abs is not stored directly
     # use the by_group CSV for proper abs values
-    by_grp = pd.read_csv(GROUPING / "feature_by_group_effect.csv")
+    by_grp = pd.read_csv(grouping / "feature_by_group_effect.csv")
     # Build group_abs from pivot
     ga_abs_df = by_grp.pivot_table(
         index="feature_id", columns="group_id", values="mean_abs_effect", aggfunc="first"
@@ -196,7 +208,7 @@ def main():
     print("Saving...")
 
     def sv(arr, name):
-        path = OUT / name
+        path = out / name
         np.save(path, arr)
         print(f"  {name}: {arr.shape}  [{arr.min():.3f}, {arr.max():.3f}]")
 
@@ -214,7 +226,7 @@ def main():
     sv(X_residual,  "feat_residual.npy")
 
     def sj(obj, name):
-        path = OUT / name
+        path = out / name
         with open(path, "w") as f:
             json.dump(obj, f, indent=2)
         print(f"  {name}")
