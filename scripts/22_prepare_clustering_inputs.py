@@ -68,12 +68,18 @@ def main():
     eff_df  = pd.read_csv(grouping / "feature_prompt_effect_matrix.csv",        index_col=0)
     grp_eff = pd.read_csv(grouping / "feature_group_effect_matrix.csv",         index_col=0)
     grp_sfr = pd.read_csv(grouping / "feature_group_sfr_matrix.csv",            index_col=0)
-    grp_act = pd.read_csv(grouping / "feature_group_activation_matrix.csv",     index_col=0)
+    act_path = grouping / "feature_group_activation_matrix.csv"
+    if act_path.exists():
+        grp_act = pd.read_csv(act_path, index_col=0)
+    else:
+        print("  WARNING: feature_group_activation_matrix.csv not found — filling with zeros (activation values on CSD3)")
+        grp_act = pd.DataFrame(0.0, index=grp_eff.index, columns=grp_eff.columns)
     pm      = pd.read_csv(grouping / "prompt_metadata.csv")
     fm      = pd.read_csv(grouping / "feature_metadata.csv")
     fa      = pd.read_csv(grouping / "feature_by_answer_summary.csv")
     contrib = pd.read_csv(grouping / "feature_prompt_contributions.csv")
-    grp_sum = pd.read_csv(grouping / "probe_group_summary.csv")
+    grp_sum_path = grouping / "probe_group_summary.csv"
+    grp_sum = pd.read_csv(grp_sum_path) if grp_sum_path.exists() else pd.DataFrame()
 
     feat_ids   = list(abs_df.index)
     group_ids  = list(grp_eff.columns)

@@ -63,7 +63,7 @@ run_step() {
         echo ""
         echo "---- Step $step: $label ----"
         date
-        python -u "$@"
+        python3 -u "$@"
         echo "  Step $step done: $(date)"
     else
         echo "  Skipping step $step ($label)"
@@ -83,6 +83,11 @@ run_step 19 "feature_prompt_analysis" \
 run_step 22 "prepare_clustering_inputs" \
     scripts/22_prepare_clustering_inputs.py \
     --grouping_dir   "$GROUPING_DIR" \
+    --clustering_dir "$CLUSTERING_DIR"
+
+# ── Step 23: run clustering benchmark ─────────────────────────────────────────
+run_step 23 "run_clustering_benchmark" \
+    scripts/23_run_clustering_benchmark.py \
     --clustering_dir "$CLUSTERING_DIR"
 
 # ── Step 26: cluster semantics ────────────────────────────────────────────────

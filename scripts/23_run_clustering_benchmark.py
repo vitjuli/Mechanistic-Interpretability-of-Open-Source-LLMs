@@ -49,8 +49,13 @@ from sklearn.preprocessing import normalize
 
 warnings.filterwarnings("ignore")
 
+import argparse as _ap
+_parser = _ap.ArgumentParser(add_help=False)
+_parser.add_argument("--clustering_dir", type=Path, default=None)
+_known, _ = _parser.parse_known_args()
+
 ROOT = Path(__file__).parent.parent
-CLU  = ROOT / "data/results/clustering"
+CLU  = Path(_known.clustering_dir) if _known.clustering_dir else ROOT / "data/results/clustering"
 
 K_VALS = [2, 3, 4, 5, 6]
 LOUVAIN_THRS = [0.30, 0.50]

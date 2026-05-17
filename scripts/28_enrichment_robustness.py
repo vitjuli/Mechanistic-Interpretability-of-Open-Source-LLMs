@@ -202,7 +202,7 @@ print(f"Saved cluster_weighted_enrichment.csv  ({len(df_weighted)} rows)")
 # ─────────────────────────────────────────────────────────────────────────────
 # Classify each (cluster, field, value) enrichment
 
-def classify_enrichment(lifts: dict, w_lift: float | None) -> tuple[str, str, str]:
+def classify_enrichment(lifts: dict, w_lift) -> tuple:
     """
     lifts: {top_k: lift_value}  (None allowed for missing values)
     w_lift: weighted lift

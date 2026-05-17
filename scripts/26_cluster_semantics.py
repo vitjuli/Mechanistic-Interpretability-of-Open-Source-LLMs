@@ -769,4 +769,3 @@ with open(out_path, "w") as f:
 size_kb = out_path.stat().st_size / 1024
 print(f"\nSaved cluster_semantics.json  ({size_kb:.0f} KB)")
 print("All outputs complete.")
-EOF
