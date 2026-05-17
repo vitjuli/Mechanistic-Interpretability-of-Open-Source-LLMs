@@ -22,11 +22,18 @@ from scipy import stats
 warnings.filterwarnings("ignore")
 ROOT = Path(__file__).parent.parent
 
-GROUPING   = ROOT / "data/results/grouping"
-CLU_DIR    = ROOT / "data/results/clustering"
-JOINT_DIR  = ROOT / "data/results/cluster_joint_ablation"
+import argparse as _ap
+_p = _ap.ArgumentParser(add_help=False)
+_p.add_argument("--grouping_dir",   type=Path, default=None)
+_p.add_argument("--clustering_dir", type=Path, default=None)
+_p.add_argument("--joint_dir",      type=Path, default=None)
+_known, _ = _p.parse_known_args()
+
+GROUPING  = Path(_known.grouping_dir)   if _known.grouping_dir   else ROOT / "data/results/grouping"
+CLU_DIR   = Path(_known.clustering_dir) if _known.clustering_dir else ROOT / "data/results/clustering"
+JOINT_DIR = Path(_known.joint_dir)      if _known.joint_dir      else ROOT / "data/results/cluster_joint_ablation"
 JOINT_DIR.mkdir(parents=True, exist_ok=True)
-DASH_OUT   = ROOT / "dashboard_probe/public/data"
+DASH_OUT  = ROOT / "dashboard_probe/public/data"
 
 # ── Load base data ──────────────────────────────────────────────────────────
 import csv as csvlib

@@ -97,14 +97,18 @@ run_step 26 "cluster_semantics" \
     --clustering_dir "$CLUSTERING_DIR" \
     --out_dir        "$CS_DIR"
 
-# ── Step 27: cluster joint ablation ───────────────────────────────────────────
-run_step 27 "cluster_joint_ablation" \
-    scripts/27_cluster_joint_ablation.py \
-    --behaviour      "$BEHAVIOUR" \
-    --split          "$SPLIT" \
+# ── Step 27: cluster joint ablation ── CSD3/GPU ONLY, run via sbatch ──────────
+# Script 27 requires GPU and runs via jobs/run_probe_runB_joint_ablation.sbatch.
+# After syncing the output CSV, run --start 272 to continue locally.
+# run_step 27 "cluster_joint_ablation" scripts/27_cluster_joint_ablation.py ...
+
+# ── Step 272: analyse joint ablation (local, after CSD3 sync) ─────────────────
+# --start 272  ←  use this after syncing joint_ablation CSV from CSD3
+run_step 272 "analyse_joint_ablation" \
+    scripts/27b_analyse_joint_ablation.py \
     --grouping_dir   "$GROUPING_DIR" \
     --clustering_dir "$CLUSTERING_DIR" \
-    --run_dir        "$CJ_DIR"
+    --joint_dir      "$CJ_DIR"
 
 # ── Step 28: enrichment robustness ────────────────────────────────────────────
 run_step 28 "enrichment_robustness" \
