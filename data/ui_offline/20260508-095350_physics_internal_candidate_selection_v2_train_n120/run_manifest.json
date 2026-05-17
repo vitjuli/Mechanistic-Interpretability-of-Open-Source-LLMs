@@ -1,0 +1,201 @@
+{
+  "git_commit": "f89266f1b58583a3c21850132371d345edf0dd24",
+  "inputs": [
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:50:36",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_ablation_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 182967
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:50:36",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_ablation_physics_internal_candidate_selection_v2_summary.json",
+      "size_bytes": 939
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:57:27",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_patching_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 208880
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:57:27",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_patching_physics_internal_candidate_selection_v2_summary.json",
+      "size_bytes": 940
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:11:28",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_steering_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 130455
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:11:28",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/intervention_steering_physics_internal_candidate_selection_v2_summary.json",
+      "size_bytes": 941
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-06T17:27:42",
+      "path": "data/results/attribution_graphs/physics_internal_candidate_selection_v2/attribution_graph_train_n120_roleaware.json",
+      "size_bytes": 152513
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:58:16",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_15.csv",
+      "size_bytes": 585
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:59:04",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_16.csv",
+      "size_bytes": 328
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:59:52",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_17.csv",
+      "size_bytes": 585
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:00:39",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_18.csv",
+      "size_bytes": 584
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:01:27",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_19.csv",
+      "size_bytes": 585
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:02:16",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/importance/feature_importance_layer_20.csv",
+      "size_bytes": 579
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:50:36",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/layer_coverage_ablation_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 252
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T08:57:27",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/layer_coverage_patching_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 252
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:11:28",
+      "path": "data/results/interventions/physics_internal_candidate_selection_v2/layer_coverage_steering_physics_internal_candidate_selection_v2.csv",
+      "size_bytes": 252
+    }
+  ],
+  "outputs": [
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/interventions.csv",
+      "size_bytes": 624641
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/common_prompt_idx.json",
+      "size_bytes": 494
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/audit.json",
+      "size_bytes": 147687
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/interventions_layer_agg.csv",
+      "size_bytes": 2930
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/interventions_prompt_agg.csv",
+      "size_bytes": 39156
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:01",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/interventions_feature_agg.csv",
+      "size_bytes": 11350
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:02",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/feature_importance.csv",
+      "size_bytes": 2392
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:02",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/layer_coverage.csv",
+      "size_bytes": 730
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:02",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/supernodes.json",
+      "size_bytes": 1541
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:02",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/supernodes_summary.csv",
+      "size_bytes": 492
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:18",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/supernodes_effect.json",
+      "size_bytes": 563
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:18",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/supernodes_effect_summary.csv",
+      "size_bytes": 305
+    },
+    {
+      "exists": true,
+      "modified": "2026-05-08T09:54:18",
+      "path": "data/ui_offline/20260508-095350_physics_internal_candidate_selection_v2_train_n120/graph.json",
+      "size_bytes": 151098
+    }
+  ],
+  "parameters": {
+    "behaviour": "physics_internal_candidate_selection_v2",
+    "community_method": "louvain",
+    "effect_clusters": null,
+    "graph_n_prompts": 120,
+    "raw_sources_copied": [
+      "attribution_graph_train_n120_roleaware.json",
+      "attribution_graph_train_n120_roleaware_metadata.json",
+      "intervention_ablation_physics_internal_candidate_selection_v2.csv",
+      "intervention_patching_physics_internal_candidate_selection_v2.csv",
+      "intervention_steering_physics_internal_candidate_selection_v2.csv",
+      "intervention_ablation_physics_internal_candidate_selection_v2_summary.json",
+      "intervention_patching_physics_internal_candidate_selection_v2_summary.json",
+      "intervention_steering_physics_internal_candidate_selection_v2_summary.json"
+    ],
+    "run_id": "20260508-095350_physics_internal_candidate_selection_v2_train_n120",
+    "split": "train",
+    "timestamp": "2026-05-08T09:53:50.311769"
+  },
+  "timestamp": "2026-05-08T09:54:18.705327"
+}

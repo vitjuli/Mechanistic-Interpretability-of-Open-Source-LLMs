@@ -1,0 +1,623 @@
+{
+  "L10_F128064": {
+    "layer": 10,
+    "community": 3,
+    "role_label": "\u03b2-discrim",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": true,
+    "grad_sign": 1
+  },
+  "L10_F35580": {
+    "layer": 10,
+    "community": 3,
+    "role_label": "\u03b2-discrim",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": true,
+    "grad_sign": 1
+  },
+  "L10_F68680": {
+    "layer": 10,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L10_F80002": {
+    "layer": 10,
+    "community": 0,
+    "role_label": "\u03b2-discrim",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": true,
+    "grad_sign": 1
+  },
+  "L10_F83063": {
+    "layer": 10,
+    "community": 3,
+    "role_label": "\u03b2-discrim",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": true,
+    "grad_sign": 1
+  },
+  "L11_F114815": {
+    "layer": 11,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L11_F144890": {
+    "layer": 11,
+    "community": 3,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L11_F151375": {
+    "layer": 11,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L11_F35425": {
+    "layer": 11,
+    "community": 3,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L12_F2451": {
+    "layer": 12,
+    "community": 3,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L12_F60": {
+    "layer": 12,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L12_F71226": {
+    "layer": 12,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L13_F45942": {
+    "layer": 13,
+    "community": 3,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L13_F57499": {
+    "layer": 13,
+    "community": 3,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L13_F58969": {
+    "layer": 13,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L14_F140141": {
+    "layer": 14,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L14_F24749": {
+    "layer": 14,
+    "community": 3,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L15_F15507": {
+    "layer": 15,
+    "community": 0,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L15_F64857": {
+    "layer": 15,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L15_F89707": {
+    "layer": 15,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L16_F14097": {
+    "layer": 16,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L16_F33974": {
+    "layer": 16,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L16_F46637": {
+    "layer": 16,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L16_F53285": {
+    "layer": 16,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L16_F82587": {
+    "layer": 16,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L17_F111674": {
+    "layer": 17,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L17_F122323": {
+    "layer": 17,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L17_F153539": {
+    "layer": 17,
+    "community": 0,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L17_F63126": {
+    "layer": 17,
+    "community": 0,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L17_F6720": {
+    "layer": 17,
+    "community": 0,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L18_F108180": {
+    "layer": 18,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L18_F145795": {
+    "layer": 18,
+    "community": 0,
+    "role_label": "\u03b2-discrim",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": true,
+    "grad_sign": 1
+  },
+  "L18_F152260": {
+    "layer": 18,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L18_F41804": {
+    "layer": 18,
+    "community": 0,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L19_F130590": {
+    "layer": 19,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L19_F25394": {
+    "layer": 19,
+    "community": 4,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L19_F41536": {
+    "layer": 19,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L19_F44438": {
+    "layer": 19,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L19_F94584": {
+    "layer": 19,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L20_F117855": {
+    "layer": 20,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L20_F18705": {
+    "layer": 20,
+    "community": 4,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L20_F72939": {
+    "layer": 20,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L20_F74959": {
+    "layer": 20,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L20_F80071": {
+    "layer": 20,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L21_F12280": {
+    "layer": 21,
+    "community": 4,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L21_F157518": {
+    "layer": 21,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L21_F53078": {
+    "layer": 21,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L21_F56012": {
+    "layer": 21,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L21_F99203": {
+    "layer": 21,
+    "community": 5,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L22_F110496": {
+    "layer": 22,
+    "community": 4,
+    "role_label": "\u03b1-circuit",
+    "is_circuit": true,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L22_F113311": {
+    "layer": 22,
+    "community": 1,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L22_F133148": {
+    "layer": 22,
+    "community": 2,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L22_F28148": {
+    "layer": 22,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L22_F93236": {
+    "layer": 22,
+    "community": 5,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L23_F109767": {
+    "layer": 23,
+    "community": 1,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L23_F140107": {
+    "layer": 23,
+    "community": 2,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L23_F161196": {
+    "layer": 23,
+    "community": 2,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L23_F71067": {
+    "layer": 23,
+    "community": 2,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L23_F83556": {
+    "layer": 23,
+    "community": 2,
+    "role_label": "\u03b1-circuit",
+    "is_circuit": true,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L24_F18943": {
+    "layer": 24,
+    "community": 2,
+    "role_label": "\u03b1-discrim",
+    "is_circuit": false,
+    "is_alpha_d": true,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L24_F249": {
+    "layer": 24,
+    "community": 2,
+    "role_label": "\u03b1-discrim",
+    "is_circuit": false,
+    "is_alpha_d": true,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L24_F52031": {
+    "layer": 24,
+    "community": 2,
+    "role_label": "\u03b1-discrim",
+    "is_circuit": false,
+    "is_alpha_d": true,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L24_F60777": {
+    "layer": 24,
+    "community": 2,
+    "role_label": "\u03b2-circuit",
+    "is_circuit": true,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L24_F88968": {
+    "layer": 24,
+    "community": 2,
+    "role_label": "\u03b1-discrim",
+    "is_circuit": false,
+    "is_alpha_d": true,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L25_F105937": {
+    "layer": 25,
+    "community": 2,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L25_F110282": {
+    "layer": 25,
+    "community": 2,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L25_F126439": {
+    "layer": 25,
+    "community": 2,
+    "role_label": "\u03b1-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  },
+  "L25_F142075": {
+    "layer": 25,
+    "community": 2,
+    "role_label": "\u03b2-attr",
+    "is_circuit": false,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": -1
+  },
+  "L25_F71226": {
+    "layer": 25,
+    "community": 2,
+    "role_label": "\u03b1-circuit",
+    "is_circuit": true,
+    "is_alpha_d": false,
+    "is_beta_d": false,
+    "grad_sign": 1
+  }
+}

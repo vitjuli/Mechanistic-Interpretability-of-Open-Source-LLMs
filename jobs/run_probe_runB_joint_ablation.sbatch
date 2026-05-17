@@ -24,13 +24,13 @@
 #         data/prompts/physics_decay_type_probe_train.jsonl
 # Writes: data/analysis/runB/cluster_joint_ablation/joint_ablation_physics_decay_type_probe_train.csv
 #
-# Runtime estimate: 470 prompts × 12 clusters × ~3-4 forward passes ≈ 1-2 h
+# Runtime estimate: scripts 19/22/23 ~2 min; script 27 ~1-2 h
 #
 # Prereqs:
-#   - Run B ablation synced (done — SLURM 29432300)
-#   - runB grouping + clustering done (scripts 19/22/23 — run locally 2026-05-17)
-#   - Sync runB analysis dirs to CSD3 before submitting:
-#       rsync -avz data/analysis/runB/ iv294@login.hpc.cam.ac.uk:/rds/user/iv294/hpc-work/thesis/project/data/analysis/runB/
+#   - Run B ablation CSV at data/results/interventions/physics_decay_type_probe/runB/
+#     (done — SLURM 29432300)
+#   - data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108/ present
+#   Scripts 19/22/23 run automatically as a CPU preamble in this job.
 
 set -uo pipefail
 mkdir -p logs
@@ -67,6 +67,9 @@ GROUPING_DIR="data/analysis/runB/grouping"
 CLUSTERING_DIR="data/analysis/runB/clustering"
 JOINT_DIR="data/analysis/runB/cluster_joint_ablation"
 
+UI_RUN="data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108"
+ABL_CSV="data/results/interventions/${BEHAVIOUR}/runB/intervention_ablation_${BEHAVIOUR}.csv"
+
 echo "Parameters:"
 echo "  BEHAVIOUR:      $BEHAVIOUR"
 echo "  N_PROMPTS:      $N_PROMPTS"
@@ -76,19 +79,50 @@ echo "  JOINT_DIR:      $JOINT_DIR"
 echo "  clusters:       all (12 coimp-Louvain clusters)"
 echo ""
 
-# Verify prereqs
-for f in "$GROUPING_DIR/feature_prompt_contributions.csv" \
-         "$CLUSTERING_DIR/cluster_labels.csv" \
-         "data/prompts/${BEHAVIOUR}_${SPLIT}.jsonl"; do
+# Verify hard prereqs (ablation CSV + UI run)
+for f in "$ABL_CSV" "$UI_RUN/graph.json" "data/prompts/${BEHAVIOUR}_${SPLIT}.jsonl"; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Missing prereq: $f"
         exit 1
     fi
 done
-echo "All prereqs found."
+echo "Hard prereqs found."
 echo ""
 
-mkdir -p "$JOINT_DIR"
+mkdir -p "$GROUPING_DIR" "$CLUSTERING_DIR" "$JOINT_DIR"
+
+# ── Ensure CPU analysis dependencies are available ────────────────────────────
+python -c "import sklearn" 2>/dev/null || pip install scikit-learn -q
+python -c "import community" 2>/dev/null || pip install python-louvain -q
+
+# ── Step 19: feature × prompt analysis (CPU, ~1 min) ─────────────────────────
+echo "==== [Step 19] feature_prompt_analysis ===="
+date
+python -u scripts/19_feature_prompt_analysis.py \
+    --behaviour    "$BEHAVIOUR" \
+    --split        "$SPLIT" \
+    --ui_run       "$UI_RUN" \
+    --abl_csv      "$ABL_CSV" \
+    --grouping_dir "$GROUPING_DIR"
+echo "  Step 19 done: $(date)"
+echo ""
+
+# ── Step 22: prepare clustering inputs (CPU, ~10 s) ──────────────────────────
+echo "==== [Step 22] prepare_clustering_inputs ===="
+date
+python -u scripts/22_prepare_clustering_inputs.py \
+    --grouping_dir   "$GROUPING_DIR" \
+    --clustering_dir "$CLUSTERING_DIR"
+echo "  Step 22 done: $(date)"
+echo ""
+
+# ── Step 23: run clustering benchmark (CPU, ~30 s) ────────────────────────────
+echo "==== [Step 23] run_clustering_benchmark ===="
+date
+python -u scripts/23_run_clustering_benchmark.py \
+    --clustering_dir "$CLUSTERING_DIR"
+echo "  Step 23 done: $(date)"
+echo ""
 
 # ── Run script 27 ──────────────────────────────────────────────────────────────
 echo "==== [Script 27] Cluster joint ablation ===="

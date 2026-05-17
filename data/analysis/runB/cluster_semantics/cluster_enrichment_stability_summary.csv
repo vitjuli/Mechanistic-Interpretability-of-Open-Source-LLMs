@@ -1,0 +1,368 @@
+cluster_id,metadata_field,metadata_value,best_topk,best_lift,lift_top10,lift_top20,lift_top30,lift_top50,lift_top75,lift_top100,weighted_lift,enrichment_type,confidence,note
+0,correct_answer,beta,10,1.6068,1.6068,1.406,1.2051,1.3256,1.3123,1.2855,1.1219,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.12
+0,cue_label,antineutrino_emitted,20,2.35,,2.35,1.5667,1.88,1.88,1.41,1.0294,narrow_decisive,low,lift>1.5 at 4/5 cutoffs but weighted lift weak (1.03)
+0,cue_label,charge_plus_a_unchanged,20,11.75,7.8333,11.75,7.8333,6.2667,4.1778,3.9167,2.0524,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.05
+0,cue_label,charge_plus_z_change,10,11.75,11.75,5.875,3.9167,3.525,3.9167,2.9375,1.7273,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.73
+0,cue_label,composite_nuclear_object,30,5.875,,,5.875,3.525,3.1333,2.35,1.4541,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.45
+0,cue_label,daughter_a_minus4,75,1.2533,,,,,1.2533,0.94,0.9165,absent,medium,"max lift=1.25, weighted=0.92"
+0,cue_label,daughter_z_minus2,75,2.0889,,,,1.5667,2.0889,1.9583,1.2612,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.26
+0,cue_label,daughter_z_plus1,10,3.9167,3.9167,1.9583,3.9167,3.1333,2.6111,2.35,1.4062,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+0,cue_label,emitted_charge_minus1,75,1.5667,,,,,1.5667,1.5667,1.2142,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.21)
+0,cue_label,full_beta_process_spec,50,4.7,,2.9375,3.9167,4.7,4.7,3.525,1.6921,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.69
+0,cue_label,helium4_equivalence,20,2.9375,,2.9375,1.9583,1.175,1.5667,1.7625,1.3837,stable,high,lift>1.5 at 4/5 cutoffs; weighted lift=1.38
+0,cue_label,muon_family,75,1.0444,,,,,1.0444,0.7833,1.2181,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.22
+0,cue_label,n_to_p_plus_z_plus1,20,2.9375,,2.9375,1.9583,1.175,0.7833,1.175,1.178,narrow_decisive,medium,"peak lift=2.94 at early cutoffs, decays to 1.27; weighted=1.18"
+0,cue_label,narrative_ejection,30,5.2222,,3.9167,5.2222,3.1333,2.0889,2.35,1.6294,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.63
+0,cue_label,z_plus1_a_unchanged,10,9.4,9.4,4.7,3.1333,1.88,1.88,1.41,1.4665,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.47
+0,cue_label,z_plus1_with_antineutrino,75,1.5667,,,,1.175,1.5667,1.175,1.2514,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.25
+0,cue_type,antineutrino_emitted,20,2.35,,2.35,1.5667,1.88,1.88,1.41,1.0294,narrow_decisive,low,lift>1.5 at 4/5 cutoffs but weighted lift weak (1.03)
+0,cue_type,daughter_a_minus4,75,1.2533,,,,,1.2533,0.94,0.9165,absent,medium,"max lift=1.25, weighted=0.92"
+0,cue_type,daughter_z_minus2,75,2.0889,,,,1.5667,2.0889,1.9583,1.2612,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.26
+0,cue_type,daughter_z_plus1,10,3.9167,3.9167,1.9583,3.9167,3.1333,2.6111,2.35,1.4062,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+0,cue_type,emitted_charge_minus1,75,1.5667,,,,,1.5667,1.5667,1.2142,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.21)
+0,difficulty,hard,20,1.6023,1.0682,1.6023,1.0682,1.0682,0.997,1.0682,1.0495,absent,medium,"max lift=1.60, weighted=1.05"
+0,difficulty,medium,30,1.3056,0.7833,0.9792,1.3056,1.0967,1.0967,1.0967,1.0519,absent,medium,"max lift=1.31, weighted=1.05"
+0,evidence_completeness,combination,10,1.3056,1.3056,1.3056,1.088,1.3056,1.1315,1.1097,1.0024,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.00
+0,evidence_completeness,full,50,1.7625,,,,1.7625,1.175,0.8812,0.9195,absent,medium,"max lift=1.76, weighted=0.92"
+0,inference_steps,2,10,1.8077,1.8077,1.4688,1.2051,1.2202,1.2051,1.175,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+0,inference_steps,3,30,1.2185,0.5222,0.7833,1.2185,0.94,0.9052,1.0444,,absent,medium,"max lift=1.22, weighted=N/A"
+0,inference_steps,5,20,4.1471,2.7647,4.1471,2.7647,2.2118,1.8431,1.6588,,narrow_decisive,low,lift>1.5 at 6/6 cutoffs but weighted lift weak (N/A)
+0,keyword_free,False,50,1.645,1.175,1.175,1.5667,1.645,1.2533,1.0575,,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (N/A)
+0,level,2,10,1.8908,1.8908,1.7557,1.3506,1.3506,1.1885,1.1345,1.0671,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.07)
+0,level,AUX,10,1.6786,1.6786,1.6786,1.3988,1.175,1.0071,1.2589,1.0894,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.09)
+0,physics_concept,beta_decay,10,1.6068,1.6068,1.406,1.2051,1.3256,1.3123,1.2855,1.1219,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.12
+1,correct_answer,beta,10,1.406,1.406,1.3056,1.339,1.3658,1.2587,1.3256,1.1645,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.16
+1,cue_label,antineutrino_emitted,75,1.88,,,,,1.88,1.88,1.391,unstable,medium,max lift=1.88 but drops below 1.0 at top-50
+1,cue_label,charge_plus_z_change,20,2.9375,,2.9375,1.9583,2.35,1.5667,1.7625,1.0096,narrow_decisive,low,lift>1.5 at 5/5 cutoffs but weighted lift weak (1.01)
+1,cue_label,composite_nuclear_object,30,3.9167,,2.9375,3.9167,2.35,1.5667,1.175,1.255,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.25
+1,cue_label,electron_equivalence,50,4.7,,2.9375,3.9167,4.7,3.9167,4.1125,2.0544,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=2.05
+1,cue_label,emitted_charge_minus1,10,3.9167,3.9167,1.9583,1.3056,1.5667,2.0889,2.35,1.4492,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.45
+1,cue_label,emitted_charge_plus2,50,1.5667,,,,1.5667,1.0444,1.5667,1.1219,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.12)
+1,cue_label,emitted_mass_negligible,75,2.35,,,1.9583,1.175,2.35,2.35,1.5567,stable,high,lift>1.5 at 3/4 cutoffs; weighted lift=1.56
+1,cue_label,full_beta_process_spec,30,1.9583,,,1.9583,1.175,0.7833,0.5875,0.9744,absent,medium,"max lift=1.96, weighted=0.97"
+1,cue_label,full_emitted_alpha_spec,100,1.7625,,,,,1.5667,1.7625,1.129,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.13)
+1,cue_label,heavy_nuclear_fragment,10,7.8333,7.8333,3.9167,2.6111,3.1333,3.1333,2.35,1.8509,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.85
+1,cue_label,helium4_equivalence,30,3.9167,,2.9375,3.9167,2.35,1.5667,1.175,1.0658,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 2.25; weighted=1.07"
+1,cue_label,lepton_family,10,11.75,11.75,11.75,9.7917,7.05,5.4833,4.7,2.7345,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.73
+1,cue_label,mass_plus_daughter_a,30,1.9583,,,1.9583,1.175,1.5667,1.175,1.1219,narrow_decisive,low,lift>1.5 at 2/4 cutoffs but weighted lift weak (1.12)
+1,cue_label,muon_family,50,4.7,,,,4.7,3.1333,3.1333,1.6081,stable,high,lift>1.5 at 3/3 cutoffs; weighted lift=1.61
+1,cue_label,n_to_p_plus_z_plus1,50,2.35,,,,2.35,1.5667,1.175,1.0797,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.08)
+1,cue_label,neutron_to_proton,20,2.35,,2.35,1.5667,0.94,1.2533,0.94,1.0097,narrow_decisive,medium,"peak lift=2.35 at early cutoffs, decays to 1.17; weighted=1.01"
+1,cue_label,z_plus1_with_antineutrino,50,4.7,,,3.9167,4.7,3.1333,2.9375,1.739,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.74
+1,cue_type,antineutrino_emitted,75,1.88,,,,,1.88,1.88,1.391,unstable,medium,max lift=1.88 but drops below 1.0 at top-50
+1,cue_type,emitted_charge_minus1,10,3.9167,3.9167,1.9583,1.3056,1.5667,2.0889,2.35,1.4492,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.45
+1,cue_type,emitted_charge_plus2,50,1.5667,,,,1.5667,1.0444,1.5667,1.1219,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.12)
+1,cue_type,emitted_mass_negligible,75,2.35,,,1.9583,1.175,2.35,2.35,1.5567,stable,high,lift>1.5 at 3/4 cutoffs; weighted lift=1.56
+1,difficulty,medium,20,2.35,1.9583,2.35,2.35,1.9583,1.6711,1.5275,1.2906,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.29
+1,evidence_completeness,combination,10,1.9583,1.9583,0.9792,0.8704,0.6528,0.6963,0.7181,1.0206,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+1,inference_steps,3,20,3.1333,2.6111,3.1333,2.7852,2.1933,1.6711,1.41,,narrow_decisive,low,lift>1.5 at 5/6 cutoffs but weighted lift weak (N/A)
+1,inference_steps,4,50,1.88,,,,1.88,1.6711,1.5667,,narrow_decisive,low,lift>1.5 at 3/3 cutoffs but weighted lift weak (N/A)
+1,inference_steps,5,10,2.7647,2.7647,1.3824,0.9216,1.1059,1.4745,1.3824,,narrow_decisive,medium,"peak lift=2.76 at early cutoffs, decays to 1.22; weighted=N/A"
+1,keyword_free,False,20,2.9375,2.35,2.9375,2.7417,2.35,1.7233,1.645,,narrow_decisive,low,lift>1.5 at 6/6 cutoffs but weighted lift weak (N/A)
+1,level,3,20,3.2313,2.35,3.2313,3.1333,2.82,2.1933,1.88,1.3546,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.35
+1,physics_concept,beta_decay,10,1.406,1.406,1.3056,1.339,1.3658,1.2587,1.3256,1.1645,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.16
+2,correct_answer,beta,10,1.6068,1.6068,1.5064,1.339,1.406,1.2051,1.2654,1.0885,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.09)
+2,cue_label,charge_plus_z_change,10,5.875,5.875,2.9375,1.9583,2.35,1.5667,2.35,1.4657,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.47
+2,cue_label,daughter_a_minus4,100,1.88,,,,0.94,1.2533,1.88,1.1544,unstable,medium,max lift=1.88 but drops below 1.0 at top-50
+2,cue_label,daughter_a_unchanged,100,2.7417,,1.9583,2.6111,2.35,1.5667,2.7417,1.5182,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.52
+2,cue_label,daughter_n_minus1,10,11.75,11.75,5.875,3.9167,2.35,1.5667,1.175,1.4656,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.47
+2,cue_label,daughter_z_and_a_alpha,100,1.88,,,1.5667,0.94,1.2533,1.88,1.1184,stable,medium,lift>1.2 at 3/4 cutoffs; weighted lift=1.12
+2,cue_label,daughter_z_minus2,75,2.0889,,,,0.7833,2.0889,1.5667,1.0825,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.08)
+2,cue_label,daughter_z_plus1,10,3.9167,3.9167,3.9167,2.6111,1.5667,1.0444,0.7833,0.947,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 1.50; weighted=0.95"
+2,cue_label,emitted_2protons,30,1.9583,,,1.9583,1.175,0.7833,0.5875,0.7891,absent,medium,"max lift=1.96, weighted=0.79"
+2,cue_label,emitted_charge_minus1,30,2.6111,,,2.6111,1.5667,2.0889,1.9583,1.1124,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.11
+2,cue_label,emitted_charge_plus2,50,1.5667,,,,1.5667,1.0444,0.7833,1.2929,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.29
+2,cue_label,emitted_mass4,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.0674,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 1.50; weighted=1.07"
+2,cue_label,emitted_mass_negligible,10,5.875,5.875,2.9375,1.9583,3.525,2.35,1.7625,1.7813,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.78
+2,cue_label,full_beta_process_spec,50,2.35,,,,2.35,1.5667,1.175,0.9583,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (0.96)
+2,cue_label,heavy_nuclear_fragment,10,7.8333,7.8333,3.9167,2.6111,3.1333,2.0889,1.5667,1.7287,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.73
+2,cue_label,n_to_p_with_antineutrino,50,3.525,,2.9375,1.9583,3.525,2.35,1.7625,1.4995,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.50
+2,cue_label,narrative_ejection,100,1.5667,,,,,1.0444,1.5667,1.0825,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+2,cue_label,neutron_to_proton,100,1.41,,,,,1.2533,1.41,1.1364,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.14
+2,cue_label,not_nuclear_fragment,30,2.6111,,,2.6111,1.5667,1.0444,1.5667,1.1124,stable,medium,lift>1.2 at 3/4 cutoffs; weighted lift=1.11
+2,cue_label,z_plus1_with_antineutrino,10,11.75,11.75,5.875,5.875,3.525,3.9167,2.9375,1.8038,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.80
+2,cue_type,daughter_a_minus4,100,1.88,,,,0.94,1.2533,1.88,1.1544,unstable,medium,max lift=1.88 but drops below 1.0 at top-50
+2,cue_type,daughter_a_unchanged,100,2.7417,,1.9583,2.6111,2.35,1.5667,2.7417,1.5182,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.52
+2,cue_type,daughter_n_minus1,10,11.75,11.75,5.875,3.9167,2.35,1.5667,1.175,1.4656,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.47
+2,cue_type,daughter_z_minus2,75,2.0889,,,,0.7833,2.0889,1.5667,1.0825,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.08)
+2,cue_type,daughter_z_plus1,10,3.9167,3.9167,3.9167,2.6111,1.5667,1.0444,0.7833,0.947,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 1.50; weighted=0.95"
+2,cue_type,emitted_2protons,30,1.9583,,,1.9583,1.175,0.7833,0.5875,0.7891,absent,medium,"max lift=1.96, weighted=0.79"
+2,cue_type,emitted_charge_minus1,30,2.6111,,,2.6111,1.5667,2.0889,1.9583,1.1124,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.11
+2,cue_type,emitted_charge_plus2,50,1.5667,,,,1.5667,1.0444,0.7833,1.2929,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.29
+2,cue_type,emitted_mass4,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.0674,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 1.50; weighted=1.07"
+2,cue_type,emitted_mass_negligible,10,5.875,5.875,2.9375,1.9583,3.525,2.35,1.7625,1.7813,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.78
+2,difficulty,medium,10,1.9583,1.9583,0.9792,0.9139,0.8617,0.9922,0.94,1.0027,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+2,evidence_completeness,single,10,1.2304,1.2304,1.1688,1.1894,1.0335,1.0827,1.0827,1.046,absent,medium,"max lift=1.23, weighted=1.05"
+2,inference_steps,1,30,1.6786,0.6714,1.5107,1.6786,1.5443,1.2533,1.2086,,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (N/A)
+2,inference_steps,3,10,1.5667,1.5667,0.7833,0.6963,0.7311,0.7659,0.7311,,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+2,inference_steps,5,10,2.7647,2.7647,2.7647,1.8431,1.1059,0.7373,0.8294,,narrow_decisive,medium,"peak lift=2.76 at early cutoffs, decays to 1.13; weighted=N/A"
+2,level,1,20,1.9094,1.4688,1.9094,1.8604,1.5863,1.41,1.41,1.1646,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.16
+2,physics_concept,beta_decay,10,1.6068,1.6068,1.5064,1.339,1.406,1.2051,1.2654,1.0885,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.09)
+3,correct_answer,beta,10,1.406,1.406,1.3056,1.1382,1.2051,1.1248,1.1248,1.0115,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.01
+3,cue_label,charge_plus_z_change,20,2.9375,,2.9375,1.9583,1.175,0.7833,1.175,1.1379,narrow_decisive,medium,"peak lift=2.94 at early cutoffs, decays to 1.27; weighted=1.14"
+3,cue_label,composite_nuclear_object,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,0.5875,1.0062,narrow_decisive,medium,"peak lift=5.88 at early cutoffs, decays to 1.13; weighted=1.01"
+3,cue_label,daughter_a_minus4,30,4.7,,2.35,4.7,2.82,2.5067,1.88,1.3383,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.34
+3,cue_label,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,1.5667,1.5667,1.5667,1.1096,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.11
+3,cue_label,daughter_n_minus1,20,2.9375,,2.9375,1.9583,2.35,2.35,1.7625,1.2993,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.30
+3,cue_label,daughter_z_and_a_alpha,30,3.1333,,,3.1333,1.88,1.88,1.88,1.1413,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.14
+3,cue_label,daughter_z_minus2,10,3.9167,3.9167,1.9583,2.6111,2.35,2.0889,1.9583,1.3078,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.31
+3,cue_label,daughter_z_plus1,30,2.6111,,,2.6111,2.35,2.0889,1.9583,1.3134,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.31
+3,cue_label,electron_equivalence,75,3.1333,,,1.9583,2.35,3.1333,2.35,1.2186,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.22
+3,cue_label,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,1.7625,1.1209,stable,medium,lift>1.2 at 4/6 cutoffs; weighted lift=1.12
+3,cue_label,emitted_charge_minus1,10,3.9167,3.9167,3.9167,2.6111,2.35,1.5667,1.9583,1.1436,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.14
+3,cue_label,emitted_mass4,50,1.5667,,,,1.5667,1.0444,1.175,0.8549,absent,medium,"max lift=1.57, weighted=0.85"
+3,cue_label,heavy_nuclear_fragment,30,2.6111,,,2.6111,1.5667,2.0889,1.5667,1.2794,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.28
+3,cue_label,mass_plus_daughter_a,100,1.7625,,,,1.175,0.7833,1.7625,1.2398,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.24
+3,cue_label,muon_family,100,1.5667,,,,,1.0444,1.5667,1.1095,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+3,cue_label,n_to_p_plus_z_plus1,30,1.9583,,,1.9583,1.175,0.7833,0.5875,0.985,absent,medium,"max lift=1.96, weighted=0.98"
+3,cue_label,narrative_ejection,20,3.9167,,3.9167,2.6111,1.5667,2.0889,2.35,1.3586,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.36
+3,cue_label,neutron_to_proton,10,4.7,4.7,2.35,1.5667,1.88,1.2533,0.94,1.0564,narrow_decisive,medium,"peak lift=4.70 at early cutoffs, decays to 1.41; weighted=1.06"
+3,cue_label,not_nuclear_fragment,20,3.9167,,3.9167,2.6111,3.1333,2.0889,1.5667,1.404,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.40
+3,cue_label,z_plus1_a_unchanged,75,1.2533,,,,,1.2533,0.94,0.9171,absent,medium,"max lift=1.25, weighted=0.92"
+3,cue_type,daughter_a_minus4,30,4.7,,2.35,4.7,2.82,2.5067,1.88,1.3383,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.34
+3,cue_type,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,1.5667,1.5667,1.5667,1.1096,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.11
+3,cue_type,daughter_n_minus1,20,2.9375,,2.9375,1.9583,2.35,2.35,1.7625,1.2993,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.30
+3,cue_type,daughter_z_minus2,10,3.9167,3.9167,1.9583,2.6111,2.35,2.0889,1.9583,1.3078,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.31
+3,cue_type,daughter_z_plus1,30,2.6111,,,2.6111,2.35,2.0889,1.9583,1.3134,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.31
+3,cue_type,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,1.7625,1.1209,stable,medium,lift>1.2 at 4/6 cutoffs; weighted lift=1.12
+3,cue_type,emitted_charge_minus1,10,3.9167,3.9167,3.9167,2.6111,2.35,1.5667,1.9583,1.1436,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.14
+3,cue_type,emitted_mass4,50,1.5667,,,,1.5667,1.0444,1.175,0.8549,absent,medium,"max lift=1.57, weighted=0.85"
+3,difficulty,hard,10,2.1364,2.1364,1.0682,0.7121,1.0682,1.1394,1.0682,1.0314,narrow_decisive,medium,"peak lift=2.14 at early cutoffs, decays to 1.00; weighted=1.03"
+3,difficulty,medium,20,1.7625,1.175,1.7625,1.4361,1.2533,1.1489,1.0183,0.9998,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.00
+3,evidence_completeness,single,10,1.2304,1.2304,1.2304,1.2304,1.1565,1.1483,1.1073,1.0441,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.04
+3,inference_steps,2,30,1.2051,0.9038,0.9038,1.2051,1.1298,1.0545,1.0394,,absent,medium,"max lift=1.21, weighted=N/A"
+3,inference_steps,3,20,1.3056,0.5222,1.3056,1.2185,1.1489,1.1141,0.9922,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+3,inference_steps,5,10,5.5294,5.5294,2.7647,1.8431,2.2118,1.8431,1.6588,,narrow_decisive,medium,"peak lift=5.53 at early cutoffs, decays to 1.89; weighted=N/A"
+3,level,1,75,1.2925,1.175,1.175,1.2729,1.2337,1.2925,1.2631,1.0738,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.07
+3,level,AUX,10,3.3571,3.3571,2.5179,1.6786,1.6786,1.4548,1.2589,0.9838,narrow_decisive,medium,"peak lift=3.36 at early cutoffs, decays to 1.52; weighted=0.98"
+3,physics_concept,beta_decay,10,1.406,1.406,1.3056,1.1382,1.2051,1.1248,1.1248,1.0115,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.01
+4,correct_answer,alpha,75,1.6463,1.5932,1.4936,1.4605,1.5534,1.6463,1.5932,1.1783,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.18
+4,cue_label,charge_plus_mass,50,3.76,,2.35,3.1333,3.76,3.1333,3.29,1.5933,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.59
+4,cue_label,composite_nuclear_object,50,2.35,,,1.9583,2.35,2.35,1.7625,1.352,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.35
+4,cue_label,composition_2p2n,10,4.7,4.7,2.35,3.1333,1.88,1.2533,2.82,1.4572,stable,high,lift>1.5 at 5/6 cutoffs; weighted lift=1.46
+4,cue_label,composition_plus_daughter,20,2.9375,,2.9375,1.9583,2.35,1.5667,1.7625,1.3148,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+4,cue_label,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.5682,absent,medium,"max lift=1.31, weighted=0.57"
+4,cue_label,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,3.525,3.1333,2.35,1.3652,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.37
+4,cue_label,emitted_2protons,100,1.7625,,,,,1.5667,1.7625,1.2811,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.28)
+4,cue_label,emitted_charge_plus2,20,5.875,,5.875,3.9167,3.1333,2.0889,1.9583,1.3142,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+4,cue_label,emitted_mass4,10,3.9167,3.9167,3.9167,2.6111,1.5667,2.0889,1.9583,1.4134,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+4,cue_label,full_emitted_alpha_spec,10,17.625,17.625,8.8125,7.8333,5.875,3.9167,2.9375,1.6957,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.70
+4,cue_label,helium4_equivalence,75,1.5667,,,,,1.5667,1.175,1.2545,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+4,cue_label,neutron_to_proton,30,4.7,,2.35,4.7,3.76,2.5067,2.82,1.3431,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.34
+4,cue_type,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.5682,absent,medium,"max lift=1.31, weighted=0.57"
+4,cue_type,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,3.525,3.1333,2.35,1.3652,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.37
+4,cue_type,emitted_2protons,100,1.7625,,,,,1.5667,1.7625,1.2811,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.28)
+4,cue_type,emitted_charge_plus2,20,5.875,,5.875,3.9167,3.1333,2.0889,1.9583,1.3142,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+4,cue_type,emitted_mass4,10,3.9167,3.9167,3.9167,2.6111,1.5667,2.0889,1.9583,1.4134,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+4,difficulty,easy,10,1.5359,1.5359,1.4592,1.3824,1.2288,1.1468,1.152,1.0321,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.03
+4,evidence_completeness,combination,30,2.1759,1.9583,1.9583,2.1759,1.9583,1.7407,1.6319,1.1504,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.15
+4,inference_steps,1,10,3.0214,3.0214,2.1821,1.5667,1.41,1.3876,1.2086,,narrow_decisive,medium,"peak lift=3.02 at early cutoffs, decays to 1.39; weighted=N/A"
+4,inference_steps,5,20,1.3824,,1.3824,0.9216,0.5529,0.7373,0.8294,,absent,medium,"max lift=1.38, weighted=N/A"
+4,keyword_free,False,10,2.35,2.35,1.175,1.175,1.175,1.7233,1.41,,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (N/A)
+4,level,1,10,1.7625,1.7625,1.4688,1.0771,0.94,0.9792,0.9106,1.0028,unstable,medium,max lift=1.76 but drops below 1.0 at top-50
+4,level,2,30,1.5307,1.0805,1.2155,1.5307,1.3506,1.1885,1.2695,1.0373,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.04
+4,physics_concept,alpha_decay,75,1.6463,1.5932,1.4936,1.4605,1.5534,1.6463,1.5932,1.1783,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.18
+5,cue_label,baryon_number_4,20,7.8333,,7.8333,5.2222,4.7,4.1778,3.1333,1.7887,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.79
+5,cue_label,charge_plus_mass,100,1.41,,,,,0.6267,1.41,0.9756,absent,medium,"max lift=1.41, weighted=0.98"
+5,cue_label,composite_nuclear_object,10,11.75,11.75,5.875,3.9167,2.35,1.5667,2.35,2.1344,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.13
+5,cue_label,composition_plus_daughter,30,1.9583,,,1.9583,1.175,0.7833,0.5875,1.0104,absent,medium,"max lift=1.96, weighted=1.01"
+5,cue_label,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,0.7833,1.0444,0.7833,0.9524,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+5,cue_label,daughter_z_and_a_alpha,100,1.41,,,,0.94,0.6267,1.41,1.2684,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.27
+5,cue_label,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.5343,absent,medium,"max lift=1.31, weighted=0.53"
+5,cue_label,electron_equivalence,100,1.7625,,,,1.175,1.5667,1.7625,1.0715,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.07)
+5,cue_label,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,0.5875,1.2892,stable,medium,lift>1.2 at 3/6 cutoffs; weighted lift=1.29
+5,cue_label,emitted_2protons,20,2.9375,,2.9375,1.9583,1.175,0.7833,0.5875,0.9931,narrow_decisive,medium,"peak lift=2.94 at early cutoffs, decays to 1.13; weighted=0.99"
+5,cue_label,emitted_charge_minus1,30,5.2222,3.9167,1.9583,5.2222,3.1333,2.0889,2.35,1.6145,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.61
+5,cue_label,emitted_charge_plus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.9292,absent,medium,"max lift=1.31, weighted=0.93"
+5,cue_label,emitted_mass4,100,1.9583,,,,1.5667,1.0444,1.9583,1.2545,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.25)
+5,cue_label,heavy_nuclear_fragment,10,7.8333,7.8333,3.9167,2.6111,1.5667,1.0444,1.5667,1.1383,stable,medium,lift>1.2 at 5/6 cutoffs; weighted lift=1.14
+5,cue_label,lepton_family,50,2.35,,,,2.35,1.5667,1.175,0.9582,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (0.96)
+5,cue_label,mass_plus_daughter_a,10,5.875,5.875,2.9375,1.9583,3.525,3.1333,2.35,1.5506,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.55
+5,cue_label,muon_family,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.1384,stable,medium,lift>1.2 at 3/5 cutoffs; weighted lift=1.14
+5,cue_label,narrative_ejection,20,3.9167,,3.9167,2.6111,1.5667,3.1333,2.35,1.1848,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.18
+5,cue_label,neutron_to_proton,10,4.7,4.7,4.7,4.7,3.76,3.76,2.82,1.4496,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.45
+5,cue_label,not_nuclear_fragment,10,7.8333,7.8333,3.9167,2.6111,1.5667,1.0444,0.7833,1.0687,narrow_decisive,medium,"peak lift=7.83 at early cutoffs, decays to 1.50; weighted=1.07"
+5,cue_type,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,0.7833,1.0444,0.7833,0.9524,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+5,cue_type,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.5343,absent,medium,"max lift=1.31, weighted=0.53"
+5,cue_type,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,0.5875,1.2892,stable,medium,lift>1.2 at 3/6 cutoffs; weighted lift=1.29
+5,cue_type,emitted_2protons,20,2.9375,,2.9375,1.9583,1.175,0.7833,0.5875,0.9931,narrow_decisive,medium,"peak lift=2.94 at early cutoffs, decays to 1.13; weighted=0.99"
+5,cue_type,emitted_charge_minus1,30,5.2222,3.9167,1.9583,5.2222,3.1333,2.0889,2.35,1.6145,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.61
+5,cue_type,emitted_charge_plus2,30,1.3056,,,1.3056,0.7833,0.5222,0.3917,0.9292,absent,medium,"max lift=1.31, weighted=0.93"
+5,cue_type,emitted_mass4,100,1.9583,,,,1.5667,1.0444,1.9583,1.2545,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.25)
+5,difficulty,hard,20,1.6023,,1.6023,1.4242,1.4955,1.4242,1.2818,1.0533,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.05
+5,difficulty,medium,10,1.9583,1.9583,1.5667,1.3056,1.175,1.3578,1.3317,1.0872,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.09)
+5,evidence_completeness,full,20,1.4688,,1.4688,0.9792,1.175,1.175,1.175,1.0366,absent,medium,"max lift=1.47, weighted=1.04"
+5,inference_steps,3,10,2.0889,2.0889,1.5667,1.2185,1.1489,1.4622,1.4622,,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (N/A)
+5,inference_steps,4,20,4.7,,4.7,3.1333,2.5067,2.0889,1.5667,,narrow_decisive,medium,"peak lift=4.70 at early cutoffs, decays to 2.32; weighted=N/A"
+5,inference_steps,5,100,1.9353,,,0.9216,1.6588,1.8431,1.9353,,narrow_decisive,low,lift>1.5 at 3/4 cutoffs but weighted lift weak (N/A)
+5,level,3,20,2.6438,2.35,2.6438,1.9583,1.88,1.4883,1.4688,1.2309,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.23
+5,level,AUX,75,1.7905,0.8393,0.8393,1.119,1.175,1.7905,1.5946,1.1288,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.13)
+6,cue_label,baryon_number_4,100,1.5667,,,,,1.0444,1.5667,0.9782,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+6,cue_label,charge_plus_mass,75,1.88,,,,0.94,1.88,1.41,1.2735,unstable,medium,max lift=1.88 but drops below 1.0 at top-50
+6,cue_label,composition_2p2n,10,14.1,14.1,9.4,6.2667,4.7,3.76,2.82,2.0376,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.04
+6,cue_label,composition_plus_daughter,30,3.9167,,2.9375,3.9167,2.35,1.5667,2.9375,1.578,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.58
+6,cue_label,electron_equivalence,75,1.5667,,,,1.175,1.5667,1.175,1.1386,absent,medium,"max lift=1.57, weighted=1.14"
+6,cue_label,emitted_2neutrons,100,2.35,,,,1.175,1.5667,2.35,1.2458,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.25)
+6,cue_label,emitted_2protons,50,2.35,,,,2.35,2.35,1.7625,1.2735,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.27
+6,cue_label,emitted_charge_plus2,75,1.5667,,,,0.7833,1.5667,1.175,1.2273,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+6,cue_label,full_emitted_alpha_spec,30,7.8333,5.875,2.9375,7.8333,4.7,3.1333,2.35,1.803,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.80
+6,cue_label,heavy_nuclear_fragment,50,1.5667,,,,1.5667,1.0444,0.7833,0.7614,absent,medium,"max lift=1.57, weighted=0.76"
+6,cue_label,lepton_family,50,2.35,,,,2.35,1.5667,1.7625,1.4534,stable,high,lift>1.5 at 3/3 cutoffs; weighted lift=1.45
+6,cue_label,mass_plus_daughter_a,30,3.9167,,2.9375,3.9167,2.35,1.5667,1.175,1.1039,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.10
+6,cue_label,muon_family,50,1.5667,,,,1.5667,1.0444,0.7833,0.729,absent,medium,"max lift=1.57, weighted=0.73"
+6,cue_label,n_to_p_plus_z_plus1,20,2.9375,,2.9375,1.9583,2.35,2.35,2.35,1.7199,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.72
+6,cue_label,n_to_p_with_antineutrino,30,3.9167,,2.9375,3.9167,2.35,1.5667,1.175,1.2977,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.30
+6,cue_label,neutron_to_proton,10,9.4,9.4,7.05,6.2667,3.76,3.1333,2.82,1.5918,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.59
+6,cue_label,not_nuclear_fragment,50,3.1333,,,2.6111,3.1333,2.0889,1.5667,1.0336,narrow_decisive,low,lift>1.5 at 4/4 cutoffs but weighted lift weak (1.03)
+6,cue_type,emitted_2neutrons,100,2.35,,,,1.175,1.5667,2.35,1.2458,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.25)
+6,cue_type,emitted_2protons,50,2.35,,,,2.35,2.35,1.7625,1.2735,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.27
+6,cue_type,emitted_charge_plus2,75,1.5667,,,,0.7833,1.5667,1.175,1.2273,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+6,difficulty,easy,20,1.3056,1.2288,1.3056,1.28,1.1673,1.1264,1.0598,1.0213,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.02
+6,evidence_completeness,combination,30,3.0463,1.9583,2.6111,3.0463,2.2194,2.0019,1.8931,1.3988,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.40
+6,evidence_completeness,full,10,2.9375,2.9375,2.9375,1.9583,2.9375,2.35,2.35,1.4673,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.47
+6,inference_steps,2,20,1.5817,1.3558,1.5817,1.4311,1.1298,1.0244,0.9942,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+6,inference_steps,4,100,1.5667,,,,0.6267,1.2533,1.5667,,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+6,inference_steps,5,10,2.7647,2.7647,1.3824,1.8431,1.1059,1.1059,1.3824,,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (N/A)
+6,keyword_free,False,75,1.5667,1.175,1.175,0.7833,0.705,1.5667,1.41,,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+6,level,2,20,2.296,2.1609,2.296,2.251,1.6747,1.5126,1.4046,1.1896,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.19
+6,level,3,50,1.5275,0.5875,0.5875,0.5875,1.5275,1.2533,1.2925,1.0704,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.07
+7,correct_answer,beta,30,1.8746,1.8077,1.8077,1.8746,1.8077,1.5533,1.4462,1.1802,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.18
+7,cue_label,charge_plus_a_unchanged,50,1.5667,,,,1.5667,1.0444,0.7833,1.0585,absent,medium,"max lift=1.57, weighted=1.06"
+7,cue_label,charge_plus_z_change,50,2.35,,,1.9583,2.35,1.5667,1.175,1.0095,narrow_decisive,low,lift>1.5 at 3/4 cutoffs but weighted lift weak (1.01)
+7,cue_label,daughter_n_minus1,10,5.875,5.875,2.9375,1.9583,2.35,3.1333,2.9375,1.4286,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.43
+7,cue_label,daughter_z_minus2,75,1.5667,,,,0.7833,1.5667,1.5667,1.0714,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.07)
+7,cue_label,daughter_z_plus1,30,2.6111,,1.9583,2.6111,1.5667,1.0444,1.5667,1.1716,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.17
+7,cue_label,electron_equivalence,10,5.875,5.875,2.9375,1.9583,1.175,1.5667,1.175,1.0475,narrow_decisive,medium,"peak lift=5.88 at early cutoffs, decays to 1.47; weighted=1.05"
+7,cue_label,emitted_2neutrons,100,1.7625,,,,1.175,1.5667,1.7625,1.2005,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.20)
+7,cue_label,full_beta_process_spec,10,5.875,5.875,5.875,3.9167,3.525,3.1333,2.35,1.4771,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.48
+7,cue_label,n_to_p_plus_z_plus1,30,5.875,,,5.875,3.525,3.1333,2.9375,1.4798,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.48
+7,cue_label,n_to_p_with_antineutrino,30,1.9583,,,1.9583,1.175,1.5667,1.175,1.2076,narrow_decisive,low,lift>1.5 at 2/4 cutoffs but weighted lift weak (1.21)
+7,cue_label,neutron_to_proton,50,2.82,,2.35,1.5667,2.82,1.88,1.88,1.3076,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+7,cue_label,not_nuclear_fragment,100,2.35,,,,1.5667,2.0889,2.35,1.1904,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.19
+7,cue_label,z_plus1_a_unchanged,30,6.2667,4.7,4.7,6.2667,5.64,3.76,2.82,1.4568,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.46
+7,cue_label,z_plus1_with_antineutrino,10,5.875,5.875,2.9375,3.9167,5.875,4.7,3.525,1.517,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.52
+7,cue_type,daughter_n_minus1,10,5.875,5.875,2.9375,1.9583,2.35,3.1333,2.9375,1.4286,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.43
+7,cue_type,daughter_z_minus2,75,1.5667,,,,0.7833,1.5667,1.5667,1.0714,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.07)
+7,cue_type,daughter_z_plus1,30,2.6111,,1.9583,2.6111,1.5667,1.0444,1.5667,1.1716,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.17
+7,cue_type,emitted_2neutrons,100,1.7625,,,,1.175,1.5667,1.7625,1.2005,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.20)
+7,difficulty,hard,10,2.1364,2.1364,1.0682,0.7121,0.4273,0.2848,0.2136,0.9273,narrow_decisive,medium,"peak lift=2.14 at early cutoffs, decays to 0.41; weighted=0.93"
+7,difficulty,medium,10,1.5667,1.5667,0.9792,0.7833,1.0967,1.0444,1.0967,1.0037,absent,medium,"max lift=1.57, weighted=1.00"
+7,evidence_completeness,combination,10,1.3056,1.3056,1.3056,1.3056,1.0444,1.2185,0.9792,1.021,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.02
+7,inference_steps,2,30,1.5064,1.1298,1.1298,1.5064,1.4913,1.3558,1.2428,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+7,inference_steps,5,10,2.7647,2.7647,1.3824,0.9216,0.5529,0.3686,0.2765,,narrow_decisive,medium,"peak lift=2.76 at early cutoffs, decays to 0.53; weighted=N/A"
+7,keyword_free,False,10,2.35,2.35,2.35,1.5667,0.94,1.0967,0.94,,narrow_decisive,medium,"peak lift=2.35 at early cutoffs, decays to 1.14; weighted=N/A"
+7,level,2,30,1.5307,1.0805,1.0805,1.5307,1.5126,1.3686,1.1345,1.0228,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.02)
+7,level,AUX,10,2.5179,2.5179,1.6786,1.119,1.0071,0.7833,1.0071,1.0929,narrow_decisive,medium,"peak lift=2.52 at early cutoffs, decays to 0.98; weighted=1.09"
+7,physics_concept,beta_decay,30,1.8746,1.8077,1.8077,1.8746,1.8077,1.5533,1.4462,1.1802,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.18
+8,correct_answer,beta,10,2.0085,2.0085,1.8077,1.7407,1.5265,1.4194,1.3056,1.0657,narrow_decisive,low,lift>1.5 at 4/6 cutoffs but weighted lift weak (1.07)
+8,cue_label,antineutrino_emitted,10,4.7,4.7,2.35,3.1333,2.82,3.1333,2.35,1.4066,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+8,cue_label,charge_plus_a_unchanged,100,2.35,,,,,,2.35,1.155,unstable,medium,max lift=2.35 but drops below 1.0 at top-50
+8,cue_label,daughter_a_minus4,100,1.41,,,,,1.2533,1.41,1.2351,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.24
+8,cue_label,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,0.7833,1.0444,0.7833,0.9206,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+8,cue_label,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,1.0444,0.7833,1.1293,absent,medium,"max lift=1.31, weighted=1.13"
+8,cue_label,electron_equivalence,10,5.875,5.875,2.9375,1.9583,1.175,1.5667,1.175,1.1493,stable,medium,lift>1.2 at 4/6 cutoffs; weighted lift=1.15
+8,cue_label,emitted_2protons,100,2.35,,,,,1.5667,2.35,1.1965,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.20)
+8,cue_label,emitted_charge_minus1,20,9.7917,7.8333,9.7917,9.1389,6.2667,5.2222,3.9167,1.7697,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.77
+8,cue_label,emitted_charge_plus2,20,1.9583,,1.9583,1.3056,1.5667,1.0444,1.5667,1.2408,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.24
+8,cue_label,emitted_mass4,100,1.9583,,,,0.7833,1.0444,1.9583,1.1693,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+8,cue_label,emitted_mass_negligible,10,5.875,5.875,2.9375,3.9167,5.875,4.7,3.525,1.6296,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.63
+8,cue_label,heavy_nuclear_fragment,50,3.1333,,,,3.1333,3.1333,2.35,1.1807,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.18
+8,cue_label,n_to_p_plus_z_plus1,75,2.35,,,,1.175,2.35,2.35,1.2114,narrow_decisive,low,lift>1.5 at 2/3 cutoffs but weighted lift weak (1.21)
+8,cue_label,n_to_p_with_antineutrino,10,5.875,5.875,2.9375,1.9583,2.35,1.5667,1.7625,1.2351,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.24
+8,cue_label,narrative_ejection,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.2122,stable,medium,lift>1.2 at 3/5 cutoffs; weighted lift=1.21
+8,cue_label,neutron_to_proton,10,9.4,9.4,7.05,7.8333,5.64,5.0133,4.23,1.7411,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.74
+8,cue_label,not_nuclear_fragment,50,1.5667,,,,1.5667,1.0444,0.7833,1.0693,absent,medium,"max lift=1.57, weighted=1.07"
+8,cue_type,antineutrino_emitted,10,4.7,4.7,2.35,3.1333,2.82,3.1333,2.35,1.4066,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+8,cue_type,daughter_a_minus4,100,1.41,,,,,1.2533,1.41,1.2351,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.24
+8,cue_type,daughter_a_unchanged,20,1.9583,,1.9583,1.3056,0.7833,1.0444,0.7833,0.9206,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+8,cue_type,daughter_z_minus2,30,1.3056,,,1.3056,0.7833,1.0444,0.7833,1.1293,absent,medium,"max lift=1.31, weighted=1.13"
+8,cue_type,emitted_2protons,100,2.35,,,,,1.5667,2.35,1.1965,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.20)
+8,cue_type,emitted_charge_minus1,20,9.7917,7.8333,9.7917,9.1389,6.2667,5.2222,3.9167,1.7697,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.77
+8,cue_type,emitted_charge_plus2,20,1.9583,,1.9583,1.3056,1.5667,1.0444,1.5667,1.2408,stable,medium,lift>1.2 at 4/5 cutoffs; weighted lift=1.24
+8,cue_type,emitted_mass4,100,1.9583,,,,0.7833,1.0444,1.9583,1.1693,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+8,cue_type,emitted_mass_negligible,10,5.875,5.875,2.9375,3.9167,5.875,4.7,3.525,1.6296,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.63
+8,difficulty,easy,20,1.2288,1.0752,1.2288,1.2288,1.2288,1.1878,1.1366,1.0495,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.05
+8,evidence_completeness,combination,10,1.3056,1.3056,1.3056,1.088,1.0444,0.7833,0.7833,0.9911,narrow_decisive,low,moderate lift at limited cutoffs; weighted=0.99
+8,inference_steps,1,20,1.5107,1.0071,1.5107,1.4548,1.4771,1.4324,1.3093,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+8,inference_steps,2,10,1.3558,1.3558,1.0168,1.1298,1.0394,1.0545,1.0846,,absent,medium,"max lift=1.36, weighted=N/A"
+8,level,1,75,1.6058,1.175,1.4688,1.5667,1.5275,1.6058,1.4394,1.0946,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (1.09)
+8,physics_concept,beta_decay,10,2.0085,2.0085,1.8077,1.7407,1.5265,1.4194,1.3056,1.0657,narrow_decisive,low,lift>1.5 at 4/6 cutoffs but weighted lift weak (1.07)
+9,correct_answer,beta,10,2.0085,2.0085,2.0085,1.7407,1.7274,1.6068,1.5466,1.2465,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.25
+9,cue_label,antineutrino_emitted,100,1.41,,,,,0.6267,1.41,1.1789,absent,medium,"max lift=1.41, weighted=1.18"
+9,cue_label,charge_plus_a_unchanged,10,7.8333,7.8333,3.9167,2.6111,1.5667,3.1333,2.35,1.412,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.41
+9,cue_label,charge_plus_z_change,50,2.35,,,1.9583,2.35,2.35,1.7625,1.2327,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.23
+9,cue_label,composite_nuclear_object,30,1.9583,,,1.9583,1.175,0.7833,0.5875,1.0954,absent,medium,"max lift=1.96, weighted=1.10"
+9,cue_label,daughter_n_minus1,50,2.35,,,1.9583,2.35,2.35,2.35,1.5353,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.54
+9,cue_label,daughter_z_plus1,30,2.6111,,1.9583,2.6111,2.35,1.5667,1.5667,1.3111,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+9,cue_label,helium4_equivalence,75,3.1333,,,,2.35,3.1333,2.35,1.2383,stable,medium,lift>1.2 at 3/3 cutoffs; weighted lift=1.24
+9,cue_label,n_to_p_plus_z_plus1,50,4.7,,2.9375,3.9167,4.7,3.9167,2.9375,1.7875,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.79
+9,cue_label,n_to_p_with_antineutrino,10,5.875,5.875,5.875,5.875,3.525,2.35,2.9375,1.6809,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.68
+9,cue_label,narrative_ejection,100,1.5667,,,,,,1.5667,1.1131,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+9,cue_label,neutron_to_proton,10,18.8,18.8,14.1,9.4,7.52,5.64,4.23,2.7254,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.73
+9,cue_label,z_plus1_a_unchanged,20,2.35,,2.35,1.5667,1.88,1.2533,1.41,1.2776,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.28
+9,cue_label,z_plus1_with_antineutrino,75,2.35,,,1.9583,1.175,2.35,1.7625,1.1375,stable,medium,lift>1.2 at 3/4 cutoffs; weighted lift=1.14
+9,cue_type,antineutrino_emitted,100,1.41,,,,,0.6267,1.41,1.1789,absent,medium,"max lift=1.41, weighted=1.18"
+9,cue_type,daughter_n_minus1,50,2.35,,,1.9583,2.35,2.35,2.35,1.5353,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.54
+9,cue_type,daughter_z_plus1,30,2.6111,,1.9583,2.6111,2.35,1.5667,1.5667,1.3111,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.31
+9,difficulty,easy,10,1.5359,1.5359,1.5359,1.2288,1.1059,1.0649,0.9676,1.018,narrow_decisive,low,lift>1.5 at 2/6 cutoffs but weighted lift weak (1.02)
+9,evidence_completeness,combination,10,1.9583,1.9583,1.9583,1.7407,1.3056,1.5667,1.3708,1.0584,narrow_decisive,low,lift>1.5 at 4/6 cutoffs but weighted lift weak (1.06)
+9,inference_steps,2,10,1.8077,1.8077,1.8077,1.5817,1.4913,1.3558,1.1976,,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (N/A)
+9,inference_steps,4,100,1.2533,,,1.0444,0.6267,0.4178,1.2533,,absent,medium,"max lift=1.25, weighted=N/A"
+9,keyword_free,False,10,2.35,2.35,1.175,1.175,1.41,1.7233,1.645,,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (N/A)
+9,level,2,10,2.1609,2.1609,2.0259,1.8008,1.5126,1.5487,1.3236,1.1217,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.12
+9,physics_concept,beta_decay,10,2.0085,2.0085,2.0085,1.7407,1.7274,1.6068,1.5466,1.2465,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.25
+10,correct_answer,beta,10,2.0085,2.0085,2.0085,1.9416,1.888,1.8211,1.6068,1.304,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.30
+10,cue_label,charge_plus_a_unchanged,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,0.927,narrow_decisive,medium,"peak lift=3.92 at early cutoffs, decays to 1.50; weighted=0.93"
+10,cue_label,daughter_a_unchanged,20,5.875,3.9167,5.875,3.9167,3.9167,3.1333,2.7417,1.8178,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.82
+10,cue_label,daughter_n_minus1,100,2.9375,,,,,1.5667,2.9375,1.3904,unstable,medium,max lift=2.94 but drops below 1.0 at top-50
+10,cue_label,daughter_z_plus1,50,3.9167,,1.9583,2.6111,3.9167,3.1333,2.7417,1.6914,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.69
+10,cue_label,electron_equivalence,10,5.875,5.875,2.9375,1.9583,1.175,0.7833,0.5875,1.1331,stable,medium,lift>1.2 at 3/6 cutoffs; weighted lift=1.13
+10,cue_label,emitted_charge_minus1,30,1.3056,,,1.3056,0.7833,1.0444,1.175,0.9992,absent,medium,"max lift=1.31, weighted=1.00"
+10,cue_label,lepton_family,100,1.7625,,,,,1.5667,1.7625,1.0925,narrow_decisive,low,lift>1.5 at 2/2 cutoffs but weighted lift weak (1.09)
+10,cue_label,n_to_p_with_antineutrino,75,1.5667,,,,1.175,1.5667,1.175,1.2054,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.21
+10,cue_label,neutron_to_proton,10,4.7,4.7,2.35,1.5667,3.76,2.5067,2.35,1.6794,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.68
+10,cue_label,not_nuclear_fragment,10,7.8333,7.8333,7.8333,5.2222,3.1333,4.1778,3.9167,2.2993,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.30
+10,cue_label,z_plus1_a_unchanged,50,3.76,,,3.1333,3.76,2.5067,2.82,1.5024,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.50
+10,cue_label,z_plus1_with_antineutrino,30,9.7917,5.875,8.8125,9.7917,7.05,4.7,3.525,2.4468,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=2.45
+10,cue_type,daughter_a_unchanged,20,5.875,3.9167,5.875,3.9167,3.9167,3.1333,2.7417,1.8178,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.82
+10,cue_type,daughter_n_minus1,100,2.9375,,,,,1.5667,2.9375,1.3904,unstable,medium,max lift=2.94 but drops below 1.0 at top-50
+10,cue_type,daughter_z_plus1,50,3.9167,,1.9583,2.6111,3.9167,3.1333,2.7417,1.6914,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.69
+10,cue_type,emitted_charge_minus1,30,1.3056,,,1.3056,0.7833,1.0444,1.175,0.9992,absent,medium,"max lift=1.31, weighted=1.00"
+10,difficulty,medium,10,1.5667,1.5667,1.3708,1.4361,1.0183,1.3056,1.2533,1.0618,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.06
+10,evidence_completeness,combination,10,1.3056,1.3056,0.6528,0.4352,0.7833,1.1315,0.9792,0.9977,absent,medium,"max lift=1.31, weighted=1.00"
+10,inference_steps,2,50,1.3106,1.1298,1.0168,1.1298,1.3106,1.1449,1.0846,,absent,medium,"max lift=1.31, weighted=N/A"
+10,inference_steps,5,10,2.7647,2.7647,2.7647,1.8431,2.2118,1.4745,1.1059,,narrow_decisive,medium,"peak lift=2.76 at early cutoffs, decays to 1.66; weighted=N/A"
+10,level,AUX,10,1.6786,1.6786,1.2589,1.119,1.175,1.0071,0.7554,0.948,narrow_decisive,low,moderate lift at limited cutoffs; weighted=0.95
+10,physics_concept,beta_decay,10,2.0085,2.0085,2.0085,1.9416,1.888,1.8211,1.6068,1.304,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.30
+11,correct_answer,alpha,10,1.9915,1.9915,1.6928,1.5932,1.2347,1.1949,1.175,1.0674,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (1.07)
+11,cue_label,baryon_number_4,30,5.2222,,,5.2222,3.1333,3.1333,2.35,1.4262,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.43
+11,cue_label,composite_nuclear_object,10,17.625,17.625,11.75,9.7917,7.05,4.7,4.1125,1.7899,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.79
+11,cue_label,composition_2p2n,30,3.1333,,,3.1333,2.82,1.88,1.88,1.162,stable,medium,lift>1.2 at 4/4 cutoffs; weighted lift=1.16
+11,cue_label,daughter_a_unchanged,50,3.1333,,1.9583,1.3056,3.1333,2.0889,2.35,1.2794,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.28
+11,cue_label,daughter_z_plus1,100,1.5667,,,,,1.0444,1.5667,1.1119,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+11,cue_label,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,1.5667,1.175,1.1355,stable,medium,lift>1.2 at 4/6 cutoffs; weighted lift=1.14
+11,cue_label,emitted_2protons,20,2.9375,,2.9375,1.9583,2.35,1.5667,1.7625,1.2634,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.26
+11,cue_label,emitted_charge_minus1,75,1.5667,,,,0.7833,1.5667,1.175,1.1278,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+11,cue_label,emitted_charge_plus2,100,1.9583,,,,,1.0444,1.9583,1.1645,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+11,cue_label,emitted_mass4,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.2028,stable,medium,lift>1.2 at 3/5 cutoffs; weighted lift=1.20
+11,cue_label,heavy_nuclear_fragment,10,15.6667,15.6667,7.8333,7.8333,6.2667,5.2222,3.9167,1.6527,stable,high,lift>1.5 at 6/6 cutoffs; weighted lift=1.65
+11,cue_label,helium4_equivalence,100,1.7625,,,,,,1.7625,1.1522,unstable,medium,max lift=1.76 but drops below 1.0 at top-50
+11,cue_label,lepton_family,50,4.7,,2.9375,3.9167,4.7,4.7,3.525,1.4787,stable,high,lift>1.5 at 5/5 cutoffs; weighted lift=1.48
+11,cue_label,mass_plus_daughter_a,10,5.875,5.875,2.9375,1.9583,1.175,2.35,1.7625,1.1162,stable,medium,lift>1.2 at 5/6 cutoffs; weighted lift=1.12
+11,cue_label,muon_family,75,2.0889,,,,1.5667,2.0889,1.5667,1.0703,narrow_decisive,low,lift>1.5 at 3/3 cutoffs but weighted lift weak (1.07)
+11,cue_label,not_nuclear_fragment,50,4.7,,,2.6111,4.7,3.1333,2.35,1.407,stable,high,lift>1.5 at 4/4 cutoffs; weighted lift=1.41
+11,cue_type,daughter_a_unchanged,50,3.1333,,1.9583,1.3056,3.1333,2.0889,2.35,1.2794,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.28
+11,cue_type,daughter_z_plus1,100,1.5667,,,,,1.0444,1.5667,1.1119,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+11,cue_type,emitted_2neutrons,10,5.875,5.875,2.9375,1.9583,1.175,1.5667,1.175,1.1355,stable,medium,lift>1.2 at 4/6 cutoffs; weighted lift=1.14
+11,cue_type,emitted_2protons,20,2.9375,,2.9375,1.9583,2.35,1.5667,1.7625,1.2634,stable,medium,lift>1.2 at 5/5 cutoffs; weighted lift=1.26
+11,cue_type,emitted_charge_minus1,75,1.5667,,,,0.7833,1.5667,1.175,1.1278,unstable,medium,max lift=1.57 but drops below 1.0 at top-50
+11,cue_type,emitted_charge_plus2,100,1.9583,,,,,1.0444,1.9583,1.1645,unstable,medium,max lift=1.96 but drops below 1.0 at top-50
+11,cue_type,emitted_mass4,20,3.9167,,3.9167,2.6111,1.5667,1.0444,0.7833,1.2028,stable,medium,lift>1.2 at 3/5 cutoffs; weighted lift=1.20
+11,difficulty,hard,75,1.5667,,,1.0682,1.2818,1.5667,1.3886,1.0576,narrow_decisive,low,moderate lift at limited cutoffs; weighted=1.06
+11,difficulty,medium,10,3.1333,3.1333,2.1542,1.9583,1.7233,1.41,1.2925,1.084,narrow_decisive,low,lift>1.5 at 4/6 cutoffs but weighted lift weak (1.08)
+11,evidence_completeness,single,10,1.2304,1.2304,1.1073,1.1073,1.0827,1.0991,1.095,1.0526,absent,medium,"max lift=1.23, weighted=1.05"
+11,inference_steps,3,10,3.6556,3.6556,2.6111,2.437,2.0889,1.7407,1.6189,,narrow_decisive,low,lift>1.5 at 6/6 cutoffs but weighted lift weak (N/A)
+11,inference_steps,4,30,3.1333,,,3.1333,2.5067,2.5067,1.88,,narrow_decisive,low,lift>1.5 at 4/4 cutoffs but weighted lift weak (N/A)
+11,inference_steps,5,100,1.6588,,,,1.1059,1.4745,1.6588,,narrow_decisive,low,moderate lift at limited cutoffs; weighted=N/A
+11,level,3,10,4.1125,4.1125,2.6438,2.9375,2.7025,2.35,1.9975,1.2068,stable,medium,lift>1.2 at 6/6 cutoffs; weighted lift=1.21
+11,physics_concept,alpha_decay,10,1.9915,1.9915,1.6928,1.5932,1.2347,1.1949,1.175,1.0674,narrow_decisive,low,lift>1.5 at 3/6 cutoffs but weighted lift weak (1.07)
