@@ -534,6 +534,7 @@ class TranscoderInterventionExperiment:
         feature_indices: List[int],
         mode: str = "zero",
         inhibition_factor: float = 1.0,
+        target_activations: Optional[Dict[int, float]] = None,
     ) -> InterventionResult:
         """
         Run feature ablation with REAL forward pass intervention using hooks.
@@ -586,11 +587,17 @@ class TranscoderInterventionExperiment:
             features[:, feature_indices] = 0.0
         elif mode == "inhibit":
             features[:, feature_indices] = -inhibition_factor * original
-        elif mode == "mean":
-            # Set to mean activation (if available)
-            for feat_idx in feature_indices:
-                mean_val = 0.0  # Could load from candidate_features if needed
-                features[:, feat_idx] = mean_val
+        elif mode in ("mean", "resample"):
+            # Use caller-supplied target_activations dict {feat_idx: float}
+            # Falls back to 0 if a feature is not in the dict (feature was never active)
+            if target_activations is None:
+                logger.warning(
+                    f"mode='{mode}' but no target_activations supplied — falling back to zero"
+                )
+                features[:, feature_indices] = 0.0
+            else:
+                for feat_idx in feature_indices:
+                    features[:, feat_idx] = float(target_activations.get(feat_idx, 0.0))
         else:
             raise ValueError(f"Unknown ablation mode : {mode}")
             
@@ -1849,6 +1856,20 @@ def main():
         ),
     )
     parser.add_argument(
+        "--ablation_mode",
+        type=str,
+        default="zero",
+        choices=["zero", "mean", "resample"],
+        help=(
+            "Ablation mode: "
+            "'zero' = set feature activation to 0 (default, original Run B behaviour); "
+            "'mean' = set to empirical mean activation across training prompts "
+            "         (loaded from data/results/transcoder_features/); "
+            "'resample' = replace with activation sampled from a random different prompt "
+            "             (loaded from same npy files)."
+        ),
+    )
+    parser.add_argument(
         "--ablation_sign",
         type=str,
         default="pos",
@@ -1929,6 +1950,54 @@ def main():
     results_path = Path(config["paths"]["results"])
     output_path = results_path / "interventions"
     output_path.mkdir(parents=True, exist_ok=True)
+
+    # ── Build activation pools for mean/resample ablation ────────────────────
+    # Loaded lazily: only when mode requires it.  Files live at:
+    #   data/results/transcoder_features/layer_{L}/{behaviour}_{split}_top_k_{indices,values}.npy
+    # Shape: (n_prompts * n_token_positions, top_k) — last token is at row i*n_pos + (n_pos-1).
+    _mean_act_pool: Dict[int, Dict[int, float]] = {}    # layer → {feat_idx: mean_act}
+    _resample_pool: Dict[int, Dict[int, list]] = {}     # layer → {feat_idx: [act_values]}
+    _resample_prompt_map: Dict[int, Dict[int, list]] = {}  # layer → {feat_idx: [prompt_idxs]}
+
+    if args.ablation_mode in ("mean", "resample"):
+        logger.info(f"Loading activation pools for ablation_mode='{args.ablation_mode}'…")
+        feat_dir = results_path / "transcoder_features"
+        for layer_dir in sorted(feat_dir.glob("layer_*")):
+            lyr = int(layer_dir.name.split("_")[1])
+            idx_path = layer_dir / f"{args.behaviour}_{args.split}_top_k_indices.npy"
+            val_path = layer_dir / f"{args.behaviour}_{args.split}_top_k_values.npy"
+            if not idx_path.exists() or not val_path.exists():
+                continue
+            idx_arr = np.load(str(idx_path))   # (n_rows, top_k)
+            val_arr = np.load(str(val_path))
+            n_rows, top_k = idx_arr.shape
+            # Determine token-position stride: rows cycle through positions;
+            # last token is the final position in each cycle.
+            # Detect n_pos by counting rows per expected prompt count.
+            n_prompts_expected = args.n_prompts or n_rows  # upper bound
+            # Use position-4 (empirically validated: most features appear there)
+            # The stride is inferred as the smallest integer s.t. n_rows % s == 0
+            # and n_rows/s matches a plausible prompt count.
+            n_pos = 1
+            for s in (5, 4, 3, 2, 1):
+                if n_rows % s == 0:
+                    n_pos = s
+                    break
+            last_pos_offset = n_pos - 1   # index of last-token row within each stride
+            mean_pool: Dict[int, List[float]] = {}
+            for row_i in range(last_pos_offset, n_rows, n_pos):
+                prompt_i = row_i // n_pos
+                for k in range(top_k):
+                    fi = int(idx_arr[row_i, k])
+                    av = float(val_arr[row_i, k])
+                    if av <= 0.0:
+                        break   # values are sorted descending; stop at zero
+                    mean_pool.setdefault(fi, []).append(av)
+                    if args.ablation_mode == "resample":
+                        _resample_pool.setdefault(lyr, {}).setdefault(fi, []).append(av)
+                        _resample_prompt_map.setdefault(lyr, {}).setdefault(fi, []).append(prompt_i)
+            _mean_act_pool[lyr] = {fi: float(np.mean(v)) for fi, v in mean_pool.items()}
+        logger.info(f"  Loaded pools for {len(_mean_act_pool)} layers.")
 
     # Config
     tc_config = load_transcoder_config(args.transcoder_config)
@@ -2436,6 +2505,25 @@ def main():
                         )
                         for feat_group in ablation_groups:
                             try:
+                                # Build target_activations for mean/resample modes
+                                _target_act = None
+                                if args.ablation_mode == "mean":
+                                    _target_act = {f: _mean_act_pool.get(layer, {}).get(f, 0.0)
+                                                   for f in feat_group}
+                                elif args.ablation_mode == "resample":
+                                    rng_abl = np.random.default_rng(
+                                        hash((i, layer, tuple(feat_group))) & 0xFFFFFFFF
+                                    )
+                                    layer_pool = _resample_pool.get(layer, {})
+                                    layer_pmap = _resample_prompt_map.get(layer, {})
+                                    _target_act = {}
+                                    for f in feat_group:
+                                        pool_vals = layer_pool.get(f, [])
+                                        pool_pids = layer_pmap.get(f, [])
+                                        # Exclude same prompt if possible
+                                        excl = [v for v, p in zip(pool_vals, pool_pids) if p != i]
+                                        vals = excl if excl else pool_vals
+                                        _target_act[f] = float(rng_abl.choice(vals)) if vals else 0.0
                                 result = experiment.run_ablation_experiment(
                                     prompt=prompt,
                                     prompt_idx=i,
@@ -2443,7 +2531,8 @@ def main():
                                     incorrect_token=incorrect,
                                     layer=layer,
                                     feature_indices=feat_group,
-                                    mode="zero",
+                                    mode=args.ablation_mode,
+                                    target_activations=_target_act,
                                 )
                                 # Tag with graph-vs-control label
                                 result.feature_source = _abl_feature_src
