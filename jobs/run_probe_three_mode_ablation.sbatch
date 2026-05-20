@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
-#SBATCH --time=04:00:00
+#SBATCH --time=12:00:00
 #SBATCH --output=logs/probe-3mode-%j.out
 #SBATCH --error=logs/probe-3mode-%j.out
 #
@@ -65,9 +65,9 @@ nvidia-smi || true
 echo ""
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-BEHAVIOUR=physics_decay_type_probe
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
-N_PROMPTS=470
+N_PROMPTS=538
 LAYERS="10 16 18 24"          # only the four target cluster layers
 
 # Run B graph (same as used for Run B ablation)

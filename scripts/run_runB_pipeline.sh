@@ -2,41 +2,42 @@
 # run_runB_pipeline.sh
 #
 # Local runner for the Run B downstream pipeline (scripts 19-29).
-# Run B = sign-complete ablation using all 69 graph features
-# (vs Run A = 40 positive-attribution features only).
-#
-# Prereqs:
-#   1. Run B ablation CSV synced from CSD3:
-#      rsync -avz iv294@login.hpc.cam.ac.uk:/.../data/results/interventions/physics_decay_type_probe/runB/ \
-#            data/results/interventions/physics_decay_type_probe/runB/
-#   2. The canonical UI run (for graph metadata):
-#      data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108/
-#
-# Outputs:
-#   data/analysis/runB/grouping/     (script 19)
-#   data/analysis/runB/clustering/   (script 22)
-#   data/analysis/runB/cluster_semantics/   (script 26)
-#   data/analysis/runB/cluster_joint_ablation/  (script 27)
+# Works for both V1 (physics_decay_type_probe) and V2 (physics_decay_type_probe_v2).
 #
 # Usage:
-#   bash scripts/run_runB_pipeline.sh [--start STEP]
-# where STEP is 19, 22, 26, 27, 28, or 29.
+#   bash scripts/run_runB_pipeline.sh [--start STEP] [--behaviour BEHAVIOUR]
+# where STEP is 19, 22, 23, 26, 272, 27, 28, 29
+# and   BEHAVIOUR defaults to physics_decay_type_probe_v2
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
-BEHAVIOUR=physics_decay_type_probe
+# ── Defaults ───────────────────────────────────────────────────────────────────
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
+# UI run stays V1: graph.json (features/communities) is behaviour-independent
 UI_RUN="data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108"
+
+# ── Parse args ─────────────────────────────────────────────────────────────────
+START_STEP=19
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --start)      START_STEP=$2; shift 2 ;;
+        --behaviour)  BEHAVIOUR=$2;  shift 2 ;;
+        *) echo "Unknown arg: $1"; exit 1 ;;
+    esac
+done
+
 ABL_CSV="data/results/interventions/${BEHAVIOUR}/runB/intervention_ablation_${BEHAVIOUR}.csv"
 
-GROUPING_DIR="data/analysis/runB/grouping"
-CLUSTERING_DIR="data/analysis/runB/clustering"
-CS_DIR="data/analysis/runB/cluster_semantics"
-CJ_DIR="data/analysis/runB/cluster_joint_ablation"
+# Analysis dirs namespaced by behaviour
+RUNB_BASE="data/analysis/${BEHAVIOUR}/runB"
+GROUPING_DIR="${RUNB_BASE}/grouping"
+CLUSTERING_DIR="${RUNB_BASE}/clustering"
+CS_DIR="${RUNB_BASE}/cluster_semantics"
+CJ_DIR="${RUNB_BASE}/cluster_joint_ablation"
 
 # Parse --start flag
 START_STEP=19
@@ -49,6 +50,7 @@ done
 
 echo "========================================================"
 echo "  Run B downstream pipeline"
+echo "  Behaviour: $BEHAVIOUR"
 echo "  Start step: $START_STEP"
 echo "========================================================"
 

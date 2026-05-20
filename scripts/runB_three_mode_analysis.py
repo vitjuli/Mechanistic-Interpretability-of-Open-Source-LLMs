@@ -23,12 +23,18 @@ from scipy import stats
 
 warnings.filterwarnings("ignore")
 
+import argparse as _ap
+_p = _ap.ArgumentParser(add_help=False)
+_p.add_argument("--behaviour", default="physics_decay_type_probe_v2")
+_known, _ = _p.parse_known_args()
+BEHAVIOUR = _known.behaviour
+
 ROOT = Path(__file__).resolve().parents[1]
-THREE_MODE_DIR = ROOT / "data/analysis/runB_validation/three_mode_ablation_control"
+THREE_MODE_DIR = ROOT / f"data/analysis/{BEHAVIOUR}_validation/three_mode_ablation_control"
+THREE_MODE_DIR.mkdir(parents=True, exist_ok=True)
 OUT = THREE_MODE_DIR
 
 MODES = ["zero", "mean", "resample"]
-BEHAVIOUR = "physics_decay_type_probe"
 
 # ── Load all three mode CSVs ───────────────────────────────────────────────────
 dfs = {}

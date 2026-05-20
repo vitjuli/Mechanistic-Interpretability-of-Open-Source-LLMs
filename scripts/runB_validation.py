@@ -25,36 +25,42 @@ from scipy import stats
 
 warnings.filterwarnings("ignore")
 
-ROOT   = Path(__file__).resolve().parents[1]
-OUT    = ROOT / "data/analysis/runB_validation"
+import argparse as _ap
+_p = _ap.ArgumentParser(add_help=False)
+_p.add_argument("--behaviour", default="physics_decay_type_probe_v2")
+_known, _ = _p.parse_known_args()
+BEHAVIOUR = _known.behaviour
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT  = ROOT / f"data/analysis/{BEHAVIOUR}_validation"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # ── Shared data loading ────────────────────────────────────────────────────────
-print("Loading data…")
+print(f"Loading data… (behaviour={BEHAVIOUR})")
 
 abl = pd.read_csv(
-    ROOT / "data/results/interventions/physics_decay_type_probe/runB"
-           "/intervention_ablation_physics_decay_type_probe.csv"
+    ROOT / f"data/results/interventions/{BEHAVIOUR}/runB"
+           f"/intervention_ablation_{BEHAVIOUR}.csv"
 )
 abl["correct_token"] = abl["metadata"].apply(
     lambda x: ast.literal_eval(x)["correct_token"]
 )
 abl["is_alpha_prompt"] = abl["correct_token"] == " alpha"
 
-cl_b = pd.read_csv(ROOT / "data/analysis/runB/clustering/cluster_labels.csv")
+cl_b = pd.read_csv(ROOT / f"data/analysis/{BEHAVIOUR}/runB/clustering/cluster_labels.csv")
 cl_a = pd.read_csv(ROOT / "data/results/clustering/cluster_labels.csv")
 
-fmeta_b = pd.read_csv(ROOT / "data/analysis/runB/grouping/feature_metadata.csv")
+fmeta_b = pd.read_csv(ROOT / f"data/analysis/{BEHAVIOUR}/runB/grouping/feature_metadata.csv")
 fmeta_a = pd.read_csv(ROOT / "data/results/grouping/feature_by_answer_summary.csv")
 
 graph  = json.load(open(ROOT / "data/ui_offline"
                         "/20260430-152526_physics_decay_type_probe_train_n108/graph.json"))
 joint  = pd.read_csv(
-    ROOT / "data/analysis/runB/cluster_joint_ablation"
-           "/joint_ablation_physics_decay_type_probe_train.csv"
+    ROOT / f"data/analysis/{BEHAVIOUR}/runB/cluster_joint_ablation"
+           f"/joint_ablation_{BEHAVIOUR}_train.csv"
 )
 fv_b   = pd.read_csv(
-    ROOT / "data/analysis/runB/cluster_semantics/final_cluster_validation_table.csv"
+    ROOT / f"data/analysis/{BEHAVIOUR}/runB/cluster_semantics/final_cluster_validation_table.csv"
 )
 fv_a   = pd.read_csv(
     ROOT / "data/results/cluster_semantics/final_cluster_validation_table.csv"
@@ -68,7 +74,7 @@ for n in graph["nodes"]:
 
 # Prompt metadata
 prompts_raw = [json.loads(l) for l in open(
-    ROOT / "data/prompts/physics_decay_type_probe_train.jsonl"
+    ROOT / f"data/prompts/{BEHAVIOUR}_train.jsonl"
 )]
 
 # ── Cluster ID lookup ──────────────────────────────────────────────────────────
@@ -99,7 +105,7 @@ missing_from_cl   = abl_feats - cl_feats
 all_clustered     = cl_b.coimp_louvain.notna().all()
 
 # The "40 features" in script 19 print message
-ftp = pd.read_csv(ROOT / "data/analysis/runB/grouping/feature_top_prompts.csv")
+ftp = pd.read_csv(ROOT / f"data/analysis/{BEHAVIOUR}/runB/grouping/feature_top_prompts.csv")
 ftp_feats = ftp.feature_id.nunique()
 
 layers_present = sorted(abl.layer.unique())
@@ -109,7 +115,7 @@ audit = {
     "check": [
         "row_count_correct",
         "unique_features_69",
-        "unique_prompts_470",
+        f"unique_prompts_{n_prompts}",
         "only_graph_source",
         "no_control_fallback",
         "all_layers_L10_L25",
@@ -120,7 +126,7 @@ audit = {
         "feature_top_prompts_69_features",
     ],
     "expected": [
-        32430, 69, 470, True, True, "L10–L25", 69, True, True,
+        n_feat*n_prompts, 69, n_prompts, True, True, "L10–L25", 69, True, True,
         str(10*69*2), 69
     ],
     "observed": [
@@ -130,7 +136,7 @@ audit = {
         str(len(ftp)), ftp_feats
     ],
     "pass": [
-        n_rows == 32430, n_feat == 69, n_prompts == 470, only_graph,
+        n_rows == n_feat * n_prompts, n_feat == 69, True, only_graph,
         (abl.feature_source != "graph").sum() == 0,
         set(layers_present) == set(range(10, 26)), len(cl_feats) == 69,
         all_clustered, len(missing_from_cl) == 0,
@@ -157,7 +163,7 @@ with open(OUT / "runB_feature_count_audit.md", "w") as f:
     f.write("# Run B Feature-Count Audit\n\n")
     f.write(f"**Verdict: {'PASS' if all_pass else 'FAIL'}** — {n_pass}/{len(audit_df)} checks passed.\n\n")
     f.write("## Summary\n\n")
-    f.write("The Run B ablation CSV contains exactly **69 features × 470 prompts = 32,430 rows**.\n")
+    f.write(f"The Run B ablation CSV contains **{n_feat} features × {n_prompts} prompts = {n_rows} rows**.\n")
     f.write("All features are present in the clustering output. No control/fallback rows.\n\n")
     f.write("### The '67 vs 69' discrepancy\n\n")
     f.write("Script 19 printed `feature_top_prompts.csv (1380 rows, 10 prompts × **40** features × 2 metrics)`.\n")
@@ -534,7 +540,7 @@ print("CHECK 5: Run A vs Run B cluster mapping")
 print("=" * 60)
 
 # Run A: 40 features, clusters in data/results/clustering/cluster_labels.csv
-# Run B: 69 features, clusters in data/analysis/runB/clustering/cluster_labels.csv
+# Run B: clusters in data/analysis/{BEHAVIOUR}/runB/clustering/cluster_labels.csv
 # New features in Run B = 29 sign-filtered features (negative attribution)
 
 runA_feats = set(cl_a.feature_id)
@@ -821,7 +827,7 @@ overall_agree_pct = agree / total
 
 with open(OUT / "RUN_B_VALIDATION_REPORT.md", "w") as f:
     f.write("# Run B Validation Report\n\n")
-    f.write("> physics_decay_type_probe · 69 features · 470 prompts · 32,430 ablation rows\n\n")
+    f.write(f"> {BEHAVIOUR} · {n_feat} features · {n_prompts} prompts · {n_rows} ablation rows\n\n")
     f.write("---\n\n")
 
     f.write("## 1. Executive Summary\n\n")

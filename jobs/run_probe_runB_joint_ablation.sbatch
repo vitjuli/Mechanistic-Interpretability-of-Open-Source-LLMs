@@ -59,13 +59,13 @@ nvidia-smi || true
 echo ""
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-BEHAVIOUR=physics_decay_type_probe
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
-N_PROMPTS=470
+N_PROMPTS=538
 
-GROUPING_DIR="data/analysis/runB/grouping"
-CLUSTERING_DIR="data/analysis/runB/clustering"
-JOINT_DIR="data/analysis/runB/cluster_joint_ablation"
+GROUPING_DIR="data/analysis/${BEHAVIOUR}/runB/grouping"
+CLUSTERING_DIR="data/analysis/${BEHAVIOUR}/runB/clustering"
+JOINT_DIR="data/analysis/${BEHAVIOUR}/runB/cluster_joint_ablation"
 
 UI_RUN="data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108"
 ABL_CSV="data/results/interventions/${BEHAVIOUR}/runB/intervention_ablation_${BEHAVIOUR}.csv"

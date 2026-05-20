@@ -42,7 +42,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
 
-BEHAVIOUR=physics_decay_type_probe
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
 RUNC_BASE="data/analysis/runC_top10_sign_complete"
 GROUPING_DIR="${RUNC_BASE}/grouping"
@@ -65,7 +65,7 @@ python -u scripts/27_cluster_joint_ablation.py \
     --behaviour      "$BEHAVIOUR" \
     --split          "$SPLIT" \
     --clusters       all \
-    --n_prompts      470 \
+    --n_prompts      538 \
     --grouping_dir   "$GROUPING_DIR" \
     --clustering_dir "$CLUSTERING_DIR" \
     --run_dir        "$JOINT_DIR"

@@ -55,9 +55,9 @@ nvidia-smi || true
 echo ""
 
 # ── Parameters ────────────────────────────────────────────────────────────────
-BEHAVIOUR=physics_decay_type_probe
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
-N_PROMPTS=470
+N_PROMPTS=538
 LAYERS="10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25"
 TOP_K_ABLATE=20
 GRAPH_BEHAVIOUR=physics_decay_type
@@ -109,7 +109,7 @@ python3 -c "
 import pandas as pd
 from pathlib import Path
 
-p = Path('data/results/interventions/physics_decay_type_probe/runB/intervention_ablation_physics_decay_type_probe.csv')
+p = Path(f'data/results/interventions/${BEHAVIOUR}/runB/intervention_ablation_${BEHAVIOUR}.csv')
 if not p.exists():
     print('Output CSV not found:', p)
     exit()

@@ -69,10 +69,10 @@ echo ""
 
 # ── Parameters ─────────────────────────────────────────────────────────────────
 BEHAVIOUR=physics_decay_type              # graph is built from the base behaviour
-PROBE_BEHAVIOUR=physics_decay_type_probe  # ablation runs on probe prompts
+PROBE_BEHAVIOUR=physics_decay_type_probe_v2  # ablation runs on probe prompts
 SPLIT=train
 N_GRAPH=108          # prompts used to build the attribution graph (same as Run B)
-N_PROBE=470          # prompts ablated
+N_PROBE=538          # prompts ablated
 LAYERS="10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25"
 
 TOP_K_PER_LAYER=10   # Run C: double the Run B budget of 5

@@ -28,12 +28,23 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-BEHAVIOUR=physics_decay_type_probe
+BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
 UI_RUN="data/ui_offline/20260430-152526_physics_decay_type_probe_train_n108"
+
+# ── Parse args ─────────────────────────────────────────────────────────────────
+START_STEP=19
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --start)      START_STEP=$2; shift 2 ;;
+        --behaviour)  BEHAVIOUR=$2;  shift 2 ;;
+        *) echo "Unknown arg: $1"; exit 1 ;;
+    esac
+done
+
 ABL_CSV="data/results/interventions/${BEHAVIOUR}/runC/intervention_ablation_${BEHAVIOUR}.csv"
 
-RUNC_BASE="data/analysis/runC_top10_sign_complete"
+RUNC_BASE="data/analysis/${BEHAVIOUR}/runC_top10_sign_complete"
 GROUPING_DIR="${RUNC_BASE}/grouping"
 CLUSTERING_DIR="${RUNC_BASE}/clustering"
 CS_DIR="${RUNC_BASE}/cluster_semantics"
