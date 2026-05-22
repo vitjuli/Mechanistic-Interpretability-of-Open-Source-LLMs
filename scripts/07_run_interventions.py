@@ -1814,6 +1814,12 @@ def main():
         help="Number of prompts to use",
     )
     parser.add_argument(
+        "--prompt_offset",
+        type=int,
+        default=0,
+        help="Skip the first N prompts (for splitting a long run across multiple jobs).",
+    )
+    parser.add_argument(
         "--prompts_file",
         type=str,
         default=None,
@@ -2235,10 +2241,14 @@ def main():
         # ====== UNIFIED PROMPT SUBSETTING ======
         # Slice ONCE, use everywhere. Prevents steering/feature_importance
         # from silently using more prompts than ablation/patching.
-        sample_prompts = prompts[:args.n_prompts] if args.n_prompts else prompts
+        offset = args.prompt_offset
+        if args.n_prompts:
+            sample_prompts = prompts[offset : offset + args.n_prompts]
+        else:
+            sample_prompts = prompts[offset:]
         logger.info(
             f"Prompt subsetting: {len(prompts)} total -> {len(sample_prompts)} selected "
-            f"(--n_prompts={args.n_prompts})"
+            f"(--n_prompts={args.n_prompts}, --prompt_offset={offset})"
         )
 
         metadata = {

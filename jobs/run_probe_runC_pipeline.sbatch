@@ -8,6 +8,9 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=12:00:00
+# NOTE: Step 07 alone takes ~15h for 538 prompts × 102 features.
+# Use run_probe_runC_ablation_p1.sbatch + run_probe_runC_ablation_p2.sbatch instead
+# (splits prompts 0-269 / 270-537, each ~7.5h, run in parallel).
 #SBATCH --output=logs/probe-runC-%j.out
 #SBATCH --error=logs/probe-runC-%j.out
 #
