@@ -200,6 +200,7 @@ def run_recon_baseline(
 
                 # Reconstruction error in MLP-input space
                 recon_err = (x_hat - x_tc).norm().item()
+                x_norm    = x_tc.norm().item()      # ||x|| for relative error
 
                 # Logit diff with x̃ patched in  — x_hat is (1, d)
                 delta_recon = compute_logit_diff_with_patch(
@@ -226,6 +227,7 @@ def run_recon_baseline(
                 "abs_effect":    abs(effect),
                 "sign_flipped":  int(np.sign(delta_recon) != np.sign(delta_orig)),
                 "recon_err_norm": recon_err,
+                "x_norm":        x_norm,           # ||x|| for rel_err = recon_err/x_norm
             })
 
     return pd.DataFrame(rows)

@@ -76,21 +76,24 @@ for idx in CHECK_IDXS:
     correct_ids = tok.encode(correct, add_special_tokens=False)
     correct_first_id = correct_ids[0]
 
-    # Decision token should be the last token of the prompt,
-    # which should be the first token of correct_answer
-    # (model generates the answer at position len(prompt))
-    # The NEXT generated token is the answer — so we check that the prompt
-    # ends at a natural decision boundary, not with a partial answer token.
-    # The correct_answer token should NOT appear in the prompt.
-    prompt_ids = ids.tolist()
-    answer_in_prompt = correct_first_id in prompt_ids
-
-    if answer_in_prompt:
-        fail(f"idx={idx}: correct_answer token ({correct!r} → id {correct_first_id}) "
-             f"found in prompt — tokenisation issue")
+    # Decision token check: the LAST token of the prompt must NOT be the answer
+    # token (that would mean the answer is already in the prompt — pre-leaked).
+    # Note: for physics prompts the answer word (e.g. "alpha") can appear in
+    # the question body ("alpha decay or beta decay?") — that is expected and
+    # is NOT a tokenisation issue.  We only care about the final position.
+    if last_tok_id == correct_first_id:
+        fail(f"idx={idx}: last prompt token IS the answer token "
+             f"({correct!r} → id {correct_first_id}) — answer pre-leaked at end")
     else:
         ok(f"idx={idx}: last_prompt_tok='{last_decoded}'  "
-           f"correct='{correct.strip()}'  answer not pre-leaked ✓")
+           f"correct='{correct.strip()}'  answer not at end ✓")
+
+    # Informational: note if answer token appears in the prompt body (expected
+    # for physics prompts where the question names both decay types).
+    prompt_ids = ids.tolist()
+    if correct_first_id in prompt_ids:
+        print(f"    (note: answer token appears in prompt body — expected for "
+              f"physics prompts that name both decay types)")
 
     # Also verify correct_answer is single token
     if len(correct_ids) != 1:
@@ -107,38 +110,54 @@ print("=" * 60)
 print("TEST 2: Transcoder enc→dec invertibility")
 print("=" * 60)
 
+def _capture_mlp_input(layer_idx: int, prompt_text: str) -> torch.Tensor:
+    """Return post_attention_layernorm output at last token — (1, d)."""
+    inputs = tok([prompt_text], return_tensors="pt")
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    captured = {}
+    block = model.model.model.layers[layer_idx]
+    def _hook(module, inp, out):
+        captured["x"] = out[:, -1:, :].detach()
+    h = block.post_attention_layernorm.register_forward_hook(_hook)
+    with torch.no_grad():
+        model.model(**inputs, use_cache=False)
+    h.remove()
+    return captured["x"][0]   # (1, d)
+
+# Collect real activations for a small set of prompts at each test layer.
+# Using 5 prompts gives a realistic distribution; we check that enc→dec
+# reconstruction error is within a reasonable multiple of the recon baseline
+# (~20-25 norm units from script 51).
+REAL_REL_ERR_THRESHOLD = 2.0   # rel_err < 2.0 for real activations (generous)
+
 for layer in [11, 18, 24]:
     tc = tc_set[layer]
-    d  = tc_info.get("d_model", 2560)
-
-    test_cases = {
-        "zeros":  torch.zeros(1, d),
-        "ones":   torch.ones(1, d),
-        "randn":  torch.randn(1, d),
-    }
-
-    for name, x_raw in test_cases.items():
-        x = x_raw.to(tc.dtype).to(device)
+    errs, norms = [], []
+    for idx in CHECK_IDXS:
+        x = _capture_mlp_input(layer, prompts[idx]["prompt"]).to(tc.dtype)
         with torch.no_grad():
             a     = tc.encode(x)
             x_hat = tc.decode(a)
-        err = (x_hat - x).norm().item()
-        # For zeros: expect near-zero (unless transcoder has a large bias)
-        # For randn:  expect err < ||x|| (compression not explosion)
-        x_norm = x.norm().item()
-        rel_err = err / max(x_norm, 1e-6)
+        err   = (x_hat - x).norm().item()
+        xnorm = x.norm().item()
+        errs.append(err)
+        norms.append(xnorm)
 
-        if name == "zeros" and err > 10.0:
-            fail(f"L{layer} zeros: recon_err={err:.3f} — large bias in decoder")
-        elif name != "zeros" and rel_err > 5.0:
-            fail(f"L{layer} {name}: rel_err={rel_err:.2f} — reconstruction explodes")
-        else:
-            ok(f"L{layer} {name}: ||ε||={err:.4f}  rel={rel_err:.3f}")
+    mean_err  = sum(errs)  / len(errs)
+    mean_norm = sum(norms) / len(norms)
+    mean_rel  = mean_err   / max(mean_norm, 1e-6)
 
-    # Check that active features ≥ 0 (JumpReLU)
-    x_real = torch.randn(1, d).to(tc.dtype).to(device)
+    if mean_rel > REAL_REL_ERR_THRESHOLD:
+        fail(f"L{layer} real activations: mean_rel_err={mean_rel:.3f} > "
+             f"{REAL_REL_ERR_THRESHOLD} — transcoder reconstruction poor on real data")
+    else:
+        ok(f"L{layer} real activations: mean||ε||={mean_err:.2f}  "
+           f"mean||x||={mean_norm:.2f}  rel={mean_rel:.3f}")
+
+    # Check JumpReLU: all activations must be ≥ 0
+    x_sample = _capture_mlp_input(layer, prompts[CHECK_IDXS[0]]["prompt"]).to(tc.dtype)
     with torch.no_grad():
-        a = tc.encode(x_real)
+        a = tc.encode(x_sample)
     n_neg = (a < 0).sum().item()
     if n_neg > 0:
         fail(f"L{layer}: {n_neg} negative feature activations — JumpReLU broken")
