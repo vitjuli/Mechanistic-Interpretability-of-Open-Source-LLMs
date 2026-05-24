@@ -1,28 +1,28 @@
 #!/bin/bash
 #SBATCH -A MPHIL-DIS-SL2-GPU
-#SBATCH --job-name=rand-init-ctrl
+#SBATCH --job-name=grad-sens
 #SBATCH --partition=ampere
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=80G
-#SBATCH --time=8:00:00
-#SBATCH --output=logs/rand-init-ctrl-%j.out
-#SBATCH --error=logs/rand-init-ctrl-%j.out
+#SBATCH --mem=64G
+#SBATCH --time=5:00:00
+#SBATCH --output=logs/grad-sens-%j.out
+#SBATCH --error=logs/grad-sens-%j.out
 #
-# Script 52: Random-init control (Wu et al. 2024)
-# Tests whether IIA signal reflects model computation or transcoder capacity.
-# Loads BOTH trained Qwen3-4B AND a random-init copy (~24GB total VRAM).
+# Script 53: Gradient sensitivity analysis
+# Projects reconstruction error onto ∇_x logit_diff.
+# One backward pass per prompt covers all 16 layers simultaneously.
 #
 # Independent of Run C ablation — can run in parallel with runC_p2.
-# Runtime estimate: ~4-6h (all clusters, ~269 pairs each, 2 models)
+# Runtime estimate: ~3-4h (538 prompts × 1 backward + 16 patch passes)
 
 set -uo pipefail
 mkdir -p logs
 
 echo "========================================================"
-echo "  Script 52: Random-Init IIA Control"
+echo "  Script 53: Gradient Sensitivity Analysis"
 echo "  Job: ${SLURM_JOB_ID}  Started: $(date)"
 echo "========================================================"
 
@@ -46,22 +46,18 @@ echo ""
 
 BEHAVIOUR=physics_decay_type_probe_v2
 SPLIT=train
-CLUSTER_JSON="data/analysis/cluster_semantics_probe.json"
-OUTPUT_DIR="data/analysis/random_init_control"
+LAYERS="10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25"
+OUTPUT_DIR="data/analysis/gradient_sensitivity"
 
 PROMPT_FILE="data/prompts/${BEHAVIOUR}_${SPLIT}.jsonl"
-[ -f "$PROMPT_FILE" ]   || { echo "ERROR: Prompt file not found: $PROMPT_FILE"; exit 1; }
-[ -f "$CLUSTER_JSON" ]  || { echo "ERROR: Cluster JSON not found: $CLUSTER_JSON"; exit 1; }
-echo "Prompts:     $PROMPT_FILE"
-echo "Clusters:    $CLUSTER_JSON"
+[ -f "$PROMPT_FILE" ] || { echo "ERROR: Prompt file not found: $PROMPT_FILE"; exit 1; }
+echo "Prompts: $PROMPT_FILE"
 echo ""
 
-python -u scripts/52_random_init_control.py \
+python -u scripts/53_gradient_sensitivity_analysis.py \
     --behaviour   "$BEHAVIOUR" \
     --split       "$SPLIT" \
-    --all_clusters \
-    --cluster_json "$CLUSTER_JSON" \
-    --seed        42 \
+    --layers      $LAYERS \
     --output_dir  "$OUTPUT_DIR"
 
 echo ""
