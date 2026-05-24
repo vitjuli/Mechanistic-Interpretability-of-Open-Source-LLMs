@@ -1152,6 +1152,48 @@ def create_prompt_pairs(
         logger.info(f"Pairing result: {len(pairs)} pairs (Mode 2: self-pair)")
         return pairs
 
+    elif behaviour in (
+        "physics_decay_type",
+        "physics_decay_type_probe",
+        "physics_decay_type_probe_v2",
+    ):
+        # Pair alpha targets with beta sources and vice-versa.
+        # correct_answer (probe_v2) or correct_token (base behaviour) both accepted.
+        def _decay_class(p):
+            return p.get("correct_answer", p.get("correct_token", ""))
+
+        t_alpha = [p for p in prompts if _decay_class(p) == " alpha"]
+        t_beta  = [p for p in prompts if _decay_class(p) == " beta"]
+        logger.info(
+            f"Pairing input: {len(prompts)} prompts "
+            f"(alpha={len(t_alpha)}, beta={len(t_beta)})"
+        )
+
+        if source_prompts is not None:
+            s_alpha = [p for p in source_prompts if _decay_class(p) == " alpha"]
+            s_beta  = [p for p in source_prompts if _decay_class(p) == " beta"]
+            t_alpha = sort_by_margin(t_alpha)
+            t_beta  = sort_by_margin(t_beta)
+            pairs.extend(_pair_targets_with_sources(t_alpha, s_beta,  "AlphaTarget<-BetaSource"))
+            pairs.extend(_pair_targets_with_sources(t_beta,  s_alpha, "BetaTarget<-AlphaSource"))
+            logger.info(f"Pairing result: {len(pairs)} pairs (Mode 1: separate source/target)")
+            return pairs
+
+        if len(t_alpha) == 0 or len(t_beta) == 0:
+            logger.warning(
+                f"Only one class present: alpha={len(t_alpha)}, beta={len(t_beta)}. "
+                f"Falling back to consecutive pairing."
+            )
+            for i in range(0, len(prompts) - 1, 2):
+                pairs.append((prompts[i], prompts[i + 1]))
+            return pairs
+
+        t_alpha = sort_by_margin(t_alpha)
+        t_beta  = sort_by_margin(t_beta)
+        pairs.extend(_pair_targets_with_sources(t_alpha, t_beta,  "AlphaTarget<-BetaSource"))
+        pairs.extend(_pair_targets_with_sources(t_beta,  t_alpha, "BetaTarget<-AlphaSource"))
+        logger.info(f"Pairing result: {len(pairs)} pairs (Mode 2: self-pair cross-class)")
+
     elif behaviour == "physics_scalar_vector_operator":
         # Pair scalar targets with vector sources and vice-versa
         # Swapping scalar↔vector should flip/affect the output
