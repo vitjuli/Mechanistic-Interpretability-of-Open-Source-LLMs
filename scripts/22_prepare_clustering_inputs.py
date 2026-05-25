@@ -170,8 +170,12 @@ def main():
     core_idx   = [j for j, p in enumerate(prompt_idxs)
                   if pm_sorted.loc[p, "level"] in ("1","2")
                   or pm_sorted.loc[p, "group_id"] in ("L3-FA","L3-FB")]
-    pass_idx   = [j for j, p in enumerate(prompt_idxs) if pm_sorted.loc[p, "sign_correct"]]
-    fail_idx   = [j for j, p in enumerate(prompt_idxs) if not pm_sorted.loc[p, "sign_correct"]]
+    if "sign_correct" in pm_sorted.columns:
+        pass_idx = [j for j, p in enumerate(prompt_idxs) if pm_sorted.loc[p, "sign_correct"]]
+        fail_idx = [j for j, p in enumerate(prompt_idxs) if not pm_sorted.loc[p, "sign_correct"]]
+    else:
+        pass_idx = list(range(len(prompt_idxs)))
+        fail_idx = []
 
     subsets = {
         "level": {k: v for k,v in level_idx.items()},
@@ -186,13 +190,13 @@ def main():
     for fid in feat_ids:
         row = fm_ab.loc[fid]
         feat_labels[fid] = {
-            "layer":       int(row.layer),
+            "layer":       int(row.layer) if pd.notna(row.layer) else int(fid.split("_F")[0].lstrip("L")),
             "community":   int(row.community) if pd.notna(row.community) else -1,
-            "role_label":  str(row.role_label),
-            "is_circuit":  bool(row.is_circuit_feature),
-            "is_alpha_d":  bool(row.is_global_alpha_discrim),
-            "is_beta_d":   bool(row.is_global_beta_discrim),
-            "grad_sign":   int(row.grad_attr_sign),
+            "role_label":  str(row.role_label) if pd.notna(row.get("role_label", None)) else "None",
+            "is_circuit":  bool(row.is_circuit_feature) if pd.notna(row.get("is_circuit_feature", None)) else False,
+            "is_alpha_d":  bool(row.is_global_alpha_discrim) if pd.notna(row.get("is_global_alpha_discrim", None)) else False,
+            "is_beta_d":   bool(row.is_global_beta_discrim) if pd.notna(row.get("is_global_beta_discrim", None)) else False,
+            "grad_sign":   int(row.grad_attr_sign) if pd.notna(row.get("grad_attr_sign", None)) else 0,
         }
 
     # ── Prompt labels ─────────────────────────────────────────────────────────────
@@ -204,7 +208,7 @@ def main():
             "level":        str(row.level),
             "group_id":     str(row.group_id),
             "correct_answer": str(row.correct_answer),
-            "sign_correct": bool(row.sign_correct),
+            "sign_correct": bool(row.sign_correct) if "sign_correct" in pm_sorted.columns else True,
             "is_anchor":    bool(row.is_anchor),
             "is_kw":        bool(row.is_kw_variant),
             "is_aux":       bool(row.is_auxiliary),
