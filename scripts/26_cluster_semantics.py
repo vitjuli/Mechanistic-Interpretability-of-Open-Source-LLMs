@@ -658,7 +658,7 @@ for cid in cluster_ids:
             "gid":   str(row.get("group_id","")),
             "cue":   str(row.get("cue_label","")) if pd.notna(row.get("cue_label")) else None,
             "ans":   str(row.get("correct_answer","")),
-            "ok":    bool(pm_idx.loc[row["prompt_idx"],"sign_correct"]) if row["prompt_idx"] in pm_idx.index else None,
+            "ok":    bool(pm_idx.loc[row["prompt_idx"],"sign_correct"]) if ("sign_correct" in pm_idx.columns and row["prompt_idx"] in pm_idx.index) else None,
             "short": str(pm_idx.loc[row["prompt_idx"],"prompt_short"])[:70] if row["prompt_idx"] in pm_idx.index else "",
         }
 
