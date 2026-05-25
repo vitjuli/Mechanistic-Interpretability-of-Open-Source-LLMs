@@ -17,8 +17,10 @@
 #   runD graph: built from physics_decay_type_probe_v2 538 prompts → covers all probe types
 #              (L1 atomic / L2 relational / L3 abstract / AUX / keyword)
 #
-# With 538 prompts × top_k_per_layer=20, the union covers many more unique features
-# per layer, especially for early layers (L10-L18) which were thin in runC.
+# min_prompts=5: a feature needs to appear in only 5/538 prompts to be a candidate.
+# top_k_per_layer=20 then selects the top-20 by attribution score per layer.
+# Default auto (10% = 54) was too strict: only 98 nodes survived, same as runC.
+# With min_prompts=5 we expect ~20 nodes per layer ≈ 300 total.
 #
 # Output: data/results/attribution_graphs/physics_decay_type_probe_v2/
 #           attribution_graph_train_n538_roleaware_static_k20.json
@@ -88,6 +90,7 @@ python -u scripts/06_build_attribution_graph.py \
     --graph_node_mode    role_aware \
     --vw_threshold       "$VW_THRESH" \
     --top_k_per_layer    "$TOP_K_PER_LAYER" \
+    --min_prompts        5 \
     --no_activation_weighted \
     --output_suffix      "$GRAPH_SUFFIX"
 

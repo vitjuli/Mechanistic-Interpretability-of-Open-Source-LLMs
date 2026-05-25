@@ -1720,6 +1720,14 @@ def main():
              "Applied after frequency/min_prompts filters. None = keep all (default).",
     )
     parser.add_argument(
+        "--min_prompts",
+        type=int,
+        default=None,
+        help="Minimum number of prompts a feature must appear in to be included. "
+             "Default None = auto (10%% of N, min 1). Use a low absolute value (e.g. 5) "
+             "to allow rare features through when combined with --top_k_per_layer.",
+    )
+    parser.add_argument(
         "--activation_weighted",
         action="store_true",
         default=True,
@@ -1963,7 +1971,7 @@ def main():
             G = builder.aggregate_graphs_role_aware(
                 n_prompts=args.n_prompts,
                 k_per_prompt=k_per_prompt,
-                min_prompts=None,
+                min_prompts=args.min_prompts,
                 max_frequency=max_frequency,
                 vw_threshold=args.vw_threshold,
                 k_content=args.k_content,
@@ -1976,7 +1984,7 @@ def main():
             G = builder.aggregate_graphs_per_prompt_union(
                 n_prompts=args.n_prompts,
                 k_per_prompt=k_per_prompt,
-                min_prompts=None,  # Auto-adaptive: 1 if N<=5 else 10% of N
+                min_prompts=args.min_prompts,  # None = auto (10% of N)
                 max_frequency=max_frequency,
                 vw_threshold=args.vw_threshold,
             )
