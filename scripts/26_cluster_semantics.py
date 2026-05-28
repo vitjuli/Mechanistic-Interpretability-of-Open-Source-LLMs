@@ -31,7 +31,12 @@ _p.add_argument("--clustering_dir", type=Path, default=None,
                 help="Input clustering dir. Defaults to data/results/clustering/.")
 _p.add_argument("--out_dir",        type=Path, default=None,
                 help="Output dir. Defaults to data/results/cluster_semantics/.")
+_p.add_argument("--cluster_col",    type=str, default="coimp_louvain",
+                help="Column in cluster_labels.csv to use as cluster assignment.")
+_p.add_argument("--no_dashboard",   action="store_true",
+                help="Skip writing dashboard_probe/public/data/cluster_semantics.json.")
 _args, _ = _p.parse_known_args()
+CLUSTER_COL = _args.cluster_col
 
 GROUPING = Path(_args.grouping_dir)   if _args.grouping_dir   else ROOT / "data/results/grouping"
 CLU      = Path(_args.clustering_dir) if _args.clustering_dir else ROOT / "data/results/clustering"
@@ -55,7 +60,7 @@ fmeta    = pd.read_csv(GROUPING / "feature_metadata.csv")
 import csv as csvlib
 with open(CLU / "cluster_labels.csv") as f:
     rows = list(csvlib.DictReader(f))
-coimp_labels = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
+coimp_labels = {r["feature_id"]: int(r[CLUSTER_COL]) for r in rows}
 feat_ids_mat = json.load(open(CLU / "feat_ids.json"))
 feat_idx_map = {fid: i for i, fid in enumerate(feat_ids_mat)}
 
@@ -757,15 +762,18 @@ out_json = {
         "n_clusters":    len(cluster_ids),
         "n_features":    len(feat_ids_mat),
         "n_prompts":     len(pmeta),
-        "method":        "coimp_louvain",
+        "method":        CLUSTER_COL,
         "top_k_support": TOP_K_SUPPORT,
     },
     "clusters": clusters_json,
 }
 
-out_path = DASH_OUT / "cluster_semantics.json"
-with open(out_path, "w") as f:
-    json.dump(out_json, f, separators=(",",":"))
-size_kb = out_path.stat().st_size / 1024
-print(f"\nSaved cluster_semantics.json  ({size_kb:.0f} KB)")
+if _args.no_dashboard:
+    print("\nSkipped dashboard cluster_semantics.json (--no_dashboard).")
+else:
+    out_path = DASH_OUT / "cluster_semantics.json"
+    with open(out_path, "w") as f:
+        json.dump(out_json, f, separators=(",",":"))
+    size_kb = out_path.stat().st_size / 1024
+    print(f"\nSaved cluster_semantics.json  ({size_kb:.0f} KB)")
 print("All outputs complete.")
