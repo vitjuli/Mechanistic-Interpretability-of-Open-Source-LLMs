@@ -141,8 +141,9 @@ def main():
     ap.add_argument("--cluster_json",
                     default="dashboard_probe/public/data/cluster_semantics.json")
     ap.add_argument("--monitor_features_json",
-                    default="data/results/clustering/feat_ids.json",
-                    help="List of feature IDs to monitor for backup activation")
+                    default=None,
+                    help="Optional: list of feature IDs to monitor. "
+                         "If omitted, all features from --cluster_json are used.")
     ap.add_argument("--max_prompts", type=int, default=80)
     ap.add_argument("--target_clusters", nargs="+", type=int, default=None,
                     help="Cluster IDs to ablate. Default = all multi-feature clusters")
@@ -163,7 +164,11 @@ def main():
     cs = json.load(open(root / args.cluster_json))
     clusters = {c["id"]: c for c in cs["clusters"]}
 
-    monitor_fids = json.load(open(root / args.monitor_features_json))
+    if args.monitor_features_json:
+        monitor_fids = json.load(open(root / args.monitor_features_json))
+    else:
+        # Pool all features from all clusters
+        monitor_fids = [f["id"] for c in cs["clusters"] for f in c["features"]]
     monitor_features = defaultdict(list)
     for fid in monitor_fids:
         layer, idx = fid.lstrip("L").split("_F")
