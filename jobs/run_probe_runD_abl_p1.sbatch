@@ -63,7 +63,7 @@ python -u scripts/07_run_interventions.py \
     --split            "$SPLIT" \
     --experiment       ablation \
     --n_prompts        180 \
-    --prompt_start     0 \
+    --prompt_offset    0 \
     --graph_n_prompts  "$N_GRAPH" \
     --graph_suffix     "$GRAPH_SUFFIX" \
     --layers           $LAYERS \
