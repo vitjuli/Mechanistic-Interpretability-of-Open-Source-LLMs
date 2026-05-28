@@ -515,7 +515,7 @@ for cid in cluster_ids:
         f"| Members (n) | {n} |",
         f"| Feature IDs | {', '.join(feats)} |",
         f"| Layers | {', '.join(str(l) for l in sorted(set(layers)))} (span {coh.layer_span}) |",
-        f"| Dominant role | {roles.most_common(1)[0][0] if roles else '—'} ({roles.most_common(1)[0][1]}/{n}) |",
+        f"| Dominant role | {roles.most_common(1)[0][0] if roles.most_common(1) else '—'} ({roles.most_common(1)[0][1] if roles.most_common(1) else 0}/{n}) |",
         f"| Role distribution | {dict(roles)} |",
         f"| Circuit features | {n_circuit} |",
         f"| Global α-discriminators | {n_ad} |",

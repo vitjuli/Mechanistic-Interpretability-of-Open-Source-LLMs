@@ -34,6 +34,7 @@ echo "Job: $SLURM_JOB_ID   Node: $(hostname)   GPU: $CUDA_VISIBLE_DEVICES"
 echo "Start: $(date)"
 
 python3 scripts/37_iia_probe_clusters.py --device cuda \
+    --k               14 \
     --prompt_metadata data/analysis/runD/grouping/prompt_metadata.csv \
     --clustering_dir  data/analysis/runD/clustering_full \
     --out_dir         data/analysis/runD/carrier_stability
