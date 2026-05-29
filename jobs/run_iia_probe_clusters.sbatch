@@ -24,11 +24,15 @@ set -euo pipefail
 module purge
 module load rhel8/default-amp
 
-ATEN_CPU_CAPABILITY=avx2
-MKL_ENABLE_INSTRUCTIONS=AVX2
-export ATEN_CPU_CAPABILITY MKL_ENABLE_INSTRUCTIONS
+export ATEN_CPU_CAPABILITY=avx2
+export MKL_ENABLE_INSTRUCTIONS=AVX2
+export NPY_DISABLE_CPU_FEATURES="AVX512F AVX512CD AVX512VL AVX512BW AVX512DQ"
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export TOKENIZERS_PARALLELISM=false
+export PYTHONUNBUFFERED=1
 
-cd "$SLURM_SUBMIT_DIR"
+cd /rds/user/iv294/hpc-work/thesis/project
+source venv/bin/activate
 
 echo "=== IIA probe clusters ==="
 echo "Job: $SLURM_JOB_ID   Node: $(hostname)   GPU: $CUDA_VISIBLE_DEVICES"
