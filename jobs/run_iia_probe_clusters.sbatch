@@ -7,15 +7,16 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
-#SBATCH --time=02:00:00
+#SBATCH --time=08:00:00
 #SBATCH --output=logs/iia-probe-%j.out
 #SBATCH --error=logs/iia-probe-%j.out
 #
-# IIA on 24 contrastive pairs for G_probe (12 agglo clusters).
+# IIA on 269 random alpha/beta pairs, 14 coimp_louvain clusters, 227 features.
 # Script 37: patches feature activations of each cluster from source prompt
 # into target prompt, measures sign flip rate (IIA = Condition II test).
 #
-# Estimated time: ~60-90 min (48 baseline passes + 576 patched passes)
+# Estimated time: ~4-6h (538 baseline passes + 7532 patching passes)
+# 269 pairs x 14 clusters x 2 directions = 7532 patches
 #
 
 set -euo pipefail
@@ -34,9 +35,9 @@ echo "Job: $SLURM_JOB_ID   Node: $(hostname)   GPU: $CUDA_VISIBLE_DEVICES"
 echo "Start: $(date)"
 
 python3 scripts/37_iia_probe_clusters.py --device cuda \
-    --k               14 \
-    --prompt_metadata data/analysis/runD/grouping/prompt_metadata.csv \
-    --clustering_dir  data/analysis/runD/clustering_full \
-    --out_dir         data/analysis/runD/carrier_stability
+    --cluster_col     coimp_louvain \
+    --prompt_metadata data/analysis/runD_v2/grouping/prompt_metadata.csv \
+    --clustering_dir  data/analysis/runD_v2/clustering_full \
+    --out_dir         data/analysis/runD_v2/carrier_stability
 
 echo "Done: $(date)"

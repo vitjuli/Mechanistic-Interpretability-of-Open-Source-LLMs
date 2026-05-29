@@ -187,7 +187,10 @@ def main():
     parser.add_argument("--max_pairs", type=int, default=None,
                         help="Max pairs to use (default: min(n_alpha, n_beta))")
     parser.add_argument("--seed", type=int, default=SEED)
-    parser.add_argument("--k", type=int, default=12, help="agglomerative cluster count")
+    parser.add_argument("--k", type=int, default=12, help="agglomerative cluster count (used only if --cluster_col not set)")
+    parser.add_argument("--cluster_col", type=str, default=None,
+                        help="Column name in cluster_labels.csv to use (e.g. 'coimp_louvain'). "
+                             "Defaults to agglo_coimp_k{k}.")
     parser.add_argument("--prompt_metadata", type=str,
                         default=str(GROUPING / "prompt_metadata.csv"),
                         help="Path to prompt_metadata.csv (use RunD path for 538-prompt corpus)")
@@ -200,7 +203,7 @@ def main():
     clustering_dir = Path(args.clustering_dir)
     out_dir        = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    cluster_col = f"agglo_coimp_k{args.k}"
+    cluster_col = args.cluster_col if args.cluster_col else f"agglo_coimp_k{args.k}"
 
     device = args.device
     rng = np.random.default_rng(args.seed)
