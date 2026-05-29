@@ -1,0 +1,1025 @@
+{
+  "k_14": {
+    "n_clusters": 14,
+    "clusters": [
+      {
+        "cluster_id": 4,
+        "n": 20,
+        "layers": [
+          24
+        ],
+        "mean_signed": -0.14842,
+        "n_neg_sign": 20,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 9,
+        "n": 25,
+        "layers": [
+          14,
+          17
+        ],
+        "mean_signed": -0.10250000000000002,
+        "n_neg_sign": 25,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 6,
+        "n": 12,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.08098333333333332,
+        "n_neg_sign": 12,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 5,
+        "n": 19,
+        "layers": [
+          20
+        ],
+        "mean_signed": -0.06656315789473684,
+        "n_neg_sign": 19,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 3,
+        "n": 18,
+        "layers": [
+          15
+        ],
+        "mean_signed": -0.02311111111111111,
+        "n_neg_sign": 18,
+        "n_pos_sign": 0,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 13,
+        "n": 8,
+        "layers": [
+          11
+        ],
+        "mean_signed": -0.006987500000000001,
+        "n_neg_sign": 7,
+        "n_pos_sign": 1,
+        "polarity": "mixed",
+        "purity": 0.875
+      },
+      {
+        "cluster_id": 10,
+        "n": 4,
+        "layers": [
+          13
+        ],
+        "mean_signed": 0.004125,
+        "n_neg_sign": 0,
+        "n_pos_sign": 4,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 11,
+        "n": 9,
+        "layers": [
+          12
+        ],
+        "mean_signed": 0.0152,
+        "n_neg_sign": 0,
+        "n_pos_sign": 9,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 14,
+        "n": 20,
+        "layers": [
+          19
+        ],
+        "mean_signed": 0.015229999999999999,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 8,
+        "n": 13,
+        "layers": [
+          16
+        ],
+        "mean_signed": 0.036046153846153846,
+        "n_neg_sign": 0,
+        "n_pos_sign": 13,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 12,
+        "n": 8,
+        "layers": [
+          10
+        ],
+        "mean_signed": 0.044687500000000005,
+        "n_neg_sign": 0,
+        "n_pos_sign": 8,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 7,
+        "n": 17,
+        "layers": [
+          18
+        ],
+        "mean_signed": 0.05486470588235294,
+        "n_neg_sign": 0,
+        "n_pos_sign": 17,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 2,
+        "n": 20,
+        "layers": [
+          21
+        ],
+        "mean_signed": 0.073905,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 1,
+        "n": 34,
+        "layers": [
+          22,
+          23
+        ],
+        "mean_signed": 0.16353235294117652,
+        "n_neg_sign": 0,
+        "n_pos_sign": 34,
+        "polarity": "beta",
+        "purity": 1.0
+      }
+    ],
+    "L14_L17_split": false,
+    "L22_L23_split": false,
+    "L18_intact": true,
+    "L24_intact": true,
+    "n_alpha": 4,
+    "n_beta": 3,
+    "n_mixed": 7
+  },
+  "k_15": {
+    "n_clusters": 15,
+    "clusters": [
+      {
+        "cluster_id": 5,
+        "n": 20,
+        "layers": [
+          24
+        ],
+        "mean_signed": -0.14842,
+        "n_neg_sign": 20,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 10,
+        "n": 25,
+        "layers": [
+          14,
+          17
+        ],
+        "mean_signed": -0.10250000000000002,
+        "n_neg_sign": 25,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 7,
+        "n": 12,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.08098333333333332,
+        "n_neg_sign": 12,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 6,
+        "n": 19,
+        "layers": [
+          20
+        ],
+        "mean_signed": -0.06656315789473684,
+        "n_neg_sign": 19,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 4,
+        "n": 18,
+        "layers": [
+          15
+        ],
+        "mean_signed": -0.02311111111111111,
+        "n_neg_sign": 18,
+        "n_pos_sign": 0,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 14,
+        "n": 8,
+        "layers": [
+          11
+        ],
+        "mean_signed": -0.006987500000000001,
+        "n_neg_sign": 7,
+        "n_pos_sign": 1,
+        "polarity": "mixed",
+        "purity": 0.875
+      },
+      {
+        "cluster_id": 11,
+        "n": 4,
+        "layers": [
+          13
+        ],
+        "mean_signed": 0.004125,
+        "n_neg_sign": 0,
+        "n_pos_sign": 4,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 12,
+        "n": 9,
+        "layers": [
+          12
+        ],
+        "mean_signed": 0.0152,
+        "n_neg_sign": 0,
+        "n_pos_sign": 9,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 15,
+        "n": 20,
+        "layers": [
+          19
+        ],
+        "mean_signed": 0.015229999999999999,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 9,
+        "n": 13,
+        "layers": [
+          16
+        ],
+        "mean_signed": 0.036046153846153846,
+        "n_neg_sign": 0,
+        "n_pos_sign": 13,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 13,
+        "n": 8,
+        "layers": [
+          10
+        ],
+        "mean_signed": 0.044687500000000005,
+        "n_neg_sign": 0,
+        "n_pos_sign": 8,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 8,
+        "n": 17,
+        "layers": [
+          18
+        ],
+        "mean_signed": 0.05486470588235294,
+        "n_neg_sign": 0,
+        "n_pos_sign": 17,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 3,
+        "n": 20,
+        "layers": [
+          21
+        ],
+        "mean_signed": 0.073905,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 1,
+        "n": 14,
+        "layers": [
+          22
+        ],
+        "mean_signed": 0.10204285714285713,
+        "n_neg_sign": 0,
+        "n_pos_sign": 14,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 2,
+        "n": 20,
+        "layers": [
+          23
+        ],
+        "mean_signed": 0.206575,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      }
+    ],
+    "L14_L17_split": false,
+    "L22_L23_split": true,
+    "L18_intact": true,
+    "L24_intact": true,
+    "n_alpha": 4,
+    "n_beta": 4,
+    "n_mixed": 7
+  },
+  "k_16": {
+    "n_clusters": 16,
+    "clusters": [
+      {
+        "cluster_id": 5,
+        "n": 20,
+        "layers": [
+          24
+        ],
+        "mean_signed": -0.14842,
+        "n_neg_sign": 20,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 10,
+        "n": 17,
+        "layers": [
+          17
+        ],
+        "mean_signed": -0.10746470588235293,
+        "n_neg_sign": 17,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 11,
+        "n": 8,
+        "layers": [
+          14
+        ],
+        "mean_signed": -0.09195,
+        "n_neg_sign": 8,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 7,
+        "n": 12,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.08098333333333332,
+        "n_neg_sign": 12,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 6,
+        "n": 19,
+        "layers": [
+          20
+        ],
+        "mean_signed": -0.06656315789473684,
+        "n_neg_sign": 19,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 4,
+        "n": 18,
+        "layers": [
+          15
+        ],
+        "mean_signed": -0.02311111111111111,
+        "n_neg_sign": 18,
+        "n_pos_sign": 0,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 15,
+        "n": 8,
+        "layers": [
+          11
+        ],
+        "mean_signed": -0.006987500000000001,
+        "n_neg_sign": 7,
+        "n_pos_sign": 1,
+        "polarity": "mixed",
+        "purity": 0.875
+      },
+      {
+        "cluster_id": 12,
+        "n": 4,
+        "layers": [
+          13
+        ],
+        "mean_signed": 0.004125,
+        "n_neg_sign": 0,
+        "n_pos_sign": 4,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 13,
+        "n": 9,
+        "layers": [
+          12
+        ],
+        "mean_signed": 0.0152,
+        "n_neg_sign": 0,
+        "n_pos_sign": 9,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 16,
+        "n": 20,
+        "layers": [
+          19
+        ],
+        "mean_signed": 0.015229999999999999,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 9,
+        "n": 13,
+        "layers": [
+          16
+        ],
+        "mean_signed": 0.036046153846153846,
+        "n_neg_sign": 0,
+        "n_pos_sign": 13,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 14,
+        "n": 8,
+        "layers": [
+          10
+        ],
+        "mean_signed": 0.044687500000000005,
+        "n_neg_sign": 0,
+        "n_pos_sign": 8,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 8,
+        "n": 17,
+        "layers": [
+          18
+        ],
+        "mean_signed": 0.05486470588235294,
+        "n_neg_sign": 0,
+        "n_pos_sign": 17,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 3,
+        "n": 20,
+        "layers": [
+          21
+        ],
+        "mean_signed": 0.073905,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 1,
+        "n": 14,
+        "layers": [
+          22
+        ],
+        "mean_signed": 0.10204285714285713,
+        "n_neg_sign": 0,
+        "n_pos_sign": 14,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 2,
+        "n": 20,
+        "layers": [
+          23
+        ],
+        "mean_signed": 0.206575,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      }
+    ],
+    "L14_L17_split": true,
+    "L22_L23_split": true,
+    "L18_intact": true,
+    "L24_intact": true,
+    "n_alpha": 5,
+    "n_beta": 4,
+    "n_mixed": 7
+  },
+  "k_17": {
+    "n_clusters": 17,
+    "clusters": [
+      {
+        "cluster_id": 5,
+        "n": 20,
+        "layers": [
+          24
+        ],
+        "mean_signed": -0.14842,
+        "n_neg_sign": 20,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 11,
+        "n": 17,
+        "layers": [
+          17
+        ],
+        "mean_signed": -0.10746470588235293,
+        "n_neg_sign": 17,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 12,
+        "n": 8,
+        "layers": [
+          14
+        ],
+        "mean_signed": -0.09195,
+        "n_neg_sign": 8,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 8,
+        "n": 4,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.086975,
+        "n_neg_sign": 4,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 7,
+        "n": 8,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.07798749999999999,
+        "n_neg_sign": 8,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 6,
+        "n": 19,
+        "layers": [
+          20
+        ],
+        "mean_signed": -0.06656315789473684,
+        "n_neg_sign": 19,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 4,
+        "n": 18,
+        "layers": [
+          15
+        ],
+        "mean_signed": -0.02311111111111111,
+        "n_neg_sign": 18,
+        "n_pos_sign": 0,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 16,
+        "n": 8,
+        "layers": [
+          11
+        ],
+        "mean_signed": -0.006987500000000001,
+        "n_neg_sign": 7,
+        "n_pos_sign": 1,
+        "polarity": "mixed",
+        "purity": 0.875
+      },
+      {
+        "cluster_id": 13,
+        "n": 4,
+        "layers": [
+          13
+        ],
+        "mean_signed": 0.004125,
+        "n_neg_sign": 0,
+        "n_pos_sign": 4,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 14,
+        "n": 9,
+        "layers": [
+          12
+        ],
+        "mean_signed": 0.0152,
+        "n_neg_sign": 0,
+        "n_pos_sign": 9,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 17,
+        "n": 20,
+        "layers": [
+          19
+        ],
+        "mean_signed": 0.015229999999999999,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 10,
+        "n": 13,
+        "layers": [
+          16
+        ],
+        "mean_signed": 0.036046153846153846,
+        "n_neg_sign": 0,
+        "n_pos_sign": 13,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 15,
+        "n": 8,
+        "layers": [
+          10
+        ],
+        "mean_signed": 0.044687500000000005,
+        "n_neg_sign": 0,
+        "n_pos_sign": 8,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 9,
+        "n": 17,
+        "layers": [
+          18
+        ],
+        "mean_signed": 0.05486470588235294,
+        "n_neg_sign": 0,
+        "n_pos_sign": 17,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 3,
+        "n": 20,
+        "layers": [
+          21
+        ],
+        "mean_signed": 0.073905,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 1,
+        "n": 14,
+        "layers": [
+          22
+        ],
+        "mean_signed": 0.10204285714285713,
+        "n_neg_sign": 0,
+        "n_pos_sign": 14,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 2,
+        "n": 20,
+        "layers": [
+          23
+        ],
+        "mean_signed": 0.206575,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      }
+    ],
+    "L14_L17_split": true,
+    "L22_L23_split": true,
+    "L18_intact": true,
+    "L24_intact": true,
+    "n_alpha": 6,
+    "n_beta": 4,
+    "n_mixed": 7
+  },
+  "k_18": {
+    "n_clusters": 18,
+    "clusters": [
+      {
+        "cluster_id": 6,
+        "n": 20,
+        "layers": [
+          24
+        ],
+        "mean_signed": -0.14842,
+        "n_neg_sign": 20,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 12,
+        "n": 17,
+        "layers": [
+          17
+        ],
+        "mean_signed": -0.10746470588235293,
+        "n_neg_sign": 17,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 13,
+        "n": 8,
+        "layers": [
+          14
+        ],
+        "mean_signed": -0.09195,
+        "n_neg_sign": 8,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 9,
+        "n": 4,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.086975,
+        "n_neg_sign": 4,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 8,
+        "n": 8,
+        "layers": [
+          25
+        ],
+        "mean_signed": -0.07798749999999999,
+        "n_neg_sign": 8,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 7,
+        "n": 19,
+        "layers": [
+          20
+        ],
+        "mean_signed": -0.06656315789473684,
+        "n_neg_sign": 19,
+        "n_pos_sign": 0,
+        "polarity": "alpha",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 5,
+        "n": 18,
+        "layers": [
+          15
+        ],
+        "mean_signed": -0.02311111111111111,
+        "n_neg_sign": 18,
+        "n_pos_sign": 0,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 17,
+        "n": 8,
+        "layers": [
+          11
+        ],
+        "mean_signed": -0.006987500000000001,
+        "n_neg_sign": 7,
+        "n_pos_sign": 1,
+        "polarity": "mixed",
+        "purity": 0.875
+      },
+      {
+        "cluster_id": 14,
+        "n": 4,
+        "layers": [
+          13
+        ],
+        "mean_signed": 0.004125,
+        "n_neg_sign": 0,
+        "n_pos_sign": 4,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 15,
+        "n": 9,
+        "layers": [
+          12
+        ],
+        "mean_signed": 0.0152,
+        "n_neg_sign": 0,
+        "n_pos_sign": 9,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 18,
+        "n": 20,
+        "layers": [
+          19
+        ],
+        "mean_signed": 0.015229999999999999,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 11,
+        "n": 13,
+        "layers": [
+          16
+        ],
+        "mean_signed": 0.036046153846153846,
+        "n_neg_sign": 0,
+        "n_pos_sign": 13,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 16,
+        "n": 8,
+        "layers": [
+          10
+        ],
+        "mean_signed": 0.044687500000000005,
+        "n_neg_sign": 0,
+        "n_pos_sign": 8,
+        "polarity": "mixed",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 10,
+        "n": 17,
+        "layers": [
+          18
+        ],
+        "mean_signed": 0.05486470588235294,
+        "n_neg_sign": 0,
+        "n_pos_sign": 17,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 4,
+        "n": 20,
+        "layers": [
+          21
+        ],
+        "mean_signed": 0.073905,
+        "n_neg_sign": 0,
+        "n_pos_sign": 20,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 1,
+        "n": 14,
+        "layers": [
+          22
+        ],
+        "mean_signed": 0.10204285714285713,
+        "n_neg_sign": 0,
+        "n_pos_sign": 14,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 3,
+        "n": 1,
+        "layers": [
+          23
+        ],
+        "mean_signed": 0.1804,
+        "n_neg_sign": 0,
+        "n_pos_sign": 1,
+        "polarity": "beta",
+        "purity": 1.0
+      },
+      {
+        "cluster_id": 2,
+        "n": 19,
+        "layers": [
+          23
+        ],
+        "mean_signed": 0.20795263157894736,
+        "n_neg_sign": 0,
+        "n_pos_sign": 19,
+        "polarity": "beta",
+        "purity": 1.0
+      }
+    ],
+    "L14_L17_split": true,
+    "L22_L23_split": true,
+    "L18_intact": true,
+    "L24_intact": true,
+    "n_alpha": 6,
+    "n_beta": 5,
+    "n_mixed": 7
+  }
+}

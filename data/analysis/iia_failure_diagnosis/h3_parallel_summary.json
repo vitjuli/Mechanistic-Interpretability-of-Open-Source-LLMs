@@ -1,0 +1,20 @@
+{
+  "n_prompts": 132,
+  "n_alpha": 78,
+  "n_beta": 54,
+  "n_clusters": 12,
+  "threshold_abs": 0.3,
+  "mean_corr_off_diag_alpha": 0.045235660956047155,
+  "mean_corr_off_diag_beta": 0.10616417909003845,
+  "n_pos_pairs_alpha": 8,
+  "n_pos_pairs_beta": 14,
+  "mean_clusters_firing_per_prompt": 4.325757575757576,
+  "frac_prompts_ge3_firing": 0.946969696969697,
+  "frac_prompts_ge5_firing": 0.42424242424242425,
+  "n_alpha_clusters": 5,
+  "n_beta_clusters": 4,
+  "parallel_evidence": [
+    "5 \u03b1-clusters + 4 \u03b2-clusters (redundant role coverage)"
+  ],
+  "verdict": "H3-parallel WEAK: some parallel structure but not strong"
+}

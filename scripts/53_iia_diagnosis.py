@@ -132,23 +132,31 @@ def get_feature_sets(args, root: Path) -> List[Dict]:
             })
 
     elif args.mode == "h2_pairs":
-        # v2 cluster_semantics
+        # v2 cluster_semantics at k=16 (after recut)
+        # Cluster IDs (k=16): C7=L18 (strongest α, orient_Δ=−0.896),
+        #                     C4=L24 (strongest β, orient_Δ=+1.334),
+        #                     C1=L23 (β, +0.962), C2=L21 (β, +0.709),
+        #                     C0=L22 (β, +0.408), C6=L25 (β, +0.445),
+        #                     C11=L13 (α, −0.609), C13=L10 (α, −0.483),
+        #                     C15=L19 (α, −0.410), C3=L15 (α, −0.122)
         cs = json.load(open(root / "data/analysis/iia_failure_diagnosis/cluster_semantics_v2.json"))
         clusters = {c["id"]: c for c in cs["clusters"]}
 
         # KEY pairs: strongest opposite-polarity (α + β)
         priority_pairs = [
-            (8, 13, "α+β STRONGEST (L18+L24)"),    # both top SFR=1.0/0.96
-            (8, 11, "α+β (L18+L21)"),
-            (8, 12, "α+β (L18+L22+L23)"),
-            (3, 13, "α-early+β-late (L13+L24)"),
-            (0, 13, "α-veryEarly+β-late (L10+L24)"),
-            (9, 13, "α+β (L19+L24)"),
-            (8, 7,  "α+β (L18+L25)"),
+            (7, 4,  "α+β STRONGEST (L18+L24)"),     # SFR=0.96 + SFR=1.00
+            (7, 1,  "α+β (L18+L23)"),               # both strong
+            (7, 2,  "α+β (L18+L21)"),
+            (7, 0,  "α+β (L18+L22)"),               # k=16 separates L22
+            (11, 4, "α-early+β-late (L13+L24)"),
+            (13, 4, "α-veryEarly+β-late (L10+L24)"),
+            (15, 4, "α+β (L19+L24)"),
+            (7, 6,  "α+β (L18+L25)"),
+            # Triplets — both strong α + both strong β
             # Same-polarity controls (should NOT give IIA)
-            (8, 9,  "α+α control (L18+L19)"),
-            (13, 11, "β+β control (L24+L21)"),
-            (13, 12, "β+β control (L24+L22+L23)"),
+            (7, 15, "α+α control (L18+L19)"),
+            (4, 1,  "β+β control (L24+L23)"),
+            (4, 2,  "β+β control (L24+L21)"),
         ]
         for (ci, cj, tag) in priority_pairs:
             feats = [f["id"] for f in clusters[ci]["features"]] + \
@@ -158,6 +166,15 @@ def get_feature_sets(args, root: Path) -> List[Dict]:
                 "feature_ids": feats,
                 "meta": {"cluster_a": ci, "cluster_b": cj, "tag": tag},
             })
+        # Triplet (top-3 opposite-polarity) — closes the question of how many clusters needed
+        triplet = [f["id"] for f in clusters[7]["features"]] + \
+                  [f["id"] for f in clusters[4]["features"]] + \
+                  [f["id"] for f in clusters[1]["features"]]
+        sets.append({
+            "name": "triplet_C7_C4_C1_(L18+L24+L23)",
+            "feature_ids": triplet,
+            "meta": {"clusters": [7, 4, 1], "tag": "strongest α + top 2 β"},
+        })
         # Cumulative ensemble: add clusters by |orient_delta| descending
         ranked_cids = sorted(clusters.keys(),
                              key=lambda c: -abs(clusters[c]["orient_delta"]))
