@@ -139,7 +139,7 @@ def main():
     ap.add_argument("--split",       default="train")
     ap.add_argument("--prompts_file",default=None)
     ap.add_argument("--cluster_json",
-                    default="dashboard_probe/public/data/cluster_semantics.json")
+                    default="data/analysis/iia_failure_diagnosis/cluster_semantics_v2.json")
     ap.add_argument("--monitor_features_json",
                     default=None,
                     help="Optional: list of feature IDs to monitor. "

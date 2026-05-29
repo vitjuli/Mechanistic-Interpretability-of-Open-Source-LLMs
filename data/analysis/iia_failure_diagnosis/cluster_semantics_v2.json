@@ -1,0 +1,580 @@
+{
+  "meta": {
+    "source": "runD_v2",
+    "method": "coimp_louvain k=14",
+    "n_features": 62,
+    "n_clusters": 14
+  },
+  "clusters": [
+    {
+      "id": 0,
+      "name": "C0 L10 \u03b1-supporting",
+      "polarity": "alpha",
+      "orient_delta": -0.483,
+      "n_features": 4,
+      "layer_min": 10,
+      "layer_max": 10,
+      "layers": [
+        10
+      ],
+      "features": [
+        {
+          "id": "L10_F128064",
+          "layer": 10,
+          "mean_abs": 0.2929,
+          "mean_signed": 0.0387
+        },
+        {
+          "id": "L10_F35580",
+          "layer": 10,
+          "mean_abs": 0.266,
+          "mean_signed": 0.0484
+        },
+        {
+          "id": "L10_F68680",
+          "layer": 10,
+          "mean_abs": 0.2676,
+          "mean_signed": 0.0528
+        },
+        {
+          "id": "L10_F83063",
+          "layer": 10,
+          "mean_abs": 0.2667,
+          "mean_signed": 0.0428
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "C1 L11 \u03b2-supporting weak",
+      "polarity": "beta",
+      "orient_delta": 0.161,
+      "n_features": 4,
+      "layer_min": 11,
+      "layer_max": 11,
+      "layers": [
+        11
+      ],
+      "features": [
+        {
+          "id": "L11_F114815",
+          "layer": 11,
+          "mean_abs": 0.1415,
+          "mean_signed": -0.0079
+        },
+        {
+          "id": "L11_F144890",
+          "layer": 11,
+          "mean_abs": 0.1424,
+          "mean_signed": -0.0121
+        },
+        {
+          "id": "L11_F151375",
+          "layer": 11,
+          "mean_abs": 0.1348,
+          "mean_signed": -0.0087
+        },
+        {
+          "id": "L11_F35425",
+          "layer": 11,
+          "mean_abs": 0.1365,
+          "mean_signed": 0.001
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "C2 L12 \u03b2-supporting weak",
+      "polarity": "beta",
+      "orient_delta": 0.059,
+      "n_features": 3,
+      "layer_min": 12,
+      "layer_max": 12,
+      "layers": [
+        12
+      ],
+      "features": [
+        {
+          "id": "L12_F2451",
+          "layer": 12,
+          "mean_abs": 0.1137,
+          "mean_signed": 0.0179
+        },
+        {
+          "id": "L12_F60",
+          "layer": 12,
+          "mean_abs": 0.1194,
+          "mean_signed": 0.0166
+        },
+        {
+          "id": "L12_F71226",
+          "layer": 12,
+          "mean_abs": 0.1172,
+          "mean_signed": 0.0139
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "C3 L13 \u03b1-supporting",
+      "polarity": "alpha",
+      "orient_delta": -0.609,
+      "n_features": 3,
+      "layer_min": 13,
+      "layer_max": 13,
+      "layers": [
+        13
+      ],
+      "features": [
+        {
+          "id": "L13_F45942",
+          "layer": 13,
+          "mean_abs": 0.2941,
+          "mean_signed": 0.0006
+        },
+        {
+          "id": "L13_F57499",
+          "layer": 13,
+          "mean_abs": 0.3019,
+          "mean_signed": 0.0041
+        },
+        {
+          "id": "L13_F58969",
+          "layer": 13,
+          "mean_abs": 0.3173,
+          "mean_signed": 0.006
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "C4 L14+L17 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.178,
+      "n_features": 6,
+      "layer_min": 14,
+      "layer_max": 17,
+      "layers": [
+        14,
+        17
+      ],
+      "features": [
+        {
+          "id": "L14_F140141",
+          "layer": 14,
+          "mean_abs": 0.1851,
+          "mean_signed": -0.0914
+        },
+        {
+          "id": "L17_F111674",
+          "layer": 17,
+          "mean_abs": 0.2042,
+          "mean_signed": -0.1073
+        },
+        {
+          "id": "L17_F122323",
+          "layer": 17,
+          "mean_abs": 0.201,
+          "mean_signed": -0.1111
+        },
+        {
+          "id": "L17_F153539",
+          "layer": 17,
+          "mean_abs": 0.2061,
+          "mean_signed": -0.1087
+        },
+        {
+          "id": "L17_F63126",
+          "layer": 17,
+          "mean_abs": 0.205,
+          "mean_signed": -0.1073
+        },
+        {
+          "id": "L17_F6720",
+          "layer": 17,
+          "mean_abs": 0.2033,
+          "mean_signed": -0.1104
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "C5 L15 \u03b1-supporting weak",
+      "polarity": "alpha",
+      "orient_delta": -0.122,
+      "n_features": 3,
+      "layer_min": 15,
+      "layer_max": 15,
+      "layers": [
+        15
+      ],
+      "features": [
+        {
+          "id": "L15_F15507",
+          "layer": 15,
+          "mean_abs": 0.1543,
+          "mean_signed": -0.0186
+        },
+        {
+          "id": "L15_F64857",
+          "layer": 15,
+          "mean_abs": 0.1569,
+          "mean_signed": -0.0193
+        },
+        {
+          "id": "L15_F89707",
+          "layer": 15,
+          "mean_abs": 0.1479,
+          "mean_signed": -0.0232
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "C6 L16 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.417,
+      "n_features": 5,
+      "layer_min": 16,
+      "layer_max": 16,
+      "layers": [
+        16
+      ],
+      "features": [
+        {
+          "id": "L16_F14097",
+          "layer": 16,
+          "mean_abs": 0.237,
+          "mean_signed": 0.0362
+        },
+        {
+          "id": "L16_F33974",
+          "layer": 16,
+          "mean_abs": 0.2298,
+          "mean_signed": 0.03
+        },
+        {
+          "id": "L16_F46637",
+          "layer": 16,
+          "mean_abs": 0.2343,
+          "mean_signed": 0.0437
+        },
+        {
+          "id": "L16_F53285",
+          "layer": 16,
+          "mean_abs": 0.2363,
+          "mean_signed": 0.0337
+        },
+        {
+          "id": "L16_F82587",
+          "layer": 16,
+          "mean_abs": 0.2292,
+          "mean_signed": 0.0328
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "C7 L25 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.445,
+      "n_features": 5,
+      "layer_min": 25,
+      "layer_max": 25,
+      "layers": [
+        25
+      ],
+      "features": [
+        {
+          "id": "L25_F105937",
+          "layer": 25,
+          "mean_abs": 0.3106,
+          "mean_signed": -0.0696
+        },
+        {
+          "id": "L25_F110282",
+          "layer": 25,
+          "mean_abs": 0.1823,
+          "mean_signed": -0.0819
+        },
+        {
+          "id": "L25_F126439",
+          "layer": 25,
+          "mean_abs": 0.2973,
+          "mean_signed": -0.0888
+        },
+        {
+          "id": "L25_F142075",
+          "layer": 25,
+          "mean_abs": 0.2739,
+          "mean_signed": -0.0775
+        },
+        {
+          "id": "L25_F71226",
+          "layer": 25,
+          "mean_abs": 0.1898,
+          "mean_signed": -0.0992
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "C8 L18 \u03b1-supporting STRONGEST",
+      "polarity": "alpha",
+      "orient_delta": -0.896,
+      "n_features": 3,
+      "layer_min": 18,
+      "layer_max": 18,
+      "layers": [
+        18
+      ],
+      "features": [
+        {
+          "id": "L18_F108180",
+          "layer": 18,
+          "mean_abs": 0.4561,
+          "mean_signed": 0.0724
+        },
+        {
+          "id": "L18_F152260",
+          "layer": 18,
+          "mean_abs": 0.4361,
+          "mean_signed": 0.0267
+        },
+        {
+          "id": "L18_F41804",
+          "layer": 18,
+          "mean_abs": 0.4642,
+          "mean_signed": 0.0576
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "C9 L19 \u03b1-supporting",
+      "polarity": "alpha",
+      "orient_delta": -0.41,
+      "n_features": 5,
+      "layer_min": 19,
+      "layer_max": 19,
+      "layers": [
+        19
+      ],
+      "features": [
+        {
+          "id": "L19_F130590",
+          "layer": 19,
+          "mean_abs": 0.2529,
+          "mean_signed": 0.0149
+        },
+        {
+          "id": "L19_F25394",
+          "layer": 19,
+          "mean_abs": 0.2411,
+          "mean_signed": 0.0149
+        },
+        {
+          "id": "L19_F41536",
+          "layer": 19,
+          "mean_abs": 0.2586,
+          "mean_signed": 0.017
+        },
+        {
+          "id": "L19_F44438",
+          "layer": 19,
+          "mean_abs": 0.2538,
+          "mean_signed": 0.0134
+        },
+        {
+          "id": "L19_F94584",
+          "layer": 19,
+          "mean_abs": 0.2503,
+          "mean_signed": 0.0164
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "C10 L20 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.244,
+      "n_features": 4,
+      "layer_min": 20,
+      "layer_max": 20,
+      "layers": [
+        20
+      ],
+      "features": [
+        {
+          "id": "L20_F117855",
+          "layer": 20,
+          "mean_abs": 0.1932,
+          "mean_signed": -0.1005
+        },
+        {
+          "id": "L20_F18705",
+          "layer": 20,
+          "mean_abs": 0.1668,
+          "mean_signed": -0.0646
+        },
+        {
+          "id": "L20_F72939",
+          "layer": 20,
+          "mean_abs": 0.1711,
+          "mean_signed": -0.0807
+        },
+        {
+          "id": "L20_F80071",
+          "layer": 20,
+          "mean_abs": 0.1749,
+          "mean_signed": -0.055
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "C11 L21 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.709,
+      "n_features": 5,
+      "layer_min": 21,
+      "layer_max": 21,
+      "layers": [
+        21
+      ],
+      "features": [
+        {
+          "id": "L21_F12280",
+          "layer": 21,
+          "mean_abs": 0.4054,
+          "mean_signed": 0.0807
+        },
+        {
+          "id": "L21_F157518",
+          "layer": 21,
+          "mean_abs": 0.3885,
+          "mean_signed": 0.0674
+        },
+        {
+          "id": "L21_F53078",
+          "layer": 21,
+          "mean_abs": 0.376,
+          "mean_signed": 0.0699
+        },
+        {
+          "id": "L21_F56012",
+          "layer": 21,
+          "mean_abs": 0.3783,
+          "mean_signed": 0.0727
+        },
+        {
+          "id": "L21_F99203",
+          "layer": 21,
+          "mean_abs": 0.3667,
+          "mean_signed": 0.0674
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "C12 L22+L23 \u03b2-supporting",
+      "polarity": "beta",
+      "orient_delta": 0.734,
+      "n_features": 9,
+      "layer_min": 22,
+      "layer_max": 23,
+      "layers": [
+        22,
+        23
+      ],
+      "features": [
+        {
+          "id": "L22_F113311",
+          "layer": 22,
+          "mean_abs": 0.3377,
+          "mean_signed": 0.0812
+        },
+        {
+          "id": "L22_F133148",
+          "layer": 22,
+          "mean_abs": 0.2869,
+          "mean_signed": 0.0881
+        },
+        {
+          "id": "L22_F28148",
+          "layer": 22,
+          "mean_abs": 0.3122,
+          "mean_signed": 0.1106
+        },
+        {
+          "id": "L22_F93236",
+          "layer": 22,
+          "mean_abs": 0.3162,
+          "mean_signed": 0.0957
+        },
+        {
+          "id": "L23_F109767",
+          "layer": 23,
+          "mean_abs": 0.5309,
+          "mean_signed": 0.1537
+        },
+        {
+          "id": "L23_F140107",
+          "layer": 23,
+          "mean_abs": 0.5312,
+          "mean_signed": 0.2133
+        },
+        {
+          "id": "L23_F161196",
+          "layer": 23,
+          "mean_abs": 0.5716,
+          "mean_signed": 0.2099
+        },
+        {
+          "id": "L23_F71067",
+          "layer": 23,
+          "mean_abs": 0.5242,
+          "mean_signed": 0.1714
+        },
+        {
+          "id": "L23_F83556",
+          "layer": 23,
+          "mean_abs": 0.6008,
+          "mean_signed": 0.1804
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "C13 L24 \u03b2-supporting STRONGEST",
+      "polarity": "beta",
+      "orient_delta": 1.334,
+      "n_features": 3,
+      "layer_min": 24,
+      "layer_max": 24,
+      "layers": [
+        24
+      ],
+      "features": [
+        {
+          "id": "L24_F18943",
+          "layer": 24,
+          "mean_abs": 0.7332,
+          "mean_signed": -0.1515
+        },
+        {
+          "id": "L24_F52031",
+          "layer": 24,
+          "mean_abs": 0.7646,
+          "mean_signed": -0.1442
+        },
+        {
+          "id": "L24_F88968",
+          "layer": 24,
+          "mean_abs": 0.6482,
+          "mean_signed": -0.1374
+        }
+      ]
+    }
+  ]
+}

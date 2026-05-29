@@ -109,58 +109,71 @@ def get_feature_sets(args, root: Path) -> List[Dict]:
     """Returns list of {name, feature_ids, layer_feats} dicts."""
     sets = []
 
+    cf = json.load(open(root / "data/analysis/iia_failure_diagnosis/circuit_features_for_h1.json"))
+
     if args.mode == "h1_circuit":
-        cf = json.load(open(root / "data/analysis/iia_failure_diagnosis/circuit_features_for_h1.json"))
-        # Build cumulative top-K sets
+        # v2: rank by mean_abs_effect (causal effect on logit margin),
+        # not graph edge weights (v1→v2 lesson: attribution sign ≠ causal direction)
+        feats_ranked = cf["top_by_causal_effect"]
         for K in [5, 10, 15, 20, 25, 30]:
-            for ranking in ["top_by_output_edge", "top_by_total_attribution"]:
-                feats = [f["feature_id"] for f in cf[ranking][:K]]
-                sets.append({
-                    "name": f"{ranking}_top{K}",
-                    "feature_ids": feats,
-                })
+            feats = [f["feature_id"] for f in feats_ranked[:K]]
+            sets.append({
+                "name": f"top_by_causal_effect_top{K}",
+                "feature_ids": feats,
+            })
+        # Also: cumulative cluster-by-cluster (top-3 per cluster)
+        cumulative = []
+        for cid in [13, 8, 11, 12, 7, 9, 6]:  # strongest first by |orient_delta|
+            top3 = [f["feature_id"] for f in cf["top_per_cluster"][str(cid)]["features"]]
+            cumulative.extend(top3)
+            sets.append({
+                "name": f"cumul_through_C{cid}",
+                "feature_ids": list(cumulative),
+            })
 
     elif args.mode == "h2_pairs":
-        cs = json.load(open(root / "dashboard_probe/public/data/cluster_semantics.json"))
+        # v2 cluster_semantics
+        cs = json.load(open(root / "data/analysis/iia_failure_diagnosis/cluster_semantics_v2.json"))
         clusters = {c["id"]: c for c in cs["clusters"]}
-        # Pair definitions based on H3-parallel analysis: α-supporters and β-supporters
-        alpha_supporters = [4, 6, 7, 1, 2]  # mean_eff_α > 0.05 and mean_eff_β < -0.05
-        beta_supporters  = [0, 3, 5, 8]
-        pairs = []
-        # detector+executor pairs (early α + late α, early β + late β)
-        for ci in alpha_supporters:
-            li = clusters[ci]["features"][0]["layer"]
-            for cj in alpha_supporters:
-                if cj == ci:
-                    continue
-                lj = clusters[cj]["features"][0]["layer"]
-                if li < 18 and lj >= 20:
-                    pairs.append((ci, cj, "α-early+α-late"))
-        for ci in beta_supporters:
-            li = clusters[ci]["features"][0]["layer"]
-            for cj in beta_supporters:
-                if cj == ci:
-                    continue
-                lj = clusters[cj]["features"][0]["layer"]
-                if li < 18 and lj >= 20:
-                    pairs.append((ci, cj, "β-early+β-late"))
-        # Cross-role controls
-        for ci in alpha_supporters[:2]:
-            for cj in beta_supporters[:2]:
-                pairs.append((ci, cj, "α+β-mixed"))
-        for (ci, cj, tag) in pairs:
+
+        # KEY pairs: strongest opposite-polarity (α + β)
+        priority_pairs = [
+            (8, 13, "α+β STRONGEST (L18+L24)"),    # both top SFR=1.0/0.96
+            (8, 11, "α+β (L18+L21)"),
+            (8, 12, "α+β (L18+L22+L23)"),
+            (3, 13, "α-early+β-late (L13+L24)"),
+            (0, 13, "α-veryEarly+β-late (L10+L24)"),
+            (9, 13, "α+β (L19+L24)"),
+            (8, 7,  "α+β (L18+L25)"),
+            # Same-polarity controls (should NOT give IIA)
+            (8, 9,  "α+α control (L18+L19)"),
+            (13, 11, "β+β control (L24+L21)"),
+            (13, 12, "β+β control (L24+L22+L23)"),
+        ]
+        for (ci, cj, tag) in priority_pairs:
             feats = [f["id"] for f in clusters[ci]["features"]] + \
                     [f["id"] for f in clusters[cj]["features"]]
             sets.append({
-                "name": f"pair_C{ci}_C{cj}_{tag}",
+                "name": f"pair_C{ci}_C{cj}_{tag.replace(' ', '_')}",
                 "feature_ids": feats,
                 "meta": {"cluster_a": ci, "cluster_b": cj, "tag": tag},
             })
+        # Cumulative ensemble: add clusters by |orient_delta| descending
+        ranked_cids = sorted(clusters.keys(),
+                             key=lambda c: -abs(clusters[c]["orient_delta"]))
+        cumul = []
+        for cid in ranked_cids[:8]:
+            cumul.extend([f["id"] for f in clusters[cid]["features"]])
+            sets.append({
+                "name": f"ensemble_top{len(cumul)//5*5}_thru_C{cid}",
+                "feature_ids": list(cumul),
+                "meta": {"cumulative_clusters": [
+                    int(c) for c in ranked_cids[:ranked_cids.index(cid)+1]]},
+            })
 
     elif args.mode == "h4_layer_split":
-        cf = json.load(open(root / "data/analysis/iia_failure_diagnosis/circuit_features_for_h1.json"))
-        feats = cf["top_by_total_attribution"][:30]
-        # Split by layer threshold
+        # Split top-30 by causal effect into early vs late
+        feats = cf["top_by_causal_effect"][:30]
         for split_layer in [18, 20, 22]:
             early = [f["feature_id"] for f in feats if f["layer"] < split_layer]
             late  = [f["feature_id"] for f in feats if f["layer"] >= split_layer]

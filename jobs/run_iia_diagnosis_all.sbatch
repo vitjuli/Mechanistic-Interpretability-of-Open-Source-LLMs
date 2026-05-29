@@ -1,23 +1,23 @@
 #!/bin/bash
 #SBATCH -A MPHIL-DIS-SL2-GPU
-#SBATCH --job-name=iia-diag-now
+#SBATCH --job-name=iia-diag-v2
 #SBATCH --partition=ampere
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
-#SBATCH --time=8:00:00
-#SBATCH --output=logs/iia-diag-now-%j.out
-#SBATCH --error=logs/iia-diag-now-%j.out
+#SBATCH --time=20:00:00
+#SBATCH --output=logs/iia-diag-v2-%j.out
+#SBATCH --error=logs/iia-diag-v2-%j.out
 #
-# IIA failure diagnosis — RUN-NOW subset (independent of new clustering):
-#   H1: patch top-K circuit features (from n538 attribution graph)
-#   H4: early-only vs late-only layer split
+# IIA failure diagnosis — v2 features + clusters (runD_v2 outputs):
+#   H1: patch top-K causal features (mean_abs_effect ranking, not graph edges)
+#   H2: priority pairs (α+β strongest opposite-polarity) + cumulative ensembles
+#   H4: early vs late layer split (top-30 by causal effect)
 #
-# H2 (cluster pairs) and H3-reactive (cluster ablation) require the NEW
-# clusters from Phase 3-4 (semantics scripts 19→22→23→26). Run those
-# AFTER new cluster_semantics.json is generated.
+# v1→v2 lesson encoded: ranking by mean_abs_effect (not graph edge weight)
+# captures features that are CAUSALLY important regardless of attribution sign.
 #
 # BEFORE SUBMITTING:
 #   cd /rds/user/iv294/hpc-work/thesis/project
@@ -67,8 +67,16 @@ python -u scripts/53_iia_diagnosis.py \
     --max_pairs 200
 echo "==== H1 done: $(date) ===="
 
-# H2 SKIPPED — waits for new clusters from Phase 3-4 (semantics scripts).
-# Will be in a separate sbatch jobs/run_iia_diagnosis_post_clustering.sbatch.
+# ─────────────────────────────────────────────────────────────────────────────
+echo ""
+echo "==== H2: priority pairs + cumulative ensembles (v2 clusters) ===="
+date
+python -u scripts/53_iia_diagnosis.py \
+    --mode h2_pairs \
+    --behaviour physics_decay_type_probe_v2 \
+    --split train \
+    --max_pairs 150
+echo "==== H2 done: $(date) ===="
 
 # ─────────────────────────────────────────────────────────────────────────────
 echo ""
