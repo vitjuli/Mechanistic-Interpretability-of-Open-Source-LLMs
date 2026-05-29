@@ -181,6 +181,8 @@ def main():
                         help="Input grouping dir. Defaults to data/results/grouping/.")
     parser.add_argument("--clustering_dir", type=Path, default=None,
                         help="Input clustering dir. Defaults to data/results/clustering/.")
+    parser.add_argument("--cluster_col", type=str, default="coimp_louvain",
+                        help="Column in cluster_labels.csv to use (e.g. agglo_coimp_subgroup_k30)")
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir) if args.run_dir else ROOT / "data/results/cluster_joint_ablation"
@@ -192,7 +194,9 @@ def main():
     clu_dir = Path(args.clustering_dir) if args.clustering_dir else ROOT / "data/results/clustering"
     with open(clu_dir / "cluster_labels.csv") as f:
         rows = list(csvlib.DictReader(f))
-    coimp = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
+    cluster_col = args.cluster_col
+    coimp = {r["feature_id"]: int(r[cluster_col]) for r in rows if r.get(cluster_col, "") not in ("", None)}
+    logger.info(f"Using cluster column: {cluster_col}  ({len(coimp)} features assigned)")
     clusters: dict[int, list[str]] = defaultdict(list)
     for fid, cid in coimp.items():
         clusters[cid].append(fid)

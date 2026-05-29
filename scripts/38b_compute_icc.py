@@ -49,6 +49,9 @@ parser.add_argument("--clustering_dir", type=Path, required=True)
 parser.add_argument("--out_dir",        type=Path, required=True)
 parser.add_argument("--tau_icc",        type=float, default=0.5,
                     help="ICC threshold (default 0.5, Koo & Mae 2016)")
+parser.add_argument("--clustering_col", type=str, default="coimp_louvain",
+                    help="Column in cluster_labels.csv to use for cluster assignments "
+                         "(default: coimp_louvain; use agglo_coimp_k16 for k=16)")
 args = parser.parse_args()
 
 args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -65,7 +68,8 @@ pidx_to_col = {pidx: j for j, pidx in enumerate(prompt_idxs)}
 # ── Load cluster assignments ──────────────────────────────────────────────────
 with open(args.clustering_dir / "cluster_labels.csv") as f:
     rows = list(csvlib.DictReader(f))
-coimp = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
+col = args.clustering_col
+coimp = {r["feature_id"]: int(r[col]) for r in rows if r.get(col, "") != ""}
 from collections import defaultdict
 clusters: dict[int, list[str]] = defaultdict(list)
 for fid, cid in coimp.items():

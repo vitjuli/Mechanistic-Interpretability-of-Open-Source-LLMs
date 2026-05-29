@@ -68,7 +68,10 @@ def rank_biserial(u_stat, n1, n2):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--k", type=int, default=12, help="agglomerative cluster count")
+    ap.add_argument("--k", type=int, default=12, help="agglomerative cluster count (used only if --cluster_col not set)")
+    ap.add_argument("--cluster_col", type=str, default=None,
+                    help="Column in cluster_labels.csv to use (e.g. agglo_coimp_subgroup_k30). "
+                         "Defaults to agglo_coimp_k{k}.")
     ap.add_argument("--grouping_dir", default=str(GROUPING))
     ap.add_argument("--clustering_dir", default=str(CLU))
     ap.add_argument("--out_dir", default=str(OUT))
@@ -78,7 +81,7 @@ def main():
     clustering_dir = Path(args.clustering_dir)
     out_dir        = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    cluster_col = f"agglo_coimp_k{args.k}"
+    cluster_col = args.cluster_col if args.cluster_col else f"agglo_coimp_k{args.k}"
 
     # ── load ─────────────────────────────────────────────────────────────────
     eff = pd.read_csv(grouping_dir / "feature_prompt_effect_matrix.csv", index_col=0)

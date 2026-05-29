@@ -27,11 +27,14 @@ _p = _ap.ArgumentParser(add_help=False)
 _p.add_argument("--grouping_dir",   type=Path, default=None)
 _p.add_argument("--clustering_dir", type=Path, default=None)
 _p.add_argument("--joint_dir",      type=Path, default=None)
+_p.add_argument("--cluster_col",    type=str,  default="coimp_louvain",
+                help="Column in cluster_labels.csv to use (e.g. agglo_coimp_subgroup_k30)")
 _known, _ = _p.parse_known_args()
 
 GROUPING  = Path(_known.grouping_dir)   if _known.grouping_dir   else ROOT / "data/results/grouping"
 CLU_DIR   = Path(_known.clustering_dir) if _known.clustering_dir else ROOT / "data/results/clustering"
 JOINT_DIR = Path(_known.joint_dir)      if _known.joint_dir      else ROOT / "data/results/cluster_joint_ablation"
+CLUSTER_COL = _known.cluster_col
 JOINT_DIR.mkdir(parents=True, exist_ok=True)
 DASH_OUT  = ROOT / "dashboard_probe/public/data"
 
@@ -39,7 +42,8 @@ DASH_OUT  = ROOT / "dashboard_probe/public/data"
 import csv as csvlib
 with open(CLU_DIR / "cluster_labels.csv") as f:
     rows = list(csvlib.DictReader(f))
-coimp = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
+coimp = {r["feature_id"]: int(r[CLUSTER_COL]) for r in rows if r.get(CLUSTER_COL, "") not in ("", None)}
+print(f"Using cluster column: {CLUSTER_COL}  ({len(coimp)} features assigned, {len(set(coimp.values()))} clusters)")
 clusters = defaultdict(list)
 for fid, cid in coimp.items():
     clusters[cid].append(fid)
