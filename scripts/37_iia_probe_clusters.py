@@ -54,10 +54,12 @@ SEED        = 42
 
 def load_model(device: str) -> ModelWrapper:
     import yaml
-    cfg = yaml.safe_load(open(ROOT / "configs/experiment_config.yaml"))
-    model_name = cfg.get("model_name", "Qwen/Qwen3-4B")
+    tc_cfg = yaml.safe_load(open(ROOT / "configs/transcoder_config.yaml"))
+    model_size = tc_cfg.get("model_size", "4b")
+    model_name = tc_cfg["transcoders"][model_size]["model_name"]
     log.info(f"Loading model: {model_name}")
-    return ModelWrapper(model_name=model_name, device=device)
+    return ModelWrapper(model_name=model_name, dtype="bfloat16", device="auto",
+                        trust_remote_code=True), model_size
 
 
 # ── transcoder hooks ──────────────────────────────────────────────────────────
@@ -136,8 +138,9 @@ def get_features_and_margin(
 
     feat_cache: Dict[int, torch.Tensor] = {}
     for layer_idx, mlp_in in mlp_cache.items():
+        tc = transcoders[layer_idx]
         with torch.no_grad():
-            feat_cache[layer_idx] = transcoders[layer_idx].encode(mlp_in).float()
+            feat_cache[layer_idx] = tc.encode(mlp_in.to(tc.dtype)).float()
 
     log_probs = torch.log_softmax(logits.float(), dim=0)
     cid = model.tokenizer.encode(correct_tok, add_special_tokens=False)[0]
@@ -164,8 +167,9 @@ def get_patched_margin(
         s_feat = source_feats[layer_idx]
         idx_t = torch.tensor(feat_indices, device=t_feat.device, dtype=torch.long)
         t_feat[:, idx_t] = s_feat[:, idx_t]
+        tc = transcoders[layer_idx]
         with torch.no_grad():
-            patched_mlp_inputs[layer_idx] = transcoders[layer_idx].decode(t_feat).float()
+            patched_mlp_inputs[layer_idx] = tc.decode(t_feat.to(tc.dtype)).float()
 
     inputs = {k: v.to(device) for k, v in model.tokenize([text]).items()}
     with patch_hooks(model.model, patched_mlp_inputs):
@@ -249,10 +253,16 @@ def main():
     log.info(f"Pairs: {n_pairs}  |  Clusters: {len(clusters)}")
 
     # Load model + transcoders
-    model = load_model(device)
+    model, model_size = load_model(device)
     model.model.eval()
-    tc_set = load_transcoder_set(device=device)
-    transcoders = {layer: tc_set.get_transcoder(layer) for layer in all_layers}
+    try:
+        device = str(next(model.model.parameters()).device)
+    except StopIteration:
+        pass
+    tc_set = load_transcoder_set(model_size=model_size, device=device,
+                                  dtype=torch.bfloat16, lazy_load=True,
+                                  layers=all_layers)
+    transcoders = {layer: tc_set[layer] for layer in all_layers}
 
     # Precompute baseline margins + feature activations for all unique prompts
     log.info("Collecting baseline activations...")
