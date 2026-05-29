@@ -130,17 +130,27 @@ def main():
         stat, pval = mannwhitneyu(sig_alpha, sig_beta, alternative="two-sided")
         rb = rank_biserial(stat, len(sig_alpha), len(sig_beta))
 
-        # medians
-        med_alpha = float(np.median(sig_alpha))
-        med_beta  = float(np.median(sig_beta))
+        # medians and means
+        med_alpha  = float(np.median(sig_alpha))
+        med_beta   = float(np.median(sig_beta))
+        mean_alpha = float(np.mean(sig_alpha))
+        mean_beta  = float(np.mean(sig_beta))
 
-        # fraction of prompts where sigma has the "correct" sign
-        # correct sign for alpha-prompts = positive (cluster helps alpha)
-        # correct sign for beta-prompts  = positive (cluster helps beta)
-        # BUT we want opposite signs → polarity = |med_alpha| and |med_beta| have opposite signs
-        polarity_direction = "alpha" if med_alpha > 0 else "beta"  # which class gets positive sigma
-        frac_pos_alpha = float((sig_alpha > 0).mean())
-        frac_pos_beta  = float((sig_beta > 0).mean())
+        # ── Condition I.b (thesis): E_α[σ̃_G] · E_β[σ̃_G] < 0 ─────────────
+        # effect_size sign convention: positive = ablation INCREASED logit = cluster was HURTING that class
+        # So: mean_alpha < 0 → cluster helps α → α-supporting; mean_alpha > 0 → β-supporting
+        # Note: product of means uses the SAME sign convention regardless, so the
+        # condition (product < 0) is correctly tested either way.
+        # We negate to match thesis convention (positive σ̃ = helps correct answer):
+        thesis_mean_alpha = -mean_alpha   # flip: negative ablation effect = positive attribution
+        thesis_mean_beta  = -mean_beta
+        polarity_product  = thesis_mean_alpha * thesis_mean_beta   # < 0 iff polarity holds
+        polarity_ok       = bool(polarity_product < 0)
+
+        polarity_direction = "alpha" if thesis_mean_alpha > 0 else "beta"
+        # fraction where cluster HELPS correct answer (negative ablation effect = helps)
+        frac_helps_alpha = float((sig_alpha < 0).mean())
+        frac_helps_beta  = float((sig_beta < 0).mean())
 
         # ── (B) Paired sign-flip rate ─────────────────────────────────────
         flip_count = 0
@@ -162,11 +172,15 @@ def main():
             cluster=cid,
             n_features=len(feats),
             layers=",".join(sorted(set(f.split("_")[0] for f in feats))),
+            mean_alpha=round(mean_alpha, 4),
+            mean_beta=round(mean_beta, 4),
             median_alpha=round(med_alpha, 4),
             median_beta=round(med_beta, 4),
             polarity_direction=polarity_direction,
-            frac_pos_alpha=round(frac_pos_alpha, 3),
-            frac_pos_beta=round(frac_pos_beta, 3),
+            polarity_product=round(polarity_product, 6),
+            polarity_ok=polarity_ok,
+            frac_helps_alpha=round(frac_helps_alpha, 3),
+            frac_helps_beta=round(frac_helps_beta, 3),
             mw_stat=round(stat, 1),
             mw_pval=round(pval, 6),
             rank_biserial=round(rb, 3),
@@ -184,11 +198,14 @@ def main():
     df.to_csv(out_dir / "polarity_consistency.csv", index=False)
 
     print("── Per-cluster polarity results ─────────────────────────────────────")
-    print(df[["cluster","n_features","layers","median_alpha","median_beta",
-              "rank_biserial","mw_pval_bh","sign_flip_rate","polarized_bh"]].to_string(index=False))
+    print(df[["cluster","n_features","layers","mean_alpha","mean_beta",
+              "polarity_direction","polarity_ok","rank_biserial",
+              "mw_pval_bh","sign_flip_rate","polarized_bh"]].to_string(index=False))
 
     n_polarized = df["polarized_bh"].sum()
-    print(f"\nPolarized (MW BH < {ALPHA_BH}): {n_polarized}/{len(df)}")
+    n_polarity_ok = int(df["polarity_ok"].sum())
+    print(f"\nCondition I.b (E_α·E_β < 0): {n_polarity_ok}/{len(df)} clusters pass")
+    print(f"Polarized by MW BH < {ALPHA_BH}: {n_polarized}/{len(df)}")
     print(f"Mean |rank-biserial|: {df['rank_biserial'].abs().mean():.3f}")
     print(f"Mean sign-flip rate (contrastive pairs): "
           f"{df['sign_flip_rate'].dropna().mean():.3f}")

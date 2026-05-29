@@ -47,8 +47,9 @@ for fid, cid in coimp.items():
 contrib = pd.read_csv(GROUPING / "feature_prompt_contributions.csv",
     usecols=["prompt_idx","feature_id","effect_size","abs_effect_size",
              "baseline_logit_diff","sign_flipped","correct_answer","level",
-             "group_id","sign_correct","is_circuit_feature",
+             "group_id","is_circuit_feature",
              "is_global_alpha_discrim","is_global_beta_discrim"])
+contrib["sign_correct"] = contrib["effect_size"] < 0  # feature helped correct answer
 contrib["cluster_id"] = contrib["feature_id"].map(coimp)
 pmeta = pd.read_csv(GROUPING / "prompt_metadata.csv")
 pm_idx = pmeta.set_index("prompt_idx")
@@ -122,7 +123,10 @@ for ans in ["alpha","beta"]:
     print(by_c.round(3).to_string())
 
 # ── PART 2: Actual joint ablation results (post-CSD3) ─────────────────────
-joint_csv = JOINT_DIR / "joint_ablation_physics_decay_type_probe_train.csv"
+joint_csv = next(
+    (p for p in sorted(JOINT_DIR.glob("joint_ablation_*.csv"))),
+    JOINT_DIR / "joint_ablation_physics_decay_type_probe_train.csv",
+)
 
 if not joint_csv.exists():
     print(f"\n=== PART 2: Joint ablation results not yet available ===")
@@ -148,10 +152,10 @@ print(f"Loaded {len(jdf)} rows: {jdf.cluster_id.nunique()} clusters × {jdf.prom
 
 # Merge with prompt metadata
 jdf = jdf.merge(
-    pmeta[["prompt_idx","correct_answer","level","group_id","sign_correct",
-           "is_anchor","difficulty"]],
+    pmeta[["prompt_idx","correct_answer","level","group_id","is_anchor","difficulty"]],
     on="prompt_idx", how="left"
 )
+jdf["sign_correct"] = jdf["baseline_logit_diff"] > 0  # model was correct at baseline
 
 # ── Synergy summary per cluster ───────────────────────────────────────────
 def interaction_summary(df):
