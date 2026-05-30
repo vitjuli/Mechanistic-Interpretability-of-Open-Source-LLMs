@@ -160,6 +160,9 @@ def main():
                         help="Prompts per bundle (subsample of full corpus)")
     parser.add_argument("--seed",             type=int, default=42)
     parser.add_argument("--device",           default="cuda")
+    parser.add_argument("--cluster_col",      type=str, default="coimp_louvain",
+                        help="Column in cluster_labels.csv (default coimp_louvain; "
+                             "use agglo_coimp_subgroup_k30 for sub-cluster IR null)")
     args = parser.parse_args()
 
     args.run_dir.mkdir(parents=True, exist_ok=True)
@@ -171,7 +174,9 @@ def main():
         rows = list(csvlib.DictReader(f))
 
     all_feature_ids = [r["feature_id"] for r in rows]
-    coimp = {r["feature_id"]: int(r["coimp_louvain"]) for r in rows}
+    cluster_col = args.cluster_col
+    coimp = {r["feature_id"]: int(r[cluster_col]) for r in rows if r.get(cluster_col, "") not in ("", None)}
+    logger.info(f"Using cluster column: {cluster_col}")
     real_clusters: dict[int, list[str]] = defaultdict(list)
     for fid, cid in coimp.items():
         real_clusters[cid].append(fid)

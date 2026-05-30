@@ -21,6 +21,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--null_dir",  type=Path, required=True)
 parser.add_argument("--joint_dir", type=Path, default=None,
                     help="Dir with real joint ablation results. Optional.")
+parser.add_argument("--cluster_col", type=str, default="coimp_louvain",
+                    help="Cluster column in cluster_labels.csv (default coimp_louvain; "
+                         "use agglo_coimp_subgroup_k30 for sub-cluster IR null)")
 args = parser.parse_args()
 
 null_dir  = args.null_dir
@@ -90,7 +93,8 @@ if args.joint_dir is not None:
                     rows_ = list(csvlib.DictReader(f_))
                 coimp_ = defaultdict(list)
                 for r_ in rows_:
-                    coimp_[int(r_["coimp_louvain"])].append(r_["feature_id"])
+                    if r_.get(args.cluster_col, "") not in ("", None):
+                        coimp_[int(r_[args.cluster_col])].append(r_["feature_id"])
                 sizes_by_cid = {cid: len(fids) for cid, fids in coimp_.items()}
 
             for cid, row in real_ir.iterrows():
