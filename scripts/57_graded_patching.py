@@ -303,10 +303,16 @@ def main():
     # ── Load model + transcoders ────────────────────────────────────────────
     all_layers = sorted({parse_feature_id(f)[0] for pool in pools.values() for f in pool})
     log.info(f"Loading model + transcoders for layers: {all_layers}")
-    from src.model_utils import load_model
-    from src.transcoder.transcoder_loader import load_transcoder_set
+    import yaml
+    from src.model_utils import ModelWrapper
+    from src.transcoder import load_transcoder_set
 
-    model, model_size = load_model(args.device)
+    tc_cfg = yaml.safe_load(open(ROOT / "configs/transcoder_config.yaml"))
+    model_size = tc_cfg.get("model_size", "4b")
+    model_name = tc_cfg["transcoders"][model_size]["model_name"]
+    log.info(f"Loading model: {model_name}")
+    model = ModelWrapper(model_name=model_name, dtype="bfloat16", device="auto",
+                          trust_remote_code=True)
     model.model.eval()
     try:
         args.device = str(next(model.model.parameters()).device)

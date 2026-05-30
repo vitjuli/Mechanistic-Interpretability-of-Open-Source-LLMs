@@ -209,8 +209,8 @@ def main():
     log.info(f"Using {len(prompts)} prompts (target {args.max_prompts}, total avail {len(prompts_all)})")
 
     # ── Load model + transcoders ────────────────────────────────────────────
-    from src.model_utils import load_model
-    from src.transcoder.transcoder_loader import load_transcoder_set
+    from src.model_utils import ModelWrapper
+    from src.transcoder import load_transcoder_set
 
     # Determine all layers needed
     layers_needed = set()
@@ -225,7 +225,13 @@ def main():
     log.info(f"Layers needed: {layers_needed}")
 
     log.info("Loading model + transcoders...")
-    model, model_size = load_model(args.device)
+    import yaml
+    tc_cfg = yaml.safe_load(open(ROOT / "configs/transcoder_config.yaml"))
+    model_size = tc_cfg.get("model_size", "4b")
+    model_name = tc_cfg["transcoders"][model_size]["model_name"]
+    log.info(f"Loading model: {model_name}")
+    model = ModelWrapper(model_name=model_name, dtype="bfloat16", device="auto",
+                          trust_remote_code=True)
     model.model.eval()
     try:
         args.device = str(next(model.model.parameters()).device)
