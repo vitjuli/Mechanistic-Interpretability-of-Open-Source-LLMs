@@ -58,10 +58,15 @@ import argparse
 import json
 import logging
 import re
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
+# Add project root to sys.path so `from src.transcoder import ...` works
+# (matches the pattern used by scripts 52/53/54)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("subspace_pilot")

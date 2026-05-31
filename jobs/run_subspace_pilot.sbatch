@@ -69,7 +69,7 @@ python -u scripts/61_subspace_interventions_pilot.py \
     --concept_npz    "$GEOM_NPZ" \
     --cluster_labels "$CLUSTERS" \
     --cluster_col    agglo_coimp_subgroup_k30 \
-    --A3_cluster_col agglo_coimp_k14 \
+    --A3_cluster_col coimp_louvain \
     --A1_cluster     16 \
     --A3_cluster     13 \
     --prompts        "$PROMPTS" \
