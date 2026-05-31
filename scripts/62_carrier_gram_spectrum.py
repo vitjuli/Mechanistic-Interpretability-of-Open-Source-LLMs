@@ -290,19 +290,46 @@ def run_real(args: argparse.Namespace) -> None:
         t = torch.tensor(idxs, dtype=torch.long)
         return tc._get_decoder_vectors(t).detach().float().cpu().numpy().astype(np.float64)
 
-    def random_rows_from_other_layers(k: int, exclude: set) -> np.ndarray:
-        """k decoder rows drawn from layers NOT in `exclude`, random feature idxs."""
+    # ── BATCH null draws ────────────────────────────────────────────────────
+    # OPTIMIZATION: instead of 200 × k single-feature decoder calls, we
+    # pre-generate ALL (layer, idx) pairs for ALL null draws, group by layer,
+    # do ONE batched decoder_rows() call per layer, then redistribute.
+    # For k=20, n_null_draws=200, null_layers=16 → 200*20=4000 random rows total,
+    # distributed across 16 layers ≈ 250 rows/layer. One call per layer instead of 4000.
+    def batched_null_draws(k: int, n_draws: int, exclude: set) -> List[np.ndarray]:
+        """Return n_draws Gram-input matrices D_i of shape (k, d), all from random
+        unrelated layers, batched per layer for speed."""
         pool_layers = [L for L in null_layers if L not in exclude]
         if not pool_layers:
             pool_layers = null_layers
-        rows = []
-        for _ in range(k):
-            L = pool_layers[rng.integers(len(pool_layers))]
-            tc = tset[L]
-            nfeat = tc.W_dec.shape[0] if hasattr(tc, "W_dec") else args.d_transcoder
-            fi = int(rng.integers(nfeat))
-            rows.append(decoder_rows(L, [fi])[0])
-        return np.array(rows, dtype=np.float64)
+        # 1) sample all (draw_idx, slot, layer, fidx) tuples
+        plan = []
+        for di in range(n_draws):
+            for slot in range(k):
+                L = pool_layers[rng.integers(len(pool_layers))]
+                tc = tset[L]
+                nfeat = tc.W_dec.shape[0] if hasattr(tc, "W_dec") else args.d_transcoder
+                fi = int(rng.integers(nfeat))
+                plan.append((di, slot, L, fi))
+        # 2) group by layer and do ONE batched extraction per layer
+        from collections import defaultdict
+        by_layer = defaultdict(list)
+        for (di, slot, L, fi) in plan:
+            by_layer[L].append((di, slot, fi))
+        # cache (layer, fi) → row
+        rows_cache: Dict[Tuple[int, int], np.ndarray] = {}
+        for L, triples in by_layer.items():
+            fis = [fi for (_, _, fi) in triples]
+            # unique idxs only (in case of duplicates)
+            unique_fis = sorted(set(fis))
+            D_batch = decoder_rows(L, unique_fis)  # (n_unique, d)
+            for j, fi in enumerate(unique_fis):
+                rows_cache[(L, fi)] = D_batch[j]
+        # 3) reassemble per-draw matrices
+        Ds = [np.zeros((k, Sigma_inv.shape[0]), dtype=np.float64) for _ in range(n_draws)]
+        for (di, slot, L, fi) in plan:
+            Ds[di][slot] = rows_cache[(L, fi)]
+        return Ds
 
     results = {"layers": {}, "cross_layer": None,
                "null": {}, "params": {
@@ -321,12 +348,16 @@ def run_real(args: argparse.Namespace) -> None:
         sm = spectrum_metrics(C)
         od = mean_offdiag_abs(C)
 
-        # null: random unrelated directions of the same count k
+        # null: random unrelated directions of the same count k (BATCHED)
         k = len(idxs)
         null_pr, null_l1, null_cosabs = [], [], []
         if k >= 2:
-            for _ in range(args.n_null_draws):
-                Dn = random_rows_from_other_layers(k, exclude={L})
+            logger.info("L%d: drawing %d null sets (k=%d each) with batched decoder lookup...",
+                        L, args.n_null_draws, k)
+            null_Ds = batched_null_draws(k, args.n_null_draws, exclude={L})
+            logger.info("L%d: null draws assembled, computing %d Gram spectra...",
+                        L, args.n_null_draws)
+            for Dn in null_Ds:
                 _, Cn = causal_cosine_gram(Dn, Sigma_inv)
                 smn = spectrum_metrics(Cn)
                 odn = mean_offdiag_abs(Cn)
