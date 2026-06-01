@@ -285,10 +285,27 @@ def run_real(args: argparse.Namespace) -> None:
     tset = load_transcoder_set(model_size=args.model_size, device=args.device,
                                lazy_load=True, layers=need_layers)
 
+    # ── Cache full W_dec per layer as numpy (one-time GPU→CPU transfer) ─────
+    # This eliminates per-call overhead of _get_decoder_vectors completely.
+    # W_dec shape per layer: ~(163840, 2560) float32 = ~1.6GB. We need 16 layers,
+    # so ~26GB total — but only CPU RAM, and we have 32GB allocated.
+    # If too large, we fall back to per-call extraction.
+    W_dec_cache: Dict[int, np.ndarray] = {}
+
+    def _ensure_wdec_cached(layer: int) -> np.ndarray:
+        if layer not in W_dec_cache:
+            tc = tset[layer]
+            if hasattr(tc, "W_dec"):
+                logger.info("Caching W_dec for layer %d (shape=%s)...", layer, tc.W_dec.shape)
+                W_dec_cache[layer] = tc.W_dec.detach().float().cpu().numpy().astype(np.float64)
+                logger.info("  cached %.1f MB", W_dec_cache[layer].nbytes / 1e6)
+            else:
+                raise RuntimeError(f"transcoder for L{layer} has no W_dec attribute")
+        return W_dec_cache[layer]
+
     def decoder_rows(layer: int, idxs: List[int]) -> np.ndarray:
-        tc = tset[layer]
-        t = torch.tensor(idxs, dtype=torch.long)
-        return tc._get_decoder_vectors(t).detach().float().cpu().numpy().astype(np.float64)
+        W = _ensure_wdec_cached(layer)
+        return W[np.asarray(idxs, dtype=np.int64)]
 
     # ── BATCH null draws ────────────────────────────────────────────────────
     # OPTIMIZATION: instead of 200 × k single-feature decoder calls, we
@@ -298,37 +315,29 @@ def run_real(args: argparse.Namespace) -> None:
     # distributed across 16 layers ≈ 250 rows/layer. One call per layer instead of 4000.
     def batched_null_draws(k: int, n_draws: int, exclude: set) -> List[np.ndarray]:
         """Return n_draws Gram-input matrices D_i of shape (k, d), all from random
-        unrelated layers, batched per layer for speed."""
+        unrelated layers, with W_dec fully cached (instant numpy indexing)."""
         pool_layers = [L for L in null_layers if L not in exclude]
         if not pool_layers:
             pool_layers = null_layers
-        # 1) sample all (draw_idx, slot, layer, fidx) tuples
-        plan = []
+        # 1) pre-cache W_dec for all pool layers (one GPU→CPU transfer each)
+        logger.info("  pre-caching W_dec for %d null layers...", len(pool_layers))
+        for L in pool_layers:
+            _ensure_wdec_cached(L)
+        d = Sigma_inv.shape[0]
+        # 2) draw all (n_draws, k) random (layer, idx) pairs
+        logger.info("  sampling %d × %d random (layer, idx) pairs...", n_draws, k)
+        layer_choices = pool_layers[:]
+        Ds = []
         for di in range(n_draws):
+            if di > 0 and di % 50 == 0:
+                logger.info("    null draw %d/%d", di, n_draws)
+            D = np.empty((k, d), dtype=np.float64)
             for slot in range(k):
-                L = pool_layers[rng.integers(len(pool_layers))]
-                tc = tset[L]
-                nfeat = tc.W_dec.shape[0] if hasattr(tc, "W_dec") else args.d_transcoder
-                fi = int(rng.integers(nfeat))
-                plan.append((di, slot, L, fi))
-        # 2) group by layer and do ONE batched extraction per layer
-        from collections import defaultdict
-        by_layer = defaultdict(list)
-        for (di, slot, L, fi) in plan:
-            by_layer[L].append((di, slot, fi))
-        # cache (layer, fi) → row
-        rows_cache: Dict[Tuple[int, int], np.ndarray] = {}
-        for L, triples in by_layer.items():
-            fis = [fi for (_, _, fi) in triples]
-            # unique idxs only (in case of duplicates)
-            unique_fis = sorted(set(fis))
-            D_batch = decoder_rows(L, unique_fis)  # (n_unique, d)
-            for j, fi in enumerate(unique_fis):
-                rows_cache[(L, fi)] = D_batch[j]
-        # 3) reassemble per-draw matrices
-        Ds = [np.zeros((k, Sigma_inv.shape[0]), dtype=np.float64) for _ in range(n_draws)]
-        for (di, slot, L, fi) in plan:
-            Ds[di][slot] = rows_cache[(L, fi)]
+                L = layer_choices[rng.integers(len(layer_choices))]
+                W = W_dec_cache[L]
+                fi = int(rng.integers(W.shape[0]))
+                D[slot] = W[fi]   # instant numpy indexing
+            Ds.append(D)
         return Ds
 
     results = {"layers": {}, "cross_layer": None,
@@ -475,7 +484,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="fallback feature count if tc.W_dec shape is unavailable")
 
     # null calibration
-    p.add_argument("--n_null_draws", type=int, default=200)
+    p.add_argument("--n_null_draws", type=int, default=100,
+                   help="random control draws (default 100, still gives stable p05/p95)")
     p.add_argument("--null_layers", type=int, nargs="*", default=None,
                    help="layers to draw random control directions from (default range)")
     p.add_argument("--null_layer_min", type=int, default=10)
