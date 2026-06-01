@@ -353,6 +353,16 @@ def run_real(args: argparse.Namespace) -> None:
                 int((y==0).sum()), int((y==1).sum()),
                 len(train_fams), len(fams)-len(train_fams))
 
+    # Dump residual matrices (fp16) for downstream feature-readout analysis (script 72).
+    h_dump_path = out / "h_residual_per_depth.npz"
+    np.savez_compressed(
+        h_dump_path,
+        y=y, is_train=is_train,
+        **{t: H[t].astype(np.float16) for t in taps},
+    )
+    logger.info("Saved residual matrices to %s (%.1f MB)",
+                h_dump_path, h_dump_path.stat().st_size / 1e6)
+
     # ---- carrier decoder span (for capture-cos) ----
     feats = _resolve_features(args)
     layers = sorted(feats.keys())
