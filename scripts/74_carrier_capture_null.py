@@ -46,6 +46,8 @@ import argparse, json, logging, re, sys
 from pathlib import Path
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("capture_null")
 FID = re.compile(r"[Ll](\d+)[_-]?[Ff](\d+)")
