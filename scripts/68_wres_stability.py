@@ -140,7 +140,11 @@ def run_real(args):
 
     cos_pairs = [abs(causal_cos(a, b, Si)) for a, b in combinations(ws, 2)]
     A = whitener(Si)
-    null = [abs(float((A @ unit(rng.standard_normal(d))) @ (A @ unit(rng.standard_normal(d))))) for _ in range(500)]
+    def _ccos(u, v):
+        uu = A @ u; uu /= (np.linalg.norm(uu) + 1e-30)
+        vv = A @ v; vv /= (np.linalg.norm(vv) + 1e-30)
+        return abs(float(uu @ vv))
+    null = [_ccos(rng.standard_normal(d), rng.standard_normal(d)) for _ in range(500)]
 
     res = {
         "tap": "final" if use_final else f"postL{L}",
