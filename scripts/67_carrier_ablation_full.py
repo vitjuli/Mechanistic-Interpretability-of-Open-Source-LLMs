@@ -258,6 +258,7 @@ def build_parser():
     p.add_argument("--prompts", default="physics_decay_type_probe_v2_train.jsonl")
     p.add_argument("--out_dir", default="data/analysis/iia_failure_diagnosis")
     p.add_argument("--model_name", default="Qwen/Qwen3-4B")
+    p.add_argument("--model_size", default="4b", choices=["0.6b", "1.7b", "4b", "8b", "14b"])
     p.add_argument("--device", default="cuda")
     p.add_argument("--alpha_answer", default=" alpha")
     p.add_argument("--beta_answer", default=" beta")
