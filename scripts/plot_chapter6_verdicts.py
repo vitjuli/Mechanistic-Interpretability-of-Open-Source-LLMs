@@ -133,13 +133,15 @@ ax = axes[2]
 # bar chart of key metrics
 metrics = {
     "Held-out AUC\n(decodability)":      stability["heldout_auc"]["mean"],
-    "Direction stability\n(cos w_res vs resamples)": stability["wres_stability_cos"]["mean"],
+    "Direction stability\n(cos w_res, resamples)":   stability["wres_stability_cos"]["mean"],
+    "3× null p95\n(stability threshold)":            3 * stability["random_cos_null"]["p95"],
     "cos_C(w_res, gbar)\n(orthog. stable?)":         stability["cos_C_wres_gbar"]["mean"],
     "Shuffled-label AUC\n(sanity: ~0.5)":            stability["shuffled_label_auc"]["mean"],
 }
 errors = {
     "Held-out AUC\n(decodability)":      stability["heldout_auc"]["std"],
-    "Direction stability\n(cos w_res vs resamples)": (stability["wres_stability_cos"]["p95"] - stability["wres_stability_cos"]["p05"]) / 2,
+    "Direction stability\n(cos w_res, resamples)":   (stability["wres_stability_cos"]["p95"] - stability["wres_stability_cos"]["p05"]) / 2,
+    "3× null p95\n(stability threshold)":            0,
     "cos_C(w_res, gbar)\n(orthog. stable?)":         stability["cos_C_wres_gbar"]["std"],
     "Shuffled-label AUC\n(sanity: ~0.5)":            0,
 }
@@ -147,7 +149,7 @@ errors = {
 x = np.arange(len(metrics))
 vals = list(metrics.values())
 errs = list(errors.values())
-colors = ["tab:green", "tab:red", "tab:orange", "tab:gray"]
+colors = ["tab:green", "tab:green", "tab:red", "tab:orange", "tab:gray"]
 
 bars = ax.bar(x, vals, yerr=errs, color=colors, alpha=0.7,
               edgecolor="black", capsize=5)
@@ -167,18 +169,25 @@ ax.set_xticks(x)
 ax.set_xticklabels(metrics.keys(), fontsize=8)
 ax.set_ylim(-0.1, 1.15)
 ax.set_ylabel("value")
+stable_str = "STABLE ✓" if stability["stable"] else "UNSTABLE ✗"
 ax.set_title(f"C — w_res stability (j68)\n"
-             f"20 resamples: AUC stable but DIRECTION drifts (cos={stability['wres_stability_cos']['mean']:.2f})")
+             f"20 resamples: cos={stability['wres_stability_cos']['mean']:.2f} "
+             f"vs 3×null p95={3*stability['random_cos_null']['p95']:.2f} → {stable_str}")
 ax.legend(loc="lower right", fontsize=8)
 ax.grid(alpha=0.3, axis="y")
 
-ax.text(0.98, 0.45,
-        "UNSTABLE:\nw_res direction\nis overfit artefact",
-        transform=ax.transAxes, fontsize=10, ha="right", va="top",
-        bbox=dict(facecolor="mistyrose", edgecolor="red", alpha=0.9))
+if stability["stable"]:
+    ax.text(0.98, 0.45,
+            "STABLE:\nw_res IS a real\ndirection (4× null)",
+            transform=ax.transAxes, fontsize=10, ha="right", va="top",
+            bbox=dict(facecolor="honeydew", edgecolor="green", alpha=0.9))
+else:
+    ax.text(0.98, 0.45,
+            "UNSTABLE:\nw_res direction\nis overfit artefact",
+            transform=ax.transAxes, fontsize=10, ha="right", va="top",
+            bbox=dict(facecolor="mistyrose", edgecolor="red", alpha=0.9))
 
-fig.suptitle("Chapter §6 — Three converging negative verdicts on w_res:  "
-             "decodable, but not causal, not written, not stable",
+fig.suptitle("Chapter §6 — w_res is decodable AND stable, but NOT causal and NOT written by features",
              fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.95])
 
@@ -197,8 +206,9 @@ print(f"\n[B] j66 — carrier vs w_res:")
 print(f"    227 carriers; signed_mean = {carrier['cross_layer']['signed_mean']:+.4f}")
 print(f"    capture w_res = {carrier['cross_layer']['carrier_capture_wres']:.3f} (30%)")
 print(f"    → all carriers orthogonal to w_res in null band")
-print(f"\n[C] j68 — w_res stability (n=20 resamples):")
-print(f"    Held-out AUC: {stability['heldout_auc']['mean']:.4f} (stable)")
+print(f"\n[C] j68 — w_res stability (n=20 resamples) [CORRECTED]:")
+print(f"    Held-out AUC: {stability['heldout_auc']['mean']:.4f}")
 print(f"    Direction stability: {stability['wres_stability_cos']['mean']:.3f}")
-print(f"    cos_C(w_res, gbar): {stability['cos_C_wres_gbar']['mean']:+.4f} (still ⊥ gbar)")
-print(f"    → AUC stable but direction not — overfit artefact")
+print(f"    Null p95: {stability['random_cos_null']['p95']:.4f}  (3× = {3*stability['random_cos_null']['p95']:.3f})")
+print(f"    cos_C(w_res, gbar): {stability['cos_C_wres_gbar']['mean']:+.4f} (still ⊥ gbar, stably)")
+print(f"    stable: {stability['stable']}  →  w_res IS a real direction")
