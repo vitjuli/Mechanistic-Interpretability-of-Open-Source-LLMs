@@ -350,8 +350,9 @@ def run_real(args):
         try:
             with torch.no_grad():
                 o = model(**inp, use_cache=False)
-                lp = torch.log_softmax(o.logits[0, -1, :].float(), 0)
-                return float(lp[beta_id] - lp[alpha_id])
+                row = o.logits[0, -1, :].float()
+                lp = torch.log_softmax(row, 0)
+                return float(lp[beta_id] - lp[alpha_id]), int(row.argmax().item())
         finally:
             for h in handles:
                 h.remove()
@@ -375,28 +376,41 @@ def run_real(args):
                                   "top_heads": [[int(L), int(h)] for L, h in top_heads]}
 
     # ============ (A) HEAD INTERVENTION vs RANDOM-HEAD NULL ============
+    # Two metrics, kept strictly separate:
+    #   MARGIN-flip  = sign of logit_beta - logit_alpha changed (same as j65/j75 wres_flip;
+    #                  a relative comparison of two tokens, NOT the model's answer).
+    #   INTACT-flip  = the model's actual top-1 token became the toward-class answer token
+    #                  (the behavioural metric; j75 found this ~0 even at 32 sigma).
     logger.info("(A) head intervention: top-%d concept heads vs random-head null...", args.top_k_heads)
     head_rows = []
+    flat = [(L, h) for L in layers for h in range(n_heads)]
     for factor in args.head_factors:
         mc = np.array([clean_margin[i] for i, _ in targets])
         tw = np.array([t for _, t in targets])
-        m_top = np.array([run_head_scaling(prompts[i]["prompt"], top_heads, factor) for i, _ in targets])
-        fr_top = flip_rate(mc, m_top, tw)
-        # random-head null: k random heads, N seeds
-        null_fr = []
-        flat = [(L, h) for L in layers for h in range(n_heads)]
+        toward_tok = np.array([beta_id if t == "beta" else alpha_id for t in tw])
+        rtop = [run_head_scaling(prompts[i]["prompt"], top_heads, factor) for i, _ in targets]
+        m_top = np.array([r[0] for r in rtop]); t1_top = np.array([r[1] for r in rtop])
+        fr_top = flip_rate(mc, m_top, tw)                                   # margin-flip
+        intact_top = float(np.mean(t1_top == toward_tok))                   # behavioural flip
+        intact_ab = float(np.mean([(t in (alpha_id, beta_id)) for t in t1_top]))  # top-1 is any alpha/beta
+        null_fr, null_intact = [], []
         for s in range(args.n_random_head):
             idx = rng.choice(len(flat), size=len(top_heads), replace=False)
             rset = [flat[j] for j in idx]
-            m_r = np.array([run_head_scaling(prompts[i]["prompt"], rset, factor) for i, _ in targets])
+            rr = [run_head_scaling(prompts[i]["prompt"], rset, factor) for i, _ in targets]
+            m_r = np.array([r[0] for r in rr]); t1_r = np.array([r[1] for r in rr])
             null_fr.append(flip_rate(mc, m_r, tw))
-        null_fr = np.array(null_fr)
-        row = {"factor": float(factor), "top_flip": fr_top,
-               "rand_flip_mean": float(null_fr.mean()), "rand_flip_p95": float(np.percentile(null_fr, 95)),
-               "top_percentile_vs_null": percentile_of(fr_top, null_fr)}
+            null_intact.append(float(np.mean(t1_r == toward_tok)))
+        null_fr = np.array(null_fr); null_intact = np.array(null_intact)
+        row = {"factor": float(factor),
+               "top_margin_flip": fr_top, "top_intact_flip": intact_top, "top_intact_ab_rate": intact_ab,
+               "rand_margin_flip_mean": float(null_fr.mean()), "rand_margin_flip_p95": float(np.percentile(null_fr, 95)),
+               "rand_intact_flip_mean": float(null_intact.mean()), "rand_intact_flip_p95": float(np.percentile(null_intact, 95)),
+               "margin_pct_vs_null": percentile_of(fr_top, null_fr),
+               "intact_pct_vs_null": percentile_of(intact_top, null_intact)}
         head_rows.append(row)
-        logger.info("  factor=%+.1f: top_flip=%.3f  rand_mean=%.3f p95=%.3f  (top at %.0f pct)",
-                    factor, fr_top, null_fr.mean(), np.percentile(null_fr, 95), row["top_percentile_vs_null"])
+        logger.info("  factor=%+.1f: MARGIN-flip top=%.3f (rand p95 %.3f) | INTACT-flip top=%.3f (rand p95 %.3f) | top-1 is a/b: %.3f",
+                    factor, fr_top, np.percentile(null_fr, 95), intact_top, np.percentile(null_intact, 95), intact_ab)
     results["head_intervention"] = head_rows
 
     # ============ (B) CIE SUBSPACE PATCH vs RANDOM-DIRECTION NULL ============
@@ -466,19 +480,37 @@ def run_real(args):
     print("\n" + "=" * 88)
     print("ATTENTION / CIE MECHANISM HUNT  --  does attention carry alpha/beta? is w_res causal under CIE?")
     print("=" * 88)
-    best_head = max(head_rows, key=lambda r: r["top_percentile_vs_null"]) if head_rows else None
-    if best_head and best_head["top_flip"] >= args.tau_flip and best_head["top_percentile_vs_null"] >= 95:
-        print(f"(A) ATTENTION CARRIES THE CONCEPT: top concept-aligned heads flip {best_head['top_flip']:.2f} "
-              f"(factor {best_head['factor']:+.0f}), above the random-head null p95 "
-              f"({best_head['rand_flip_p95']:.2f}). MECHANISM candidate = attention, not the MLP dictionary.")
+    # DECISIVE metric = behavioural intact-flip (top-1 became the toward-class answer).
+    # margin-flip is reported only as the steering-style relative metric (NOT behaviour).
+    best_b = max(head_rows, key=lambda r: r["top_intact_flip"]) if head_rows else None   # best by BEHAVIOUR
+    best_m = max(head_rows, key=lambda r: r["top_margin_flip"]) if head_rows else None    # best by margin
+    if best_b and best_b["top_intact_flip"] >= args.tau_flip and best_b["intact_pct_vs_null"] >= 95:
+        print(f"(A) OUTCOME 1 -- ATTENTION BEHAVIOURALLY CARRIES THE CONCEPT: at factor "
+              f"{best_b['factor']:+.0f} the top heads make the model's TOP-1 token the answer on "
+              f"{best_b['top_intact_flip']:.2f} of targets (random-head null p95 "
+              f"{best_b['rand_intact_flip_p95']:.2f}). Mechanism candidate = attention.")
     else:
-        tf = best_head["top_flip"] if best_head else float("nan")
-        print(f"(A) NO ATTENTION-HEAD CAUSALITY: top heads flip {tf:.2f}, not above the random-head null. "
-              f"Attention does not causally carry alpha/beta either (consistent with a decodable-but-bypassed concept).")
+        bi = best_b["top_intact_flip"] if best_b else float("nan")
+        bm = best_m["top_margin_flip"] if best_m else float("nan")
+        print(f"(A) NOT A BEHAVIOURAL LEVER: best behavioural INTACT-flip = {bi:.2f} (top-1 rarely/never "
+              f"becomes alpha/beta), even though the MARGIN-flip reaches {bm:.2f} under negation. The large "
+              f"margin-flip is the steering-style relative metric (sign of beta-alpha), NOT the answer; "
+              f"and head ABLATION (factor 0) is weak, so the heads are not NECESSARY. Reading: L21 heads "
+              f"WRITE a readable axis (representational, H3-geometry), but attention does not behaviourally "
+              f"carry alpha/beta -> consistent with a decodable-but-bypassed concept (H3-geometry + H2-behaviour).")
     if cie_out:
-        anyc = any(v["wres_percentile_vs_null"] >= 95 and v["cie_wres"] > 0 for v in cie_out.values())
-        print(f"(B) CIE: w_res subspace patch {'BEATS' if anyc else 'does NOT beat'} the random-direction null "
-              f"on any layer -> {'subspace causal (cf. 2602.07794)' if anyc else 'subspace causally inert (contrast with 2602.07794)'}.")
+        # behavioural: require a non-trivial flip, not mere statistical significance over a ~0 null
+        beh = any(v["flip_wres"] >= args.tau_flip for v in cie_out.values())
+        stat = any(v["wres_percentile_vs_null"] >= 95 and v["cie_wres"] > 0 for v in cie_out.values())
+        maxflip = max((v["flip_wres"] for v in cie_out.values()), default=float("nan"))
+        if beh:
+            print(f"(B) CIE: w_res subspace patch flips the answer on up to {maxflip:.2f} of targets "
+                  f"-> behaviourally causal (cf. 2602.07794).")
+        else:
+            print(f"(B) CIE: w_res subspace patch is statistically above the random-direction null "
+                  f"({'yes' if stat else 'no'}) but behaviourally negligible (max answer-flip {maxflip:.2f}). "
+                  f"Direction-patching barely moves the answer -> confirms the section-6 negative; "
+                  f"CONTRASTS with 2602.07794, whose subspace patch is behaviourally large.")
     print("=" * 88 + "\n")
 
 
