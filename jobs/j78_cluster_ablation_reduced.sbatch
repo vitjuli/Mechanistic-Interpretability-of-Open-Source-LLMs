@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
-#SBATCH --time=08:00:00
+#SBATCH --time=24:00:00
 #SBATCH --output=logs/j78r-%j.out
 #SBATCH --error=logs/j78r-%j.out
 #
@@ -55,9 +55,9 @@ python -u scripts/78_cluster_ablation_null.py \
     --prompts     data/prompts/physics_intensive_extensive_v1_train.jsonl \
     --cluster_csv "$CSV" \
     --cluster_id  4 \
-    --correct     " extensive" \
-    --incorrect   " intensive" \
-    --target_class extensive \
+    --correct     " intensive" \
+    --incorrect   " extensive" \
+    --target_class intensive \
     --n_prompts 96 \
     --n_null 15 \
     --out_dir data/analysis/iia_failure_diagnosis
