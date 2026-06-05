@@ -44,7 +44,7 @@ echo "==== SMOKE (layers 20 24, 5 prompts) ===="
 date
 python -u scripts/85_steering_all_layers.py \
     --prompts data/prompts/physics_decay_type_probe_v2_train.jsonl \
-    --layers 20 24 \
+    --steer_layers 20 24 \
     --max_targets 5 \
     --out_dir data/analysis/runD_v2/steering_all_layers/smoke
 SMOKE_RC=$?
