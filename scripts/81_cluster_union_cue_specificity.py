@@ -229,7 +229,7 @@ def run_real(args):
         rows = list(_csv.DictReader(f))
     if args.cluster_col not in rows[0]:
         raise SystemExit(f"column '{args.cluster_col}' not found in {clu_dir}/cluster_labels.csv. "
-                         f"Available columns: {sorted(rows[0].keys())[:20]}...")
+                         f"Available: {sorted(rows[0].keys())[:20]}...")
     coimp = {r["feature_id"]: int(r[args.cluster_col]) for r in rows}
     from collections import defaultdict
     clusters = defaultdict(list)
@@ -353,6 +353,16 @@ def run_real(args):
 
     records = []
 
+    # ---- incremental save helper (so timeouts don't lose work) ----
+    import csv as _csv_inc
+    def save_incremental(recs):
+        if not recs: return
+        keys = sorted({k for r in recs for k in r})
+        fn = out / f"union_cue_{args.mode}.csv"
+        with open(fn, "w", newline="") as f:
+            w = _csv_inc.DictWriter(f, fieldnames=keys); w.writeheader()
+            for r in recs: w.writerow(r)
+
     # ---------- MODE: pairs ----------
     if args.mode == "pairs":
         pairs = list(combinations(all_cluster_ids, 2))
@@ -364,8 +374,11 @@ def run_real(args):
                     len(pairs_slice), a, b, len(pairs))
         for j, pr in enumerate(pairs_slice):
             records.append(specificity_record(list(pr)))
-            if (j + 1) % 20 == 0:
-                logger.info("  pair %d/%d (global %d)", j + 1, len(pairs_slice), a + j + 1)
+            # incremental save after EVERY pair (cheap, survives timeout)
+            save_incremental(records)
+            if (j + 1) % 5 == 0:
+                logger.info("  pair %d/%d (global %d) — checkpointed",
+                            j + 1, len(pairs_slice), a + j + 1)
 
     # ---------- MODE: family (agglomerative + null) ----------
     elif args.mode == "family":
@@ -382,6 +395,8 @@ def run_real(args):
             for local_idx in nested_local:
                 cids = [s1_id_to_cluster[i] for i in local_idx]
                 rec = specificity_record(cids); rec["target_family"] = fam
+                others = [rec[f"flip_{f}"] for f in families if f != fam and not np.isnan(rec[f"flip_{f}"])]
+                rec["target_contrast"] = float(rec[f"flip_{fam}"] - max(others)) if others else float("nan")
                 # random-union null on specificity contrast for THIS family, same size
                 null_contr = []
                 for _ in range(args.n_random_union):
@@ -391,11 +406,12 @@ def run_real(args):
                     _, c = cue_specificity(ff, fam); null_contr.append(c)
                 rec["null_contrast_mean"] = float(np.nanmean(null_contr))
                 rec["null_contrast_p95"] = float(np.nanpercentile(null_contr, 95))
-                rec["target_pct_vs_null"] = percentile_of(rec["best_family_contrast"], np.array(null_contr)) \
-                    if rec["best_family"] == fam else float("nan")
+                rec["target_pct_vs_null"] = percentile_of(rec["target_contrast"], np.array(null_contr))
                 records.append(rec)
-                logger.info("  %s k=%d: flip_%s=%.2f contrast=%.2f (null p95=%.2f)", fam, len(cids), fam,
-                            rec.get(f"flip_{fam}", float('nan')), rec["best_family_contrast"], rec["null_contrast_p95"])
+                save_incremental(records)  # checkpoint after each union
+                logger.info("  %s k=%d: flip_%s=%.2f TARGET-contrast=%+.2f (target-null p95=%+.2f, pct %.0f) | best_family=%s (contrast %+.2f, NOT the test metric)",
+                            fam, len(cids), fam, rec.get(f"flip_{fam}", float('nan')), rec["target_contrast"],
+                            rec["null_contrast_p95"], rec["target_pct_vs_null"], rec["best_family"], rec["best_family_contrast"])
 
     # ---------- MODE: candidates ----------
     elif args.mode == "candidates":
@@ -435,9 +451,9 @@ def build_parser():
     p.add_argument("--k_max", type=int, default=5, help="max union size in agglomerative family growth")
     p.add_argument("--n_random_union", type=int, default=30, help="random-union null draws (on specificity)")
     p.add_argument("--candidates", default=None, help="for --mode candidates: '20+18+19,2+5+18+19+32'")
-    p.add_argument("--pair_start", type=int, default=None, help="for --mode pairs: index of first pair to process (parallelisation)")
-    p.add_argument("--pair_end",   type=int, default=None, help="for --mode pairs: index after last pair (exclusive)")
-    p.add_argument("--families", type=str, nargs="*", default=None, help="for --mode family: restrict to these family names")
+    p.add_argument("--pair_start", type=int, default=None, help="--mode pairs: index of first pair (parallelisation)")
+    p.add_argument("--pair_end",   type=int, default=None, help="--mode pairs: index after last pair (exclusive)")
+    p.add_argument("--families", type=str, nargs="*", default=None, help="--mode family: restrict to these family names")
     p.add_argument("--n_prompts", type=int, default=None)
     p.add_argument("--seed", type=int, default=0)
     return p
