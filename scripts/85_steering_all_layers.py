@@ -135,7 +135,9 @@ def run_real(args):
     last = n_layers - 1
 
     steer_layers = args.steer_layers if args.steer_layers else list(range(n_layers))
-    steer_layers = [L for L in steer_layers if 0 <= L <= last]
+    # exclude L == last (n_layers-1): post-final-block residual is captured by
+    # the 'final' tap; using blocks[L+1] for L=last would index out of range.
+    steer_layers = [L for L in steer_layers if 0 <= L < last]
     taps = [f"postL{L}" for L in steer_layers] + (["final"] if args.include_final else [])
     logger.info("model: %d layers; steering %d taps (all layers)", n_layers, len(taps))
 

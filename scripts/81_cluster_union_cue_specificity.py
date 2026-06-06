@@ -356,16 +356,27 @@ def run_real(args):
     # ---------- MODE: pairs ----------
     if args.mode == "pairs":
         pairs = list(combinations(all_cluster_ids, 2))
-        logger.info("JOB A: real ablation of %d pairs...", len(pairs))
-        for j, pr in enumerate(pairs):
+        # optional slicing for parallelisation: --pair_start / --pair_end
+        a = max(0, args.pair_start) if args.pair_start is not None else 0
+        b = min(len(pairs), args.pair_end) if args.pair_end is not None else len(pairs)
+        pairs_slice = pairs[a:b]
+        logger.info("JOB A: real ablation of %d pairs (slice %d..%d of %d total)...",
+                    len(pairs_slice), a, b, len(pairs))
+        for j, pr in enumerate(pairs_slice):
             records.append(specificity_record(list(pr)))
             if (j + 1) % 20 == 0:
-                logger.info("  pair %d/%d", j + 1, len(pairs))
+                logger.info("  pair %d/%d (global %d)", j + 1, len(pairs_slice), a + j + 1)
 
     # ---------- MODE: family (agglomerative + null) ----------
     elif args.mode == "family":
-        logger.info("JOB B: family-grouped agglomerative unions + random-union null...")
-        for fam in families:
+        if args.families:
+            fams_run = [f for f in families if f in args.families]
+            if not fams_run:
+                raise SystemExit(f"--families {args.families} not in {list(families)}")
+        else:
+            fams_run = list(families)
+        logger.info("JOB B: family-grouped agglomerative unions + random-union null... (families=%s)", fams_run)
+        for fam in fams_run:
             strength = fam_strength[fam]                      # over s1_ids order
             nested_local = agglomerative_family_unions(strength, args.k_max)
             for local_idx in nested_local:
@@ -424,6 +435,9 @@ def build_parser():
     p.add_argument("--k_max", type=int, default=5, help="max union size in agglomerative family growth")
     p.add_argument("--n_random_union", type=int, default=30, help="random-union null draws (on specificity)")
     p.add_argument("--candidates", default=None, help="for --mode candidates: '20+18+19,2+5+18+19+32'")
+    p.add_argument("--pair_start", type=int, default=None, help="for --mode pairs: index of first pair to process (parallelisation)")
+    p.add_argument("--pair_end",   type=int, default=None, help="for --mode pairs: index after last pair (exclusive)")
+    p.add_argument("--families", type=str, nargs="*", default=None, help="for --mode family: restrict to these family names")
     p.add_argument("--n_prompts", type=int, default=None)
     p.add_argument("--seed", type=int, default=0)
     return p
