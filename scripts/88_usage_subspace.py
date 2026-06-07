@@ -378,13 +378,23 @@ def run_real(args):
                     Rg = torch.randn(20000, d, device=args.device)
                     rmax.append(float(((Rg @ ut) / Rg.norm(dim=1)).abs().max()))
                 rand_max = float(np.sqrt(2 * np.log(F) / d))
+                wn = Wd.norm(dim=1) + 1e-12
+                dec_rand = []
+                for _ in range(5):
+                    rr = torch.randn(d, device=args.device); rr = rr / rr.norm()
+                    dec_rand.append(float(((Wd @ rr) / wn).abs().max()))
                 car_rows.append({"layer": int(L),
                                  "max_abs_cos_plain": float(cos_plain.abs().max()),
                                  "max_abs_cos_causal": float(cos_c.abs().max()),
                                  "rand_max_analytic": rand_max,
-                                 "rand_max_sampled20k": float(np.max(rmax))})
-                logger.info("(E) L%d: max|cos(d_f,u)| plain=%.3f causal=%.3f (rand-max ~%.3f)",
-                            L, car_rows[-1]["max_abs_cos_plain"], car_rows[-1]["max_abs_cos_causal"], rand_max)
+                                 "rand_max_sampled20k": float(np.max(rmax)),
+                                 "decoder_vs_random_max_mean": float(np.mean(dec_rand)),
+                                 "decoder_vs_random_max_p95": float(np.percentile(dec_rand, 95))})
+                logger.info("(E) L%d: max|cos(d_f,u)| plain=%.3f causal=%.3f | NULLs: isotropic~%.3f, "
+                            "decoder-vs-random=%.3f (THE null) -> %s",
+                            L, car_rows[-1]["max_abs_cos_plain"], car_rows[-1]["max_abs_cos_causal"], rand_max,
+                            car_rows[-1]["decoder_vs_random_max_mean"],
+                            "ABOVE" if car_rows[-1]["max_abs_cos_plain"] > car_rows[-1]["decoder_vs_random_max_mean"] + 0.02 else "at/below")
                 del Wd, WW
                 torch.cuda.empty_cache()
                 if hasattr(ts, "unload_layer"):
@@ -437,7 +447,7 @@ def run_real(args):
     late = sorted({r["layer"] for r in cand if r["layer"] >= 30})
     print(f"CAUTION: collapses at late layers {late} are readout-adjacent (PR(usage)->1, u~gamma_bar): "
           f"erasing the answer-readout direction trivially zeroes the margin -- this is NOT evidence of an internal channel.")
-    nonmono = sorted({L for (L, _) in cand if not monotone(L)})
+    nonmono = sorted({r["layer"] for r in cand if not monotone(r["layer"])})
     if nonmono:
         print(f"NON-MONOTONIC in k at layers {nonmono} (erasing MORE dims restores the task) -> artifact signature, not a clean channel.")
     print("A clean internal-channel claim needs a MID-stack, k-monotonic, control-intact collapse with gamma_bar projected out (see 88b).")
