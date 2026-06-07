@@ -220,7 +220,8 @@ def run_real(args):
         inp = tok([ptext], return_tensors="pt").to(args.device)
         keep = {}
         def pre(m, a):
-            a[0].retain_grad(); keep["t"] = a[0]
+            if need_grad and a[0].requires_grad:
+                a[0].retain_grad(); keep["t"] = a[0]
             hs = a[0].clone(); hs[0, -1, :] = hs[0, -1, :] + dt
             return (hs,)
         h = tap(L).register_forward_pre_hook(pre, with_kwargs=False)
@@ -228,7 +229,7 @@ def run_real(args):
             if need_grad:
                 row = model(**inp, use_cache=False).logits[0, -1, :]
                 (row[beta_id] - row[alpha_id]).backward()
-                g = keep["t"].grad[0, -1, :].float().cpu().numpy()
+                g = keep["t"].grad[0, -1, :].float().cpu().numpy() if "t" in keep else None
                 m = float(row[beta_id].item() - row[alpha_id].item())
                 model.zero_grad(set_to_none=True)
                 return m, g
@@ -237,6 +238,23 @@ def run_real(args):
             return float(row[beta_id] - row[alpha_id]), None
         finally:
             h.remove()
+
+    # ---------- pipeline sanity (CHEAP: 1 prompt × both paths) ----------
+    # Catches retain_grad / hook / shape bugs BEFORE the long capture phase.
+    logger.info("(sanity) testing steer_eval on 1 prompt × no_grad / with_grad paths...")
+    sanity_L = layers[0]
+    sanity_p = prompts[0]["prompt"]
+    sanity_d = np.zeros(d, np.float32)
+    try:
+        m_ng, _ = steer_eval(sanity_p, sanity_L, sanity_d, need_grad=False)
+        m_g, g_g = steer_eval(sanity_p, sanity_L, sanity_d, need_grad=True)
+        assert g_g is not None and g_g.shape == (d,), f"grad shape {None if g_g is None else g_g.shape}"
+        assert abs(m_ng - m_g) < 1e-2, f"margin mismatch no_grad={m_ng} with_grad={m_g}"
+        logger.info("(sanity) OK — both paths produce consistent margins (%.4f vs %.4f), grad shape %s",
+                    m_ng, m_g, g_g.shape)
+    except Exception as e:
+        logger.error("(sanity) FAILED before main loop: %s", e)
+        raise
 
     # ---------- (A) calculus: predicted vs measured ----------
     ca = [i for i in held if y[i] == 0][: args.calc_targets]

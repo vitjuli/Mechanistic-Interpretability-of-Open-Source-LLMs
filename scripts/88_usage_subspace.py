@@ -406,33 +406,45 @@ def run_real(args):
     nonfinal = [r for r in rows if r["layer"] != last]
     final_rows = [r for r in rows if r["layer"] == last]
     collapse = [r for r in nonfinal if r["acc_erased"] <= 0.55]
-    strong = [r for r in nonfinal if r["acc_erased"] < acc_clean - 0.15 and r["acc_erased"] < r["acc_rand_min"] - 0.05]
-    modest = [r for r in nonfinal if r["acc_erased"] < r["acc_rand_min"] and r not in strong and r not in collapse]
+    cand = [r for r in nonfinal if r["acc_erased"] <= 0.55 or
+            (r["acc_erased"] < acc_clean - 0.15 and r["acc_erased"] < r["acc_rand_min"] - 0.05)]
+    # control-contrast discriminator: if erasing the UNRELATED contrast's usage subspace also
+    # drops accuracy, the collapse is non-specific (output-readout), not an alpha/beta channel.
+    specific = [r for r in cand if r["acc_control_contrast"] > acc_clean - 0.10]
+    nonspecific = [r for r in cand if r not in specific]
+    # monotonicity in k per layer (a genuine low-dim channel: erasing more cannot RESTORE the task)
+    bylayer = {}
+    for r in rows:
+        bylayer.setdefault(r["layer"], {})[r["k"]] = r["acc_erased"]
+    def monotone(L):
+        ks = sorted(bylayer[L]); accs = [bylayer[L][k] for k in ks]
+        return all(accs[i + 1] <= accs[i] + 0.05 for i in range(len(accs) - 1))
+    cell = lambda rs: sorted(set((r["layer"], r["k"]) for r in rs))
     print("\n" + "=" * 96)
     print("USAGE SUBSPACE -- spectrum, angles to the readable map, and DUAL erasure")
     print("=" * 96)
     print(f"ANGLES: median max principal cos(concept_map, usage_subspace) over layers = {med_max:.3f} "
-          f"(random-frame p95 ~ {float(np.percentile(null_maxcos,95)):.3f})")
+          f"(random-frame p95 ~ {float(np.percentile(null_maxcos,95)):.3f}) "
+          f"-> {'usage subspace ~ random frame vs concept map (BYPASS at subspace level)' if med_max <= 0.16 else 'some alignment'}")
     if final_rows:
         fr = min(final_rows, key=lambda r: r["k"])
         ok = fr["acc_erased"] <= 0.6
         print(f"SANITY (final tap, k={fr['k']}): usage-erase acc={fr['acc_erased']:.2f} -> "
-              f"{'collapses as required (machinery valid)' if ok else 'DID NOT collapse -> CHECK MACHINERY'}")
-    if collapse or strong:
-        cells = sorted(set((r["layer"], r["k"]) for r in collapse + strong))
-        print(f"COLLAPSE/STRONG cells (usage causally necessary): {cells}")
-        ks = [k for (_, k) in cells]
-        print(f"-> causal channel dimension candidates k* as low as {min(ks)}; readable-map erasure (exp 87) left the task intact"
-              f" -> DOUBLE DISSOCIATION: the decision flows through a usage channel disjoint from the readable concept map.")
-    else:
-        print("No single-layer collapse: the decision channel is depth-redundant at the per-layer level.")
+              f"{'collapses as required (u~gamma_bar; machinery valid)' if ok else 'DID NOT collapse -> CHECK MACHINERY'}")
+    print(f"Usage-erasure collapse cells: {cell(cand) or 'none'}")
+    print(f"  alpha/beta-SPECIFIC (control-contrast intact): {cell(specific) or 'none'}")
+    print(f"  NON-specific (control-contrast also drops -> readout/pipeline): {cell(nonspecific) or 'none'}")
+    late = sorted({r["layer"] for r in cand if r["layer"] >= 30})
+    print(f"CAUTION: collapses at late layers {late} are readout-adjacent (PR(usage)->1, u~gamma_bar): "
+          f"erasing the answer-readout direction trivially zeroes the margin -- this is NOT evidence of an internal channel.")
+    nonmono = sorted({L for (L, _) in cand if not monotone(L)})
+    if nonmono:
+        print(f"NON-MONOTONIC in k at layers {nonmono} (erasing MORE dims restores the task) -> artifact signature, not a clean channel.")
+    print("A clean internal-channel claim needs a MID-stack, k-monotonic, control-intact collapse with gamma_bar projected out (see 88b).")
     if cum_rows:
         worst = min(cum_rows, key=lambda r: r["acc_erased"])
         print(f"CUMULATIVE: worst window {worst['window']} (k={worst['k']}): acc={worst['acc_erased']:.2f} "
               f"(rand mean {worst['acc_rand_mean']:.2f}, clean {acc_clean:.2f})")
-    if modest:
-        print(f"MODEST below-null cells (coarse nulls, n_random={args.n_random} -> treat as candidates only): "
-              f"{sorted(set((r['layer'], r['k'])) for r in [modest][0]) if False else sorted(set((r['layer'], r['k']) for r in modest))}")
     print("=" * 96 + "\n")
 
 
