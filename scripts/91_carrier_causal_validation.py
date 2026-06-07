@@ -262,8 +262,9 @@ def run_real(args):
         ft = torch.tensor(np.asarray(feats, dtype=np.int64), device=args.device)
         def hook(m, inp, output):
             with torch.no_grad():
-                acts = ts[L].encode(inp[0])                       # (1, seq, F)
-                contrib = acts[..., ft] @ Wdec[L][ft]             # (1, seq, d)
+                acts = ts[L].encode(inp[0])                       # (1, seq, F), bf16 from ts dtype
+                # cast acts to match Wdec dtype (fp32) to avoid bf16 ↔ fp32 matmul error
+                contrib = acts[..., ft].to(Wdec[L].dtype) @ Wdec[L][ft]   # (1, seq, d), fp32
             return output - contrib.to(output.dtype)
         return hook
 
