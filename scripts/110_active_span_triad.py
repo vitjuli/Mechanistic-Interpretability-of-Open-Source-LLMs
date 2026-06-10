@@ -1,19 +1,30 @@
 """
-110_active_span_triad.py   [do decoded/written/used live in the span of the ACTIVE features? same sub-dict?]
+110_active_span_triad.py   [active-span analysis + per-feature triad map (read/write/used)]
 ========================================================================================================
-Single features are ~orthogonal to w_res/u (exp 109), but a direction can be DISTRIBUTED over many features.
-The FULL decoder span is overcomplete (163840 >> 2560) so it captures everything trivially -- useless. The
-non-trivial object is the span of features that ACTUALLY FIRE. For each layer we:
-  - encode the MLP input over prompts -> active feature set A (fires on >= tau fraction of prompts)
-  - build decoder sub-matrix D_A (active rows of W_dec) and project each of {w_res, u, delta} onto span(D_A):
-        captured(v) = ||P_{span(D_A)} v||^2 / ||v||^2
-  - sparse reconstruction size: how many active features (greedy by |cos|) to reach 90% of v
-  - principal angles between span(read-features) / span(use-features) sub-spaces
-  - NULL: random unit directions projected onto span(D_A) -> baseline capture (since |A| can be large)
-If w_res is well captured by the active span but u is captured from a DIFFERENT (high principal-angle)
-sub-span, the dictionary encodes 'readable' and 'used' in different active sub-dictionaries.
+Two outputs from one capture pass over the prompts:
 
-Needs transcoders (encode + decoder). Heavier. SELF-TEST (no torch): python 110_active_span_triad.py --self_test
+  (A) AGGREGATE per-layer span analysis  →  active_span_triad.csv
+      - encode MLP input over prompts → active feature set A (fires on ≥ tau fraction of prompts)
+      - build decoder sub-matrix D_A and project each of {w_res, u, delta} onto span(D_A):
+            captured(v) = ||P_{span(D_A)} v||^2 / ||v||^2
+      - sparse reconstruction size: how many active features (greedy by |cos|) to reach 90% of v
+      - principal angles between span(read-features) / span(use-features) sub-spaces
+      - NULL: random unit directions projected onto span(D_A) → baseline capture
+      → 1 row per layer.
+
+  (B) PER-FEATURE triad map  →  feature_triad_alignment.csv  +  triad_type_summary.csv
+      For each ACTIVE feature f at each layer ℓ, record cos(W_dec[f], v) for v ∈ {w_res, u, δ}.
+      Classify into 8 'triad' buckets at threshold T = --triad_threshold (default 0.05):
+            none | wres_only | u_only | delta_only |
+            wres+u | wres+delta | u+delta | all_three
+      Lets you ask: do features write to ONE axis or several? Are there 'shared writers'?
+      → |A_ℓ| rows per layer (feature CSV) + 1 row per layer (summary CSV).
+
+If w_res is well captured by the active span but u is captured from a DIFFERENT (high principal-angle)
+sub-span, AND the per-feature map shows mostly single-axis loaders, the dictionary encodes 'readable',
+'written', and 'used' in three structurally distinct active sub-dictionaries.
+
+Needs transcoders (encode + decoder). SELF-TEST (no torch): python 110_active_span_triad.py --self_test
 """
 from __future__ import annotations
 import argparse, csv as _csv, json, logging, sys
@@ -65,6 +76,15 @@ def principal_angles(Qa, Qb):
     ang = np.degrees(np.arccos(s)); return float(ang.min()), float(ang.mean())
 
 
+def classify_triad(loads_w, loads_u, loads_d):
+    """8-bucket classification by which axes a feature loads above threshold."""
+    code = (int(loads_w) << 2) | (int(loads_u) << 1) | int(loads_d)
+    return {
+        0b000: "none", 0b100: "wres_only", 0b010: "u_only", 0b001: "delta_only",
+        0b110: "wres+u", 0b101: "wres+delta", 0b011: "u+delta", 0b111: "all_three",
+    }[code]
+
+
 def self_test():
     rng = np.random.default_rng(0); d, k = 64, 20
     D = rng.standard_normal((d, k))
@@ -73,7 +93,18 @@ def self_test():
     cap_in, _ = captured_fraction(D, v_in); cap_out, _ = captured_fraction(D, v_out)
     assert cap_in > 0.99 and cap_out < 0.6, f"in-span captured ~1 ({cap_in:.2f}), generic less ({cap_out:.2f})"
     nsz, cap = greedy_recon_size(D, v_in, 0.9); assert cap >= 0.9
-    print(f"[self_test] OK — span capture ({cap_in:.2f} vs {cap_out:.2f}); greedy reached {cap:.2f} in {nsz} atoms.")
+    # triad classifier: plant 3 distinct best-loaders, rest should be 'none'
+    F = 80
+    Wdec = rng.standard_normal((F, d))
+    Wdec /= np.linalg.norm(Wdec, axis=1, keepdims=True) + 1e-9
+    wres = Wdec[0].copy(); u_ = Wdec[1].copy(); delta = Wdec[2].copy()
+    T = 0.5
+    types = [classify_triad(abs(Wdec[i] @ wres) > T,
+                             abs(Wdec[i] @ u_) > T,
+                             abs(Wdec[i] @ delta) > T) for i in range(F)]
+    counts = {t: types.count(t) for t in set(types)}
+    assert "wres_only" in counts and "u_only" in counts and "delta_only" in counts and counts.get("none", 0) >= F // 2, counts
+    print(f"[self_test] OK — span ({cap_in:.2f} vs {cap_out:.2f}, greedy {cap:.2f}/{nsz}); triad {counts}")
 
 
 def run_real(args):
@@ -145,10 +176,11 @@ def run_real(args):
     from transcoder import load_transcoder_set
     ts = load_transcoder_set(args.transcoder_set, device=args.device, dtype=torch.bfloat16, lazy_load=True)
 
-    rows = []
+    rows = []           # aggregate per-layer
+    feat_rows = []      # per-feature (long format)
+    triad_summary = []  # per-layer triad-type counts
     for L in layers:
         # encode active features over prompts
-        acts = np.zeros((Pn, 0))
         mlp_in = torch.tensor(MIN[L], dtype=torch.bfloat16, device=args.device)
         with torch.no_grad():
             a = ts[L].encode(mlp_in)                       # (Pn, F) jumprelu acts
@@ -188,10 +220,89 @@ def run_real(args):
                          principal_angle_min_read_use=pa_min, principal_angle_mean_read_use=pa_mean))
         logger.info("L%02d |A|=%4d | cap: wres=%.2f u=%.2f δ=%.2f (null=%.2f) | recon90: wres=%d u=%d | angle(read,use)=%.0f°min %.0f°mean",
                     L, len(active), cap_w, cap_u, cap_d, cap_rand, nz_w, nz_u, pa_min, pa_mean)
-        del Wdec, D; torch.cuda.empty_cache()
+
+        # ── Per-feature triad map (cheap: ~ms) ────────────────────────────────
+        D_unit = Wdec[active] / (np.linalg.norm(Wdec[active], axis=1, keepdims=True) + 1e-12)
+        cos_w = D_unit @ wres
+        cos_u_ = D_unit @ u
+        cos_d_ = D_unit @ delta
+        abs_sum = np.abs(cos_w) + np.abs(cos_u_) + np.abs(cos_d_)
+        max_cos = np.maximum.reduce([np.abs(cos_w), np.abs(cos_u_), np.abs(cos_d_)])
+        # per-feature stats
+        a_act_cols = a[:, active]                          # (Pn, |A|)
+        mean_act_all = a_act_cols.mean(0)
+        fire_count = (a_act_cols > 0).sum(0).astype(float)
+        sum_when_fired = np.where(a_act_cols > 0, a_act_cols, 0.0).sum(0)
+        mean_act_fired = np.where(fire_count > 0, sum_when_fired / np.maximum(fire_count, 1), 0.0)
+        # attribution proxy: mean_act × <d, g>
+        g_mean = G[L][tr].astype(np.float64).mean(0)
+        proj_d_g = Wdec[active] @ g_mean                   # raw, not unit-normalised
+        attr_proxy = mean_act_all * proj_d_g
+        # per-feature ranks (smaller = stronger loader)
+        rank_w = np.argsort(-np.abs(cos_w)).argsort()
+        rank_u = np.argsort(-np.abs(cos_u_)).argsort()
+        rank_d = np.argsort(-np.abs(cos_d_)).argsort()
+        T = args.triad_threshold
+        loads_w = np.abs(cos_w) > T
+        loads_u = np.abs(cos_u_) > T
+        loads_d = np.abs(cos_d_) > T
+        for k, f in enumerate(active):
+            feat_rows.append({
+                "layer": int(L), "feature": int(f),
+                "fire_rate": float(fire_rate[f]),
+                "mean_act": float(mean_act_all[k]),
+                "mean_act_fired": float(mean_act_fired[k]),
+                "cos_d_wres": float(cos_w[k]),
+                "cos_d_u": float(cos_u_[k]),
+                "cos_d_delta": float(cos_d_[k]),
+                "abs_sum_cos": float(abs_sum[k]),
+                "max_cos": float(max_cos[k]),
+                "attribution_proxy": float(attr_proxy[k]),
+                "rank_wres": int(rank_w[k]),
+                "rank_u": int(rank_u[k]),
+                "rank_delta": int(rank_d[k]),
+                "loads_wres": bool(loads_w[k]),
+                "loads_u": bool(loads_u[k]),
+                "loads_delta": bool(loads_d[k]),
+                "triad_type": classify_triad(loads_w[k], loads_u[k], loads_d[k]),
+            })
+        # per-layer summary
+        types = [classify_triad(loads_w[k], loads_u[k], loads_d[k]) for k in range(len(active))]
+        cnt = {t: types.count(t) for t in
+               ["none", "wres_only", "u_only", "delta_only",
+                "wres+u", "wres+delta", "u+delta", "all_three"]}
+        n_single = cnt["wres_only"] + cnt["u_only"] + cnt["delta_only"]
+        n_multi = cnt["wres+u"] + cnt["wres+delta"] + cnt["u+delta"] + cnt["all_three"]
+        n_any = n_single + n_multi
+        triad_summary.append({
+            "layer": int(L), "n_active": int(len(active)),
+            **{f"n_{k}": int(v) for k, v in cnt.items()},
+            "single_axis_frac": float(n_single / max(n_any, 1)),
+            "multi_axis_frac": float(n_multi / max(n_any, 1)),
+            "max_cos_wres": float(np.abs(cos_w).max()),
+            "max_cos_u": float(np.abs(cos_u_).max()),
+            "max_cos_delta": float(np.abs(cos_d_).max()),
+            "n_feat_above_T_wres": int(loads_w.sum()),
+            "n_feat_above_T_u": int(loads_u.sum()),
+            "n_feat_above_T_delta": int(loads_d.sum()),
+        })
+        logger.info("  triad L%02d (T=%.2f): loads w=%d u=%d δ=%d | single=%d multi=%d all3=%d",
+                    L, T, int(loads_w.sum()), int(loads_u.sum()), int(loads_d.sum()),
+                    n_single, n_multi, cnt["all_three"])
+        del Wdec, D, D_unit; torch.cuda.empty_cache()
 
     with open(out / "active_span_triad.csv", "w", newline="") as f:
         w_ = _csv.DictWriter(f, fieldnames=list(rows[0].keys())); w_.writeheader(); [w_.writerow(r) for r in rows]
+    if feat_rows:
+        with open(out / "feature_triad_alignment.csv", "w", newline="") as f:
+            w_ = _csv.DictWriter(f, fieldnames=list(feat_rows[0].keys()))
+            w_.writeheader(); [w_.writerow(r) for r in feat_rows]
+        logger.info("saved per-feature triad CSV: %d rows", len(feat_rows))
+    if triad_summary:
+        with open(out / "triad_type_summary.csv", "w", newline="") as f:
+            w_ = _csv.DictWriter(f, fieldnames=list(triad_summary[0].keys()))
+            w_.writeheader(); [w_.writerow(r) for r in triad_summary]
+        logger.info("saved triad-type summary: %d rows", len(triad_summary))
 
     print("\n" + "=" * 100)
     print("ACTIVE-FEATURE SPAN vs TRIAD — are decoded/written/used in the active sub-dictionary? same sub-span?")
@@ -223,6 +334,8 @@ def build_parser():
     p.add_argument("--max_atoms", type=int, default=400)
     p.add_argument("--angle_rank", type=int, default=20)
     p.add_argument("--n_null", type=int, default=8)
+    p.add_argument("--triad_threshold", type=float, default=0.05,
+                    help="loading threshold T: a feature 'loads' an axis if |cos(d_f, axis)| > T")
     p.add_argument("--train_frac", type=float, default=0.6)
     p.add_argument("--shrink", type=float, default=0.1)
     p.add_argument("--seed", type=int, default=0)
