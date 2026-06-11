@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH -A FERGUSSON-SL3-CPU
-#SBATCH --qos=cclake
 #SBATCH --job-name=j118-null-calib
 #SBATCH --partition=cclake
 #SBATCH --nodes=1
