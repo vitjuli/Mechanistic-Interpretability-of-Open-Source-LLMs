@@ -90,19 +90,27 @@ def fit_slope(pred, meas):
 def predict_battery(G, m0, y, idx, v, c, sigma):
     """First-order prediction for the 86 steering protocol on prompt subset idx.
     Push TOWARD the opposite class: s=+1 (toward beta) for y=0, s=-1 for y=1.
-    Returns (mean signed margin movement toward target, predicted flip-rate)."""
+    Returns (mean signed margin movement toward target,
+             predicted flip-rate          [86 definition: ceiling = baseline accuracy],
+             predicted normalized flip    [among baseline-correct prompts; ceiling 1.0 —
+                                           the cross-concept-comparable metric],
+             n_correct)."""
     vu = unit_raw(np.asarray(v, float))
-    dm_t, fl = [], []
+    dm_t, fl, fl_n = [], [], []
     for i in idx:
         s = +1.0 if y[i] == 0 else -1.0
         dm = float(G[i].astype(np.float64) @ (s * c * sigma * vu))
         m1 = m0[i] + dm
         dm_t.append(s * dm)
         if y[i] == 0:    # alpha prompt steered toward beta
-            fl.append(int(m0[i] < 0 and m1 > 0))
+            f = int(m0[i] < 0 and m1 > 0); corr = m0[i] < 0
         else:            # beta prompt steered toward alpha
-            fl.append(int(m0[i] > 0 and m1 < 0))
-    return float(np.mean(dm_t)), float(np.mean(fl))
+            f = int(m0[i] > 0 and m1 < 0); corr = m0[i] > 0
+        fl.append(f)
+        if corr:
+            fl_n.append(f)
+    return (float(np.mean(dm_t)), float(np.mean(fl)),
+            float(np.mean(fl_n)) if fl_n else float("nan"), len(fl_n))
 
 
 def binom_ci_halfwidth(p, n, z=1.96):
@@ -159,7 +167,7 @@ def self_test():
     idx = list(range(n)); sigma = 1.0
     for c in (0.5, 1, 4, 16):
         for v in (unit_raw(a), w):
-            p_dm, p_fl = predict_battery(G, m_lin, y, idx, v, c, sigma)
+            p_dm, p_fl, p_fln, _ = predict_battery(G, m_lin, y, idx, v, c, sigma)
             dm_t, fl = [], []
             for i in idx:
                 s = +1.0 if y[i] == 0 else -1.0
@@ -169,7 +177,7 @@ def self_test():
             assert abs(p_dm - np.mean(dm_t)) < 1e-9 and abs(p_fl - np.mean(fl)) < 1e-12, \
                 f"linear-world mismatch at c={c}"
     # along w (orthogonal to usage) the predicted flip-rate must be ~0 at any c
-    _, p_fl_w = predict_battery(G, m_lin, y, idx, w, 16, sigma)
+    _, p_fl_w, _, _ = predict_battery(G, m_lin, y, idx, w, 16, sigma)
     assert p_fl_w == 0.0, "orthogonal direction must predict zero flips"
 
     # (2) SATURATING world: m(h) = tanh(h@a/4)*4 — predictor good at small c, breaks at large
@@ -253,9 +261,10 @@ def run_real(args):
         for c in args.c_grid:
             for name, v in dirs.items():
                 for sub_name, idx in subsets.items():
-                    dm, fl = predict_battery(G, m0, y, idx, v, c, sigma)
+                    dm, fl, fln, n_corr = predict_battery(G, m0, y, idx, v, c, sigma)
                     pred_rows.append({"layer": L, "c": float(c), "dir": name, "subset": sub_name,
                                       "n": len(idx), "pred_dmargin": dm, "pred_flip": fl,
+                                      "pred_flip_norm": fln, "n_correct": n_corr,
                                       "pred_flip_ci": binom_ci_halfwidth(fl, len(idx)),
                                       "sigma": sigma})
         if L % 4 == 0 or L == n_layers - 1:

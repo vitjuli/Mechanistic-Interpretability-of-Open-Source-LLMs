@@ -152,7 +152,14 @@ def run_real(args):
     for pf in prompt_files:
         prompts += [json.loads(l) for l in open(pf)]
     nP = len(prompts)
-    logger.info("prompts: %d total from %s", nP, prompt_files)
+    per_prompt_ids = all(("tok_id_class0" in p and "tok_id_class1" in p) for p in prompts)
+    logger.info("prompts: %d total from %s | per-prompt class token ids: %s",
+                nP, prompt_files, per_prompt_ids)
+    if per_prompt_ids:
+        id0 = np.array([int(p["tok_id_class0"]) for p in prompts])
+        id1 = np.array([int(p["tok_id_class1"]) for p in prompts])
+    else:
+        id0 = np.full(nP, alpha_id); id1 = np.full(nP, beta_id)
 
     for p_ in model.parameters():
         p_.requires_grad_(True)
@@ -184,14 +191,14 @@ def run_real(args):
         try:
             o = model(**inp, use_cache=False)
             row = o.logits[0, -1, :]
-            rm = row[beta_id] - row[alpha_id]
+            rm = row[int(id1[i])] - row[int(id0[i])]
             rm.backward()
             rowf = row.detach().float()
             lp = torch.log_softmax(rowf, 0)
-            clean_margin[i] = float(lp[beta_id] - lp[alpha_id])
+            clean_margin[i] = float(lp[int(id1[i])] - lp[int(id0[i])])
             raw_margin[i] = float(rm.item())
             baseline_top1[i] = int(rowf.argmax().item())
-            baseline_intact[i] = int(baseline_top1[i] in (alpha_id, beta_id))
+            baseline_intact[i] = int(baseline_top1[i] in (int(id0[i]), int(id1[i])))
             ids_np, vals_np = topk_row(rowf.cpu().numpy(), args.topk)
             topk_ids[i], topk_logits[i] = ids_np, vals_np
         finally:
@@ -204,7 +211,8 @@ def run_real(args):
         hf = res[last][i].astype(np.float64)
         rms_final[i] = float(np.sqrt(np.mean(hf ** 2) + rms_eps))
         model.zero_grad(set_to_none=True)
-        y[i] = 1 if p["correct_answer"].strip() == "beta" else 0
+        y[i] = int(prompts[i].get("y_canonical",
+                                  1 if p["correct_answer"].strip() == "beta" else 0))
         families.append(p.get("surface_family", f"__nofam_{i}"))
         if (i + 1) % 50 == 0:
             logger.info("  capture %d/%d", i + 1, nP)
@@ -217,7 +225,13 @@ def run_real(args):
     # we check the cheap necessary condition: nonzero and stable norm
     gn = np.linalg.norm(grad[last], axis=1)
     assert float(gn.min()) > 0, "zero gradient at final tap — hook wiring broken"
-    cf = float(unit_raw(grad[last].mean(0).astype(np.float64)) @ unit_raw(wU_diff.astype(np.float64)))
+    if per_prompt_ids:
+        # per-prompt contrasts: validate against the mean unembedding contrast over prompts
+        wU = W_U
+        contr = np.stack([wU[int(id1[i])] - wU[int(id0[i])] for i in range(nP)]).mean(0)
+        cf = float(unit_raw(grad[last].mean(0).astype(np.float64)) @ unit_raw(contr.astype(np.float64)))
+    else:
+        cf = float(unit_raw(grad[last].mean(0).astype(np.float64)) @ unit_raw(wU_diff.astype(np.float64)))
     logger.info("sanity: cos(u_final, gamma_bar) = %+.3f (high => machinery valid)", cf)
 
     # ---------- dump ----------
@@ -229,6 +243,7 @@ def run_real(args):
              baseline_intact=baseline_intact, topk_ids=topk_ids, topk_logits=topk_logits,
              rms_final=rms_final, wU_diff=wU_diff,
              alpha_id=alpha_id, beta_id=beta_id, d=d, n_layers=n_layers,
+             per_prompt_ids=per_prompt_ids, id_class0=id0, id_class1=id1,
              model_name=args.model_name,
              cos_u_final_gamma_bar=cf,
              prompts_sha=";".join(f"{Path(pf).name}:{sha16(pf)}" for pf in prompt_files))
