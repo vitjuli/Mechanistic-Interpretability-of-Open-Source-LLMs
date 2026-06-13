@@ -283,6 +283,15 @@ def run_real(args):
     cal_rows, verdict = [], {}
     pred_idx = {(r["layer"], r["c"], r["dir"], r["subset"]): r for r in pred_rows}
 
+    _defaults = build_parser().parse_args([])
+    for nm in ("measured_86", "measured_89"):
+        if (getattr(args, nm) == getattr(_defaults, nm)
+                and args.dump_dir != _defaults.dump_dir
+                and getattr(args, nm) and Path(getattr(args, nm)).exists()):
+            logger.warning("%s is the DEFAULT raw-corpus path but dump_dir is custom — "
+                           "its rows refer to ANOTHER corpus; pass --%s '' to disable "
+                           "or point it at this corpus's sweep CSV", nm, nm)
+
     if args.measured_86 and Path(args.measured_86).exists():
         meas = load_measured(args.measured_86)
         # 86 ran on the sub86 subset; only deterministic directions are reproducible
