@@ -64,7 +64,7 @@ def fisher_axis(H, y, shrink=0.1):
 def aggregate_cell(recs):
     """recs: list of per-target dicts with keys y, m0, m1, intact.
     Returns the full metric set for one (layer, c, dir) cell."""
-    dm_t, fl, fln, f01, f10, it, itf = [], [], [], [], [], [], []
+    dm_t, fl, fln, fln_it, f01, f10, it, itf = [], [], [], [], [], [], [], []
     for r in recs:
         s = +1.0 if r["y"] == 0 else -1.0
         dm_t.append(s * (r["m1"] - r["m0"]))
@@ -75,12 +75,16 @@ def aggregate_cell(recs):
         fl.append(f); it.append(r["intact"]); itf.append(int(f and r["intact"]))
         if corr:
             fln.append(f)
+            fln_it.append(int(f and r["intact"]))      # intact-conditioned, baseline-correct pool
             (f01 if r["y"] == 0 else f10).append(f)
     n = len(recs)
+    n_flips_norm = sum(fln)
     return {"n_targets": n, "n_correct": len(fln),
             "mean_dmargin_toward": float(np.mean(dm_t)),
             "margin_flip": float(np.mean(fl)),
             "flip_norm": float(np.mean(fln)) if fln else float("nan"),
+            "flip_norm_intact": float(np.mean(fln_it)) if fln_it else float("nan"),
+            "intact_given_flip": float(sum(fln_it) / n_flips_norm) if n_flips_norm else float("nan"),
             "flip_c0_to_c1": float(np.mean(f01)) if f01 else float("nan"),
             "flip_c1_to_c0": float(np.mean(f10)) if f10 else float("nan"),
             "intact_rate": float(np.mean(it)),
@@ -115,6 +119,10 @@ def self_test():
     assert m["n_targets"] == 5 and m["n_correct"] == 3
     assert abs(m["margin_flip"] - 2 / 5) < 1e-12
     assert abs(m["flip_norm"] - 2 / 3) < 1e-12
+    # baseline-correct flips: alpha row (flipped, intact=1) and beta row (flipped, intact=0)
+    # -> 2 flips among 3 correct; only 1 of them intact
+    assert abs(m["flip_norm_intact"] - 1 / 3) < 1e-12
+    assert abs(m["intact_given_flip"] - 1 / 2) < 1e-12
     assert abs(m["flip_c0_to_c1"] - 1 / 2) < 1e-12 and abs(m["flip_c1_to_c0"] - 1.0) < 1e-12
     assert abs(m["intact_flip"] - 1 / 5) < 1e-12
     # signed movement toward target: alpha rows s=+1, beta rows s=-1
@@ -218,6 +226,7 @@ def run_real(args):
 
     def run_tier(name, layers, c_grid, targets, dir_filter=None):
         rows = []
+        cell_dump = [] if args.dump_cells else None
         total = len(layers) * len(c_grid) * len(targets)
         logger.info("%s: %d layers x c=%s x %d targets (x dirs) ...", name, len(layers), c_grid, len(targets))
         done = 0
@@ -231,22 +240,33 @@ def run_real(args):
                     for i in targets:
                         s = +1.0 if y[i] == 0 else -1.0
                         m1, intact = steer_eval(i, L, (s * c * sigma) * unit_raw(vec))
-                        recs.append({"y": int(y[i]), "m0": m0[i], "m1": m1, "intact": intact})
+                        rec = {"y": int(y[i]), "m0": float(m0[i]), "m1": float(m1), "intact": int(intact)}
+                        recs.append(rec)
+                        if cell_dump is not None:
+                            cell_dump.append({"layer": int(L), "c": float(c), "dir": dname,
+                                              "idx": int(i), **rec})
                     cell = aggregate_cell(recs)
                     cell.update({"layer": int(L), "c": float(c), "dir": dname, "sigma": sigma})
                     rows.append(cell)
                 done += len(targets)
             lu = [r for r in rows if r["layer"] == L and r["dir"] == "usage"]
             lw = [r for r in rows if r["layer"] == L and r["dir"] == "w_res"]
-            logger.info("  L%02d done | usage flip_norm by c: %s | w_res: %s | intact_rate(usage,max c)=%.2f",
-                        L, {r["c"]: round(r["flip_norm"], 2) for r in lu},
-                        {r["c"]: round(r["flip_norm"], 2) for r in lw},
-                        (lu[-1]["intact_rate"] if lu else float("nan")))
+            logger.info("  L%02d done | usage flip_norm/intact by c: %s | w_res: %s | "
+                        "intact_given_flip(usage,max c)=%.2f",
+                        L, {r["c"]: (round(r["flip_norm"], 2), round(r["flip_norm_intact"], 2)) for r in lu},
+                        {r["c"]: round(r["flip_norm_intact"], 2) for r in lw},
+                        (lu[-1]["intact_given_flip"] if lu and not np.isnan(lu[-1]["intact_given_flip"]) else float("nan")))
+        if cell_dump is not None:
+            cf = out / f"cells_{name}.csv"
+            with open(cf, "w", newline="") as f:
+                w = _csv.DictWriter(f, fieldnames=["layer", "c", "dir", "idx", "y", "m0", "m1", "intact"])
+                w.writeheader(); [w.writerow(r) for r in cell_dump]
+            logger.info("  per-target dump: %s (%d rows)", cf.name, len(cell_dump))
         return rows
 
     fields = ["layer", "c", "dir", "sigma", "n_targets", "n_correct", "mean_dmargin_toward",
-              "margin_flip", "flip_norm", "flip_c0_to_c1", "flip_c1_to_c0",
-              "intact_rate", "intact_flip"]
+              "margin_flip", "flip_norm", "flip_norm_intact", "intact_given_flip",
+              "flip_c0_to_c1", "flip_c1_to_c0", "intact_rate", "intact_flip"]
     def wcsv(name, rows):
         with open(out / name, "w", newline="") as f:
             w = _csv.DictWriter(f, fieldnames=fields); w.writeheader()
@@ -303,6 +323,8 @@ def build_parser():
     p.add_argument("--tier2_layers", type=int, nargs="*", default=None)
     p.add_argument("--tier2_controls", type=int, nargs="*", default=[16, 24, 35])
     p.add_argument("--tier1_csv", default=None, help="reuse an existing tier1 CSV for layer pick")
+    p.add_argument("--dump_cells", action="store_true",
+                   help="also write per-target records (cells_tier*.csv) for CPU recompute of any metric")
     p.add_argument("--n_shuffled", type=int, default=2)
     p.add_argument("--n_random", type=int, default=2)
     p.add_argument("--train_frac", type=float, default=0.6)
