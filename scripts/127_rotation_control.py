@@ -127,7 +127,29 @@ def self_test():
     rho_slow = np.exp(-dks2 / 8.0); rho_fast = np.exp(-dks2 / 3.0)
     t_slow = fit_tau(dks2, rho_slow); t_fast = fit_tau(dks2, rho_fast)
     assert t_fast < t_slow, f"faster decay must give shorter tau: {t_fast} vs {t_slow}"
-    print("[self_test] OK — rotation curve exact, planar PR~2, tau recovery, rate discrimination pass.")
+
+    # random-walk baseline: step_corr=0 (any vector) collapses immediately -> tiny tau;
+    # high persistence -> larger tau. The baseline must be MONOTONE in persistence.
+    rng2 = np.random.default_rng(1)
+    ax0 = random_walk_axes(30, 200, rng2, step_corr=0.0)
+    c0 = rotation_curve(ax0, [1, 2, 4, 8])
+    assert c0[1] < 0.2, "structureless walk: adjacent axes near-orthogonal (high-d)"
+    ax9 = random_walk_axes(30, 200, np.random.default_rng(2), step_corr=0.9)
+    c9 = rotation_curve(ax9, [1, 2, 4, 8])
+    assert c9[1] > c0[1], "persistent walk stays more self-aligned at dk=1 than structureless"
+
+    # u/delta axis builders: produce unit vectors; rotation curve well-defined.
+    # toy "dump" in memory via a tiny shim is overkill — test the math directly:
+    d2, n2 = 30, 60
+    yy = (np.arange(n2) % 2).astype(int)
+    Hm = np.random.default_rng(3).standard_normal((n2, d2))
+    delta_vec = unit_raw(Hm[yy == 1].mean(0) - Hm[yy == 0].mean(0))
+    assert abs(np.linalg.norm(delta_vec) - 1.0) < 1e-9, "delta axis is unit"
+    Gm = np.random.default_rng(4).standard_normal((n2, d2))
+    u_vec = unit_raw(Gm.mean(0))
+    assert abs(np.linalg.norm(u_vec) - 1.0) < 1e-9, "u axis is unit"
+    print("[self_test] OK — rotation curve exact, planar PR~2, tau recovery, rate discrimination, "
+          "random-walk baseline monotonicity, u/delta unit axes pass.")
 
 
 # =====================================================================
@@ -148,7 +170,8 @@ def reconstruct_split(fams, seed, train_frac):
 
 
 def concept_axes(dump, n_layers, y, mask, shrink, shuffle_rng=None):
-    """per-layer Fisher axis on the masked rows; if shuffle_rng given, labels shuffled."""
+    """per-layer Fisher axis (w_res, the READING direction) on the masked rows;
+    if shuffle_rng given, labels shuffled."""
     axes = {}
     for L in range(n_layers):
         H = np.load(dump / f"res_L{L:02d}.npy").astype(np.float64)[mask]
@@ -161,43 +184,130 @@ def concept_axes(dump, n_layers, y, mask, shrink, shuffle_rng=None):
     return axes
 
 
+def usage_axes(dump, n_layers, mask):
+    """per-layer USAGE axis u = unit(mean gradient) on the masked rows. The gradient
+    is grad_h(logit_beta - logit_alpha), stored per prompt; u is label-independent in
+    construction (it's the output-sensitivity direction), so its proper null is the
+    random-walk baseline, NOT shuffled labels."""
+    axes = {}
+    for L in range(n_layers):
+        G = np.load(dump / f"grad_L{L:02d}.npy").astype(np.float64)[mask]
+        axes[L] = unit_raw(G.mean(0))
+    return axes
+
+
+def writing_axes(dump, n_layers, y, mask, shuffle_rng=None):
+    """per-layer WRITING axis delta = unit(mean_class1 - mean_class0) of the residual
+    on the masked rows. Like Fisher it is class-difference based, so shuffled-label is
+    a valid null (a random class split)."""
+    axes = {}
+    for L in range(n_layers):
+        H = np.load(dump / f"res_L{L:02d}.npy").astype(np.float64)[mask]
+        yy = y[mask].copy()
+        if shuffle_rng is not None:
+            shuffle_rng.shuffle(yy)
+        if yy.min() == yy.max():
+            continue
+        axes[L] = unit_raw(H[yy == 1].mean(0) - H[yy == 0].mean(0))
+    return axes
+
+
+def random_walk_axes(n_layers, d, rng, step_corr=0.0):
+    """Baseline axes with NO concept structure: each layer's axis is an independent
+    random unit vector (step_corr=0) or a partially-correlated random walk (step_corr in
+    [0,1)) where w_{L} = unit(step_corr*w_{L-1} + sqrt(1-step_corr^2)*noise). step_corr=0
+    is the 'any vector' null; tuning it shows what rotation rate looks like for a
+    structureless walk of a given persistence."""
+    axes = {}
+    prev = unit_raw(rng.standard_normal(d))
+    for L in range(n_layers):
+        if L == 0 or step_corr <= 0:
+            cur = unit_raw(rng.standard_normal(d)) if step_corr <= 0 else prev
+        else:
+            noise = rng.standard_normal(d)
+            cur = unit_raw(step_corr * prev + np.sqrt(1 - step_corr ** 2) * noise)
+        axes[L] = cur; prev = cur
+    return axes
+
+
 def run_real(args):
     concepts = json.load(open(args.concepts))
     dks = args.dks
     rows, summ = [], []
-    curves = {}
+    d_model = None
     for cdef in concepts:
         name = cdef["name"]
         dump, meta, fams, n_layers = load_dump(cdef["dump"])
+        d_model = int(meta["d"])
         y = meta["y"].astype(int)
         trm = reconstruct_split(fams, args.split_seed, args.train_frac)
         held = ~trm
-        axes = concept_axes(dump, n_layers, y, held, args.shrink)
-        cur = rotation_curve(axes, dks)
-        tau = fit_tau(dks, [cur[k] for k in dks])
-        pr = participation_ratio_axes(axes)
-        curves[name] = cur
 
-        # shuffled-label null (average several shuffles)
-        null_curves = []
-        srng = np.random.default_rng(args.seed)
-        for _ in range(args.n_shuffle):
-            ax_s = concept_axes(dump, n_layers, y, held, args.shrink, shuffle_rng=srng)
-            null_curves.append(rotation_curve(ax_s, dks))
-        null_mean = {dk: float(np.mean([nc[dk] for nc in null_curves if not np.isnan(nc[dk])])) for dk in dks}
-        null_p95 = {dk: float(np.quantile([nc[dk] for nc in null_curves if not np.isnan(nc[dk])], 0.95)) for dk in dks}
+        # three axes: w_res (reading), u (using), delta (writing)
+        axes_by_kind = {
+            "w_res": concept_axes(dump, n_layers, y, held, args.shrink),
+            "u": usage_axes(dump, n_layers, held),
+            "delta": writing_axes(dump, n_layers, y, held),
+        }
 
-        for dk in dks:
-            rows.append({"concept": name, "dk": dk,
-                         "rho_real": cur[dk], "rho_null_mean": null_mean[dk],
-                         "rho_null_p95": null_p95[dk],
-                         "real_above_null": int(cur[dk] > null_p95[dk])})
-        summ.append({"concept": name, "tau_layers": tau, "pr_axes": pr,
-                     "n_layers_used": len(axes),
-                     "rho_dk1": cur.get(1, float("nan")),
-                     "rho_dk8": cur.get(8, float("nan"))})
-        logger.info("[%s] rotation: rho(dk=1)=%.3f rho(dk=8)=%.3f | tau=%.1f layers | PR(axes)=%.1f",
-                    name, cur.get(1, float("nan")), cur.get(8, float("nan")), tau, pr)
+        for kind, axes in axes_by_kind.items():
+            cur = rotation_curve(axes, dks)
+            tau = fit_tau(dks, [cur[k] for k in dks])
+            pr = participation_ratio_axes(axes)
+
+            # null: shuffled-label for class-difference axes (w_res, delta); for u the
+            # gradient is label-independent, so shuffled-label is not meaningful — we
+            # compare u against the random-walk baseline (computed once below) instead,
+            # and report tau_shuffled as nan for u.
+            if kind in ("w_res", "delta"):
+                null_curves, null_taus = [], []
+                srng = np.random.default_rng(args.seed)
+                builder = concept_axes if kind == "w_res" else writing_axes
+                for _ in range(args.n_shuffle):
+                    if kind == "w_res":
+                        ax_s = concept_axes(dump, n_layers, y, held, args.shrink, shuffle_rng=srng)
+                    else:
+                        ax_s = writing_axes(dump, n_layers, y, held, shuffle_rng=srng)
+                    nc = rotation_curve(ax_s, dks)
+                    null_curves.append(nc)
+                    null_taus.append(fit_tau(dks, [nc[k] for k in dks]))
+                null_mean = {dk: float(np.mean([nc[dk] for nc in null_curves if not np.isnan(nc[dk])])) for dk in dks}
+                null_p95 = {dk: float(np.quantile([nc[dk] for nc in null_curves if not np.isnan(nc[dk])], 0.95)) for dk in dks}
+                tau_shuf = float(np.nanmean(null_taus))
+            else:
+                null_mean = {dk: float("nan") for dk in dks}
+                null_p95 = {dk: float("nan") for dk in dks}
+                tau_shuf = float("nan")
+
+            for dk in dks:
+                rows.append({"concept": name, "axis": kind, "dk": dk,
+                             "rho_real": cur[dk], "rho_null_mean": null_mean[dk],
+                             "rho_null_p95": null_p95[dk],
+                             "real_above_null": int(cur[dk] > null_p95[dk]) if not np.isnan(null_p95[dk]) else -1})
+            summ.append({"concept": name, "axis": kind, "tau_layers": tau, "tau_shuffled": tau_shuf,
+                         "pr_axes": pr, "n_layers_used": len(axes),
+                         "rho_dk1": cur.get(1, float("nan")), "rho_dk4": cur.get(4, float("nan")),
+                         "rho_dk8": cur.get(8, float("nan"))})
+            logger.info("[%s/%-5s] rho(dk1)=%.3f rho(dk8)=%.3f | tau=%.1f (shuf %.1f) | PR=%.1f",
+                        name, kind, cur.get(1, float("nan")), cur.get(8, float("nan")), tau, tau_shuf, pr)
+
+    # ---- third source: structureless random-walk baselines across a range of persistence ----
+    rw_rng = np.random.default_rng(args.seed + 1)
+    nL = summ_n_layers = None
+    # use the max n_layers seen (dumps share 36)
+    nL = 36
+    rw_rows = []
+    for sc in args.rw_step_corr:
+        taus_rw = []
+        for _ in range(args.n_rw):
+            ax = random_walk_axes(nL, d_model, rw_rng, step_corr=sc)
+            c = rotation_curve(ax, dks)
+            taus_rw.append(fit_tau(dks, [c[k] for k in dks]))
+        rw_rows.append({"step_corr": sc, "tau_mean": float(np.nanmean(taus_rw)),
+                        "tau_p05": float(np.nanquantile(taus_rw, 0.05)),
+                        "tau_p95": float(np.nanquantile(taus_rw, 0.95))})
+        logger.info("random-walk baseline step_corr=%.2f -> tau=%.1f [%.1f, %.1f]",
+                    sc, rw_rows[-1]["tau_mean"], rw_rows[-1]["tau_p05"], rw_rows[-1]["tau_p95"])
 
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="") as f:
@@ -207,30 +317,39 @@ def run_real(args):
     with open(sout, "w", newline="") as f:
         w = _csv.DictWriter(f, fieldnames=list(summ[0].keys())); w.writeheader()
         [w.writerow(r) for r in summ]
+    rwout = out.with_name("rotation_rw_baseline.csv")
+    with open(rwout, "w", newline="") as f:
+        w = _csv.DictWriter(f, fieldnames=list(rw_rows[0].keys())); w.writeheader()
+        [w.writerow(r) for r in rw_rows]
 
-    print("\n" + "=" * 92)
-    print("ROTATION CONTROL — is the monotonic rotation law concept-specific or generic drift?")
-    print("=" * 92)
-    print(f"{'concept':<16}{'rho(dk1)':>9}{'rho(dk8)':>9}{'tau(layers)':>13}{'PR(axes)':>10}")
+    print("\n" + "=" * 100)
+    print("ROTATION OF THE TRIAD — do reading (w_res), using (u), writing (delta) axes rotate alike?")
+    print("=" * 100)
+    print(f"{'concept':<16}{'axis':<7}{'rho(dk1)':>9}{'rho(dk4)':>9}{'rho(dk8)':>9}{'tau':>7}{'tau_shuf':>10}{'PR':>7}")
     for s in summ:
-        print(f"{s['concept']:<16}{s['rho_dk1']:>9.3f}{s['rho_dk8']:>9.3f}"
-              f"{s['tau_layers']:>13.1f}{s['pr_axes']:>10.1f}")
-    print("\nReal rotation vs shuffled-label null (does the real axis stay MORE self-aligned?):")
+        ts = f"{s['tau_shuffled']:>10.1f}" if not np.isnan(s['tau_shuffled']) else f"{'n/a':>10}"
+        print(f"{s['concept']:<16}{s['axis']:<7}{s['rho_dk1']:>9.3f}{s['rho_dk4']:>9.3f}{s['rho_dk8']:>9.3f}"
+              f"{s['tau_layers']:>7.1f}{ts}{s['pr_axes']:>7.1f}")
+    print("\nStructureless random-walk tau (the shared null for ALL axes, esp. u):")
+    for r in rw_rows:
+        print(f"  step_corr={r['step_corr']:.2f}: tau = {r['tau_mean']:.1f} [{r['tau_p05']:.1f}, {r['tau_p95']:.1f}]")
+
+    print("\nCROSS-AXIS COMPARISON (tau by axis, per concept):")
     for cdef in concepts:
-        name = cdef["name"]
-        sel = [r for r in rows if r["concept"] == name]
-        above = [r["dk"] for r in sel if r["real_above_null"]]
-        print(f"  {name:<16} real > null p95 at dk = {above if above else 'NONE'}")
-    if len(summ) >= 2:
-        taus = [s["tau_layers"] for s in summ]
-        rng_tau = max(taus) - min(taus)
-        print(f"\nCROSS-CONCEPT: tau range across concepts = {rng_tau:.1f} layers")
-        print("  - taus DIFFER (range large) -> rotation RATE is concept-specific structure,")
-        print("    not generic drift: the rotation law carries information. STRONG for the chapter.")
-        print("  - taus ~equal -> rotation is generic; the law describes drift common to any axis.")
-    print("  - real curve clearly above shuffled null -> rotation is real structure, not LDA-on-noise.")
-    print(f"per (concept,dk): {out} | summary: {sout}")
-    print("=" * 92 + "\n")
+        nm = cdef["name"]
+        byax = {s["axis"]: s["tau_layers"] for s in summ if s["concept"] == nm}
+        print(f"  {nm:<16} w_res={byax.get('w_res', float('nan')):.1f}  "
+              f"u={byax.get('u', float('nan')):.1f}  delta={byax.get('delta', float('nan')):.1f}")
+    print("\nVERDICT (read the numbers):")
+    print("  - all three taus ~equal (and all << random-walk) -> rotation is a UNIFORM property")
+    print("    of the residual stream: reading, using, and writing axes all rotate at ~the same")
+    print("    characteristic rate. Strengthens 'geometry of computation is a network property'.")
+    print("  - u rotates at a DIFFERENT rate than w_res/delta -> the triad is distinguished not")
+    print("    only in direction but in DYNAMICS across depth. Strengthens read != use != write.")
+    print("  - watch for u: likely fast mid-stack, slowing near readout (it glues to gamma_bar) —")
+    print("    if so, u's rotation is NON-uniform across depth, unlike the steadier w_res.")
+    print(f"saved: {out} | {sout} | {rwout}")
+    print("=" * 100 + "\n")
 
 
 def build_parser():
@@ -240,6 +359,9 @@ def build_parser():
     p.add_argument("--out", default="data/analysis/runD_v2/rotation_control.csv")
     p.add_argument("--dks", type=int, nargs="*", default=[1, 2, 3, 4, 6, 8, 12])
     p.add_argument("--n_shuffle", type=int, default=10)
+    p.add_argument("--rw_step_corr", type=float, nargs="*", default=[0.0, 0.5, 0.8, 0.9, 0.95],
+                   help="persistence of the structureless random-walk baseline (0=any vector)")
+    p.add_argument("--n_rw", type=int, default=20, help="random-walk repetitions per step_corr")
     p.add_argument("--train_frac", type=float, default=0.6)
     p.add_argument("--split_seed", type=int, default=0)
     p.add_argument("--shrink", type=float, default=0.1)
