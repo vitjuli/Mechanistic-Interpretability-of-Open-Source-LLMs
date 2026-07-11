@@ -1,0 +1,37 @@
+{
+  "concept": "B1_alpha_beta",
+  "attenuation_zone_median": 0.05908362533877876,
+  "rayleigh_pctl_zone_median": 98.359375,
+  "eigen_residual_zone_median": 4.3913790097909144,
+  "eigen_residual_effective_zone_median": 0.038154122317920425,
+  "margin_identity_ratio_zone_median": 20.104450817982055,
+  "pred_vs_measured_cos_mae": 0.038918830439098356,
+  "counterfactual": {
+    "22": {
+      "cos_start": 0.07962219486685483,
+      "cos_end": 0.22730470750528825,
+      "pred_end": 0.010884898616908148,
+      "sigma_deflation": 0.3616635062662331,
+      "null_cos_end_median": 0.13276772063852227,
+      "null_cos_end_p95": 0.16601003871376332,
+      "excess_over_null_end": 0.09453698686676598,
+      "n_fam_end": 33,
+      "null_cos_end_median_fam": 0.1316877102331487,
+      "null_cos_end_p95_fam": 0.16812766645228086,
+      "excess_over_null_end_fam": 0.09561699727213954
+    },
+    "24": {
+      "cos_start": 0.01919282672399258,
+      "cos_end": 0.24862290369306572,
+      "pred_end": 0.012730497955837843,
+      "sigma_deflation": 0.1498737252345592,
+      "null_cos_end_median": 0.11062720100164347,
+      "null_cos_end_p95": 0.16254038218960318,
+      "excess_over_null_end": 0.13799570269142225,
+      "n_fam_end": 33,
+      "null_cos_end_median_fam": 0.10660932625439333,
+      "null_cos_end_p95_fam": 0.16716029326959522,
+      "excess_over_null_end_fam": 0.14201357743867238
+    }
+  }
+}

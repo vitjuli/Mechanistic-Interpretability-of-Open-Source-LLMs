@@ -9,6 +9,8 @@ Reference:
 - Anthropic's "On the Biology of a Large Language Model" (2025)
 """
 
+from __future__ import annotations  # defer PEP-604 (X | Y) annotations for Python 3.9
+
 from typing import Any
 import torch
 import torch.nn as nn

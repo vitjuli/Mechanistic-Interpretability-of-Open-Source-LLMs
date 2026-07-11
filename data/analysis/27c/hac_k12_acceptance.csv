@@ -1,0 +1,13 @@
+HAC,n,c1_dir,c2_coh,c3_sem,c4_reuse,c6_level,motifs,status
+1,2,✓,✓,✓,✓,✓,13,accepted (pending c5)
+2,1,—,—,✓,✓,✓,13,descriptive (singleton)
+3,7,✓,✓,✓,✓,✓,12,accepted (pending c5)
+4,2,✓,✓,✓,✓,✓,11,accepted (pending c5)
+5,14,✓,✗,✓,✓,✓,10,partial
+6,1,—,—,✓,✓,✓,13,descriptive (singleton)
+7,2,✓,✓,✓,✓,✓,18,accepted (pending c5)
+8,4,✓,✓,✓,✓,✓,12,accepted (pending c5)
+9,2,✓,✓,✓,✓,✓,22,accepted (pending c5)
+10,2,✓,✓,✓,✓,✓,18,accepted (pending c5)
+11,2,✓,✓,✓,✓,✓,13,accepted (pending c5)
+12,1,—,—,✓,✓,✓,14,descriptive (singleton)
