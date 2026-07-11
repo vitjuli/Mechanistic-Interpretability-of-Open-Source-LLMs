@@ -16,6 +16,14 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 def unit(v):
     v=np.asarray(v,np.float64); return v/(np.linalg.norm(v)+1e-12)
 
+def fisher_axis(H, y, shrink=0.1):
+    """w_res = Sigma_w^-1 delta (LDA reading axis), shrinkage-regularised (n<d)."""
+    mu0=H[y==0].mean(0); mu1=H[y==1].mean(0); delta=mu1-mu0
+    H0=H[y==0]-mu0; H1=H[y==1]-mu1
+    Sw=(H0.T@H0 + H1.T@H1)/max(1,len(H)-2)
+    Sw=(1-shrink)*Sw + shrink*(np.trace(Sw)/Sw.shape[0])*np.eye(Sw.shape[0])
+    return unit(np.linalg.solve(Sw, delta))
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--dump",required=True); ap.add_argument("--prompts",required=True)
@@ -34,6 +42,7 @@ def main():
     res=np.load(f"{a.dump}/res_L{L:02d}.npy").astype(np.float64)
     grad=np.load(f"{a.dump}/grad_L{L:02d}.npy").astype(np.float64)
     d_delta=unit(res[y==1].mean(0)-res[y==0].mean(0)); d_usage=unit(grad.mean(0))
+    d_wres=fisher_axis(res, y)
     csv=pd.read_csv(a.steering_csv); sigma=float(csv[csv.layer==L]["sigma"].iloc[0])
     print(f"layer={L} c={a.c} sigma={sigma:.3f} | push norm={a.c*sigma:.2f} | gen={a.gen} tokens\n")
 
@@ -56,15 +65,26 @@ def main():
         order=logits.argsort(descending=True).tolist()
         rank={tok.decode([t]).strip(): order.index(t)+1 for t in ids}
         cont=tok.decode(gen[0][inp.input_ids.shape[1]:],skip_special_tokens=True).replace("\n"," ")
-        return top, rank, cont
+        lp=torch.log_softmax(logits,0)
+        margin=float(lp[ids[1]]-lp[ids[0]])   # logprob(incorrect) - logprob(correct): <0 = correct preferred, >0 = FLIPPED
+        return top, rank, cont, margin
 
     for i in range(min(a.n,len(prompts))):
         p=prompts[i]; ca=p.get("correct_answer"); ia=p.get("incorrect_answer")
-        ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
-        print(f"===== prompt {i} | correct={ca.strip()} incorrect={ia.strip()} =====")
-        for name,push in [("baseline",None),("delta",(a.c*sigma)*d_delta),("usage",(a.c*sigma)*d_usage)]:
-            top,rank,cont=analyse(p["prompt"],push,ids)
-            print(f"  [{name}] class-ranks={rank}")
+        if ia is not None:
+            ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
+        else:
+            # no incorrect_answer field -> use per-prompt class token ids (correct = class[y_canonical])
+            c0,c1=int(p["tok_id_class0"]),int(p["tok_id_class1"]); y=int(p["y_canonical"])
+            cid,iid=(c0,c1) if y==0 else (c1,c0)
+            ids=[cid,iid]; ca=ca or tok.decode([cid]); ia=tok.decode([iid])
+        print(f"===== prompt {i} | correct={str(ca).strip()} incorrect={str(ia).strip()} =====")
+        base_m=None
+        for name,push in [("baseline",None),("delta",(a.c*sigma)*d_delta),("usage",(a.c*sigma)*d_usage),("w_res",(a.c*sigma)*d_wres)]:
+            top,rank,cont,margin=analyse(p["prompt"],push,ids)
+            if name=="baseline": base_m=margin
+            flipped = "" if name=="baseline" else ("  <<< CLASS-MARGIN FLIPPED" if (base_m<0 and margin>0) else "")
+            print(f"  [{name}] margin(incorrect-correct)={margin:+.2f}{flipped}  class-ranks={rank}")
             print(f"     top{a.topk}: {top}")
             print(f"     gen: {cont!r}")
         print()
