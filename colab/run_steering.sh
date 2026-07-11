@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Task 4: w-steering generations (coherent flip text). One short call from Colab:
+# Task 4: w-steering generations, BOTH directions (alpha->beta AND beta->alpha).
 #   !bash colab/run_steering.sh
-# Builds a minimal steering_csv (layer,sigma) from the field_dump, then decodes
-# generations under baseline / delta / usage / w_res push, to show whether steering
-# produces coherent flipped answers (not garbage). Qualitative illustration.
+# Push is signed TOWARD the incorrect class per prompt (patched script), so beta
+# prompts are steered toward alpha (the HARD direction, given the beta-suppressor
+# circuit / beta-prompt asymmetry). Lets us check: is w_res inert BOTH ways, and
+# is beta->alpha harder than alpha->beta (the documented asymmetry)?
 set -e
 cd /content/project 2>/dev/null || cd "$(dirname "$0")/.."
 CPT=B1_alpha_beta
 DUMP=data/analysis/runD_v2/$CPT/field_dump
 
 python - <<'PY'
-import numpy as np, pandas as pd
+import numpy as np, pandas as pd, json
 dump="data/analysis/runD_v2/B1_alpha_beta/field_dump"
 y=np.load(f"{dump}/meta.npz")["y"].astype(int); rows=[]
 for L in range(36):
@@ -21,12 +22,20 @@ for L in range(36):
     w=np.linalg.solve(Sw,d); w/=np.linalg.norm(w)
     rows.append(dict(layer=L, sigma=float(np.std(H@w))))
 pd.DataFrame(rows).to_csv("steering_sigma_ab.csv",index=False)
-print("wrote steering_sigma_ab.csv")
+P=[json.loads(l) for l in open("data/prompts/B1_alpha_beta.jsonl")]
+a=[p for p in P if p["correct_answer"]=="alpha"][:6]
+b=[p for p in P if p["correct_answer"]=="beta"][:6]
+open("prompts_alpha6.jsonl","w").write("\n".join(json.dumps(p) for p in a))
+open("prompts_beta6.jsonl","w").write("\n".join(json.dumps(p) for p in b))
+print("wrote sigma + alpha6 + beta6")
 PY
 
-python -u scripts/steering_decode_check.py \
-    --dump "$DUMP" \
-    --prompts data/prompts/$CPT.jsonl \
-    --steering_csv steering_sigma_ab.csv \
-    --layer 24 --c 16 --n 6 --gen 30 --device cuda \
-    2>&1 | tee data/analysis/runD_v2/$CPT/steering_decode_L24.txt
+echo "########## ALPHA prompts  ->  push toward BETA (easy direction) ##########"
+python -u scripts/steering_decode_check.py --dump "$DUMP" --prompts prompts_alpha6.jsonl \
+    --steering_csv steering_sigma_ab.csv --layer 24 --c 16 --n 6 --gen 30 --device cuda \
+    2>&1 | tee data/analysis/runD_v2/$CPT/steering_decode_alpha.txt
+
+echo "########## BETA prompts  ->  push toward ALPHA (hard direction) ##########"
+python -u scripts/steering_decode_check.py --dump "$DUMP" --prompts prompts_beta6.jsonl \
+    --steering_csv steering_sigma_ab.csv --layer 24 --c 16 --n 6 --gen 30 --device cuda \
+    2>&1 | tee data/analysis/runD_v2/$CPT/steering_decode_beta.txt

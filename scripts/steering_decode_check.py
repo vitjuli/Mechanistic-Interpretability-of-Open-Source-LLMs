@@ -80,7 +80,8 @@ def main():
             ids=[cid,iid]; ca=ca or tok.decode([cid]); ia=tok.decode([iid])
         print(f"===== prompt {i} | correct={str(ca).strip()} incorrect={str(ia).strip()} =====")
         base_m=None
-        for name,push in [("baseline",None),("delta",(a.c*sigma)*d_delta),("usage",(a.c*sigma)*d_usage),("w_res",(a.c*sigma)*d_wres)]:
+        s = 1.0 if int(p.get("y_canonical", 0)) == 0 else -1.0  # push TOWARD incorrect class (alpha->beta: +, beta->alpha: -)
+        for name,push in [("baseline",None),("delta",s*(a.c*sigma)*d_delta),("usage",s*(a.c*sigma)*d_usage),("w_res",s*(a.c*sigma)*d_wres)]:
             top,rank,cont,margin=analyse(p["prompt"],push,ids)
             if name=="baseline": base_m=margin
             flipped = "" if name=="baseline" else ("  <<< CLASS-MARGIN FLIPPED" if (base_m<0 and margin>0) else "")
