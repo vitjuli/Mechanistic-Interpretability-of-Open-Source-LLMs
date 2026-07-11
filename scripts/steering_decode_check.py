@@ -30,15 +30,19 @@ def main():
     ap.add_argument("--steering_csv",required=True)
     ap.add_argument("--layer",type=int,default=24); ap.add_argument("--c",type=float,default=16)
     ap.add_argument("--n",type=int,default=6); ap.add_argument("--gen",type=int,default=20)
+    ap.add_argument("--c_grid", default=None, help="comma-sep c values to sweep (overrides --c); model loads once")
     ap.add_argument("--topk",type=int,default=15)
     ap.add_argument("--model",default="Qwen/Qwen3-4B-Base"); ap.add_argument("--device",default="cuda")
+    ap.add_argument("--out_csv", default=None, help="append structured rows here (for analysis)")
+    ap.add_argument("--tag", default="", help="concept/pair label written into the CSV")
     a=ap.parse_args()
 
     tok=AutoTokenizer.from_pretrained(a.model)
     model=AutoModelForCausalLM.from_pretrained(a.model,torch_dtype=torch.bfloat16).to(a.device).eval()
     blocks=model.model.layers; L=a.layer
     prompts=[json.loads(l) for l in open(a.prompts)]
-    y=np.load(f"{a.dump}/meta.npz")["y"].astype(int)
+    _meta=np.load(f"{a.dump}/meta.npz"); y=_meta["y"].astype(int)
+    class_a=str(_meta["class_a"]).strip() if "class_a" in _meta else None  # name of class0 (d_delta points class0->class1)
     res=np.load(f"{a.dump}/res_L{L:02d}.npy").astype(np.float64)
     grad=np.load(f"{a.dump}/grad_L{L:02d}.npy").astype(np.float64)
     d_delta=unit(res[y==1].mean(0)-res[y==0].mean(0)); d_usage=unit(grad.mean(0))
@@ -69,25 +73,50 @@ def main():
         margin=float(lp[ids[1]]-lp[ids[0]])   # logprob(incorrect) - logprob(correct): <0 = correct preferred, >0 = FLIPPED
         return top, rank, cont, margin
 
+    rows=[]
+    c_values=[float(x) for x in a.c_grid.split(",")] if a.c_grid else [a.c]
+    dirs={"delta":d_delta, "usage":d_usage, "w_res":d_wres}   # writing / use / reading
     for i in range(min(a.n,len(prompts))):
         p=prompts[i]; ca=p.get("correct_answer"); ia=p.get("incorrect_answer")
         if ia is not None:
             ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
         else:
-            # no incorrect_answer field -> use per-prompt class token ids (correct = class[y_canonical])
-            c0,c1=int(p["tok_id_class0"]),int(p["tok_id_class1"]); y=int(p["y_canonical"])
-            cid,iid=(c0,c1) if y==0 else (c1,c0)
+            c0,c1=int(p["tok_id_class0"]),int(p["tok_id_class1"]); yy=int(p["y_canonical"])
+            cid,iid=(c0,c1) if yy==0 else (c1,c0)
             ids=[cid,iid]; ca=ca or tok.decode([cid]); ia=tok.decode([iid])
-        print(f"===== prompt {i} | correct={str(ca).strip()} incorrect={str(ia).strip()} =====")
-        base_m=None
-        s = 1.0 if int(p.get("y_canonical", 0)) == 0 else -1.0  # push TOWARD incorrect class (alpha->beta: +, beta->alpha: -)
-        for name,push in [("baseline",None),("delta",s*(a.c*sigma)*d_delta),("usage",s*(a.c*sigma)*d_usage),("w_res",s*(a.c*sigma)*d_wres)]:
-            top,rank,cont,margin=analyse(p["prompt"],push,ids)
-            if name=="baseline": base_m=margin
-            flipped = "" if name=="baseline" else ("  <<< CLASS-MARGIN FLIPPED" if (base_m<0 and margin>0) else "")
-            print(f"  [{name}] margin(incorrect-correct)={margin:+.2f}{flipped}  class-ranks={rank}")
-            print(f"     top{a.topk}: {top}")
-            print(f"     gen: {cont!r}")
+        # push TOWARD the incorrect token. d_delta points class0->class1.
+        if class_a is not None:
+            s = 1.0 if str(ca).strip()==class_a else -1.0
+        elif "y_canonical" in p:
+            s = 1.0 if int(p["y_canonical"]) == 0 else -1.0
+        else:
+            s = 1.0
+        # baseline once (c-independent) -> reference margin
+        top,rank,cont,base_m=analyse(p["prompt"],None,ids)
+        rows.append(dict(tag=a.tag, layer=L, c=0.0, prompt_idx=i,
+                         correct=str(ca).strip(), incorrect=str(ia).strip(), push="baseline",
+                         margin=round(base_m,3), base_margin=round(base_m,3), dmargin=0.0,
+                         flipped=0, top1=top[0] if top else "", top5="|".join(top[:5]), gen=cont))
+        print(f"===== prompt {i} | correct={str(ca).strip()} incorrect={str(ia).strip()} | base_margin={base_m:+.2f} =====")
+        for cval in c_values:
+            line=f"  c={cval:>5.1f}:"
+            for name,d in dirs.items():
+                top,rank,cont,margin=analyse(p["prompt"], s*(cval*sigma)*d, ids)
+                fl = int(base_m<0 and margin>0)
+                rows.append(dict(tag=a.tag, layer=L, c=cval, prompt_idx=i,
+                                 correct=str(ca).strip(), incorrect=str(ia).strip(), push=name,
+                                 margin=round(margin,3), base_margin=round(base_m,3),
+                                 dmargin=round(margin-base_m,3), flipped=fl,
+                                 top1=top[0] if top else "", top5="|".join(top[:5]), gen=cont))
+                line+=f"  {name} dm={margin-base_m:+.2f}{'*' if fl else ''}"
+            print(line)
         print()
+
+    if a.out_csv:
+        import os
+        df=pd.DataFrame(rows)
+        hdr=not os.path.exists(a.out_csv)
+        df.to_csv(a.out_csv, mode="a", header=hdr, index=False)
+        print(f"[out_csv] appended {len(df)} rows -> {a.out_csv}")
 
 if __name__=="__main__": main()
