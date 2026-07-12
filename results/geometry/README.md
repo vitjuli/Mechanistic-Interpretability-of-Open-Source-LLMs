@@ -12,7 +12,8 @@ on the decay task and its variants, computed from the residual/gradient field du
 | `lambda_shrinkage.csv` | Ledoit–Wolf λ, cos(w,u) robustness to shrinkage, σ per direction | §2.5.2 / §2.7 |
 | `active_span_triad.csv` | active-feature span capture of each direction vs random null, per layer | **Table** `tab:capture`, §3.5 |
 | `feature_delta_write_contribution.csv` | writer population by depth: n_writers 8→56, top-5 share 95%→70%, 91% of δ-write in L27–35 | §3.5 writer-population paragraph |
-| `realized_decay.csv`, `realized_particles.csv`, `realized_scaffold.csv` | MLP share of rotation/length of `Δμ` + transcoder reconstruction relative error | **Table 5** (`tab:mlpshare`), §3.2 |
+| `realized_*.csv` | MLP share of rotation/length of `Δμ` + transcoder reconstruction relative error, one file per framing/pair | **Table 5** (`tab:mlpshare`), §3.2 |
+| `norm_ratio_by_layer.csv` | per-layer `r_Δμ = ‖Δμ‖/⟨‖h‖⟩`, `r_u`, and `‖Δμ‖/‖u‖`, three concepts | **Table** `tab:normratio`, §3.4 (726/234/903 at L35) |
 
 ## Appendix B — decision zone
 | file | what |
