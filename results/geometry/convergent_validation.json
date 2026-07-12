@@ -1,0 +1,104 @@
+{
+  "subspace_dim": 13,
+  "n_taps_for_subspace": 13,
+  "convergent_validation": [
+    {
+      "tap": "postL18",
+      "auc_fisher": 0.9877675840978594,
+      "auc_diffmeans": 0.9679392325145506,
+      "auc_logreg": 0.9852027226990234,
+      "cos_F_DM": 0.22396726479122253,
+      "cos_F_LR": 0.5286431909474482,
+      "cos_DM_LR": 0.6744637837510664
+    },
+    {
+      "tap": "postL21",
+      "auc_fisher": 0.9939824405642695,
+      "auc_diffmeans": 0.9751405741343593,
+      "auc_logreg": 0.9787905692019335,
+      "cos_F_DM": 0.23632975753071583,
+      "cos_F_LR": 0.5100968489218503,
+      "cos_DM_LR": 0.7182996185636732
+    },
+    {
+      "tap": "postL24",
+      "auc_fisher": 0.996251356417086,
+      "auc_diffmeans": 0.9691230146986288,
+      "auc_logreg": 0.985400019729703,
+      "cos_F_DM": 0.2372302993869177,
+      "cos_F_LR": 0.5215563196129325,
+      "cos_DM_LR": 0.7096257975624527
+    },
+    {
+      "tap": "final",
+      "auc_fisher": 0.9915162276807734,
+      "auc_diffmeans": 0.9431784551642498,
+      "auc_logreg": 0.9837229949689257,
+      "cos_F_DM": 0.2476195646397964,
+      "cos_F_LR": 0.5684796061413108,
+      "cos_DM_LR": 0.6544504632964512
+    }
+  ],
+  "cos_null_mean": 0.0161189617888225,
+  "cos_null_p95": 0.03877345400491307,
+  "capture_null_mean": 0.07049766664793211,
+  "capture_null_p95": 0.09334815166632252,
+  "complement_decodability": [
+    {
+      "tap": "postL18",
+      "auc_full": 0.9877675840978594,
+      "auc_in_subspace": 0.9873729900364999,
+      "auc_complement": 0.9759297622570781
+    },
+    {
+      "tap": "postL21",
+      "auc_full": 0.9939824405642695,
+      "auc_in_subspace": 0.9938837920489296,
+      "auc_complement": 0.9855973167603828
+    },
+    {
+      "tap": "postL24",
+      "auc_full": 0.996251356417086,
+      "auc_in_subspace": 0.9964486534477656,
+      "auc_complement": 0.9859919108217421
+    },
+    {
+      "tap": "final",
+      "auc_full": 0.9915162276807734,
+      "auc_in_subspace": 0.9917135247114531,
+      "auc_complement": 0.97464733155766
+    }
+  ],
+  "crosslayer_transfer": {
+    "postL18": {
+      "postL18": 0.9759297622570781,
+      "postL21": 0.68984906777153,
+      "postL24": 0.5287560422215646,
+      "final": 0.4782480023675644
+    },
+    "postL21": {
+      "postL18": 0.8017164841669133,
+      "postL21": 0.9855973167603828,
+      "postL24": 0.6792936766301667,
+      "final": 0.6282923941994673
+    },
+    "postL24": {
+      "postL18": 0.6396369734635494,
+      "postL21": 0.9222649699122029,
+      "postL24": 0.9859919108217421,
+      "final": 0.5083357995462169
+    },
+    "final": {
+      "postL18": 0.42655618032948606,
+      "postL21": 0.7078030975633817,
+      "postL24": 0.5675249087501233,
+      "final": 0.97464733155766
+    }
+  },
+  "verdict": {
+    "concept_axis_not_artefact": true,
+    "irreducibly_distributed": true,
+    "complement_signal_rotates_like_concept": true,
+    "summary": "w_res is NOT a method artefact: Fisher/diff-means/logreg all decode held-out (>90%) yet are not collinear (Fisher-diffmeans cos as low as 0.22). Decodability is IRREDUCIBLY DISTRIBUTED: the orthogonal complement of the 13-dim Fisher subspace still decodes at 0.981. The complement signal ROTATES across layers like the main axis (adjacent transfer high, distant low), arguing genuine distributed concept structure rather than static nuisance. There is no single 'correct' concept axis; the orthogonality results (sec 3.2, 5, 6) concern the relation between decodable footprint and causal mechanism, robustly."
+  }
+}

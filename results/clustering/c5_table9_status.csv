@@ -1,0 +1,13 @@
+cluster,agglo_id,physical_feature,flip_rate,c5_pass,final_status
+1,8,charge_plus_z_change,0.0915,True,accepted
+2,1,lepton_family,0.0319,False,partial
+3,2,z_plus1_with_antineutrino,0.0255,False,descriptive
+4,7,emitted_charge_minus1,0.0681,True,accepted
+5,5,neutron_to_proton,0.0809,True,partial
+6,12,composite_nuclear_object,0.034,False,descriptive
+7,6,emitted_charge_minus1,0.1511,True,descriptive
+8,9,composite_nuclear_object,0.0681,True,accepted
+9,4,z_plus1_with_antineutrino,0.0426,False,partial
+10,10,heavy_nuclear_fragment,0.0638,True,accepted
+11,11,composite_nuclear_object,0.0809,True,accepted
+12,3,z_plus1_a_unchanged,0.1319,True,accepted
