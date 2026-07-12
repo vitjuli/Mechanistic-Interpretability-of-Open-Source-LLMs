@@ -21,8 +21,10 @@ report/*.blg
 report/*.synctex.gz
 report/*.fls
 report/*.fdb_latexmk
-# Large data and models are hosted externally (see README, Data Availability)
-data/
+# Large data and models are hosted externally (see README, Data Availability).
+# The small prompt corpora are kept in the repository.
+data/*
+!data/prompts/
 models/*.safetensors
 models/*.bin
 models/*.hdf
