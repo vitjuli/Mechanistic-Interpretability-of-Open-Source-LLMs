@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+**/.DS_Store
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+# Jupyter
+.ipynb_checkpoints/
+# LaTeX build artefacts (PDFs are kept)
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.bbl
+report/*.blg
+report/*.synctex.gz
+report/*.fls
+report/*.fdb_latexmk
+# Large data and models are hosted externally (see README, Data Availability)
+data/
+models/*.safetensors
+models/*.bin
+models/*.hdf
+# Doxygen build output
+docs/html/
+docs/latex/
