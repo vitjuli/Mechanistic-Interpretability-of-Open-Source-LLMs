@@ -1,0 +1,136 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-07-12 00:15:08.821101: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-07-12 00:15:08.891533: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 63.71it/s]
+layer=22 c=16 sigma=1.368 | push norm=21.89 | gen=30 tokens
+
+===== prompt 0 | correct=alpha incorrect=beta | base_margin=-4.12 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.12  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.12  usage dm=+0.25  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.75  usage dm=+0.88  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.50  usage dm=+2.25  w_res dm=+0.00
+  c= 16.0:  delta dm=+3.50  usage dm=+7.00*  w_res dm=+0.13
+  c= 32.0:  delta dm=+7.88*  usage dm=+15.75*  w_res dm=+0.38
+
+===== prompt 1 | correct=alpha incorrect=beta | base_margin=-3.12 =====
+  c=  1.0:  delta dm=+0.25  usage dm=+0.25  w_res dm=+0.12
+  c=  2.0:  delta dm=+0.25  usage dm=+0.38  w_res dm=+0.12
+  c=  4.0:  delta dm=+0.62  usage dm=+0.75  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.25  usage dm=+1.88  w_res dm=+0.12
+  c= 16.0:  delta dm=+3.00  usage dm=+5.50*  w_res dm=+0.25
+  c= 32.0:  delta dm=+6.62*  usage dm=+13.75*  w_res dm=+0.62
+
+===== prompt 2 | correct=alpha incorrect=beta | base_margin=-3.50 =====
+  c=  1.0:  delta dm=+0.38  usage dm=+0.50  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.62  usage dm=+0.75  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.12  usage dm=+1.62  w_res dm=+0.00
+  c=  8.0:  delta dm=+2.38  usage dm=+4.25*  w_res dm=+0.38
+  c= 16.0:  delta dm=+5.50*  usage dm=+10.75*  w_res dm=+0.25
+  c= 32.0:  delta dm=+9.25*  usage dm=+18.38*  w_res dm=+0.50
+
+===== prompt 3 | correct=alpha incorrect=beta | base_margin=+0.25 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.37  w_res dm=-0.12
+  c=  2.0:  delta dm=+0.50  usage dm=+0.88  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.00  usage dm=+2.25  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.88  usage dm=+4.75  w_res dm=+0.00
+  c= 16.0:  delta dm=+3.75  usage dm=+8.88  w_res dm=+0.12
+  c= 32.0:  delta dm=+5.50  usage dm=+13.12  w_res dm=+0.12
+
+===== prompt 4 | correct=alpha incorrect=beta | base_margin=-0.62 =====
+  c=  1.0:  delta dm=+0.13  usage dm=+0.25  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.25  usage dm=+0.62  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.75*  usage dm=+1.62*  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.75*  usage dm=+3.62*  w_res dm=+0.12
+  c= 16.0:  delta dm=+3.75*  usage dm=+7.25*  w_res dm=+0.25
+  c= 32.0:  delta dm=+5.62*  usage dm=+12.25*  w_res dm=+0.62
+
+===== prompt 5 | correct=alpha incorrect=beta | base_margin=-3.00 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.25  w_res dm=+0.12
+  c=  2.0:  delta dm=+0.38  usage dm=+0.38  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.62  usage dm=+0.88  w_res dm=+0.12
+  c=  8.0:  delta dm=+1.38  usage dm=+1.88  w_res dm=+0.00
+  c= 16.0:  delta dm=+3.00  usage dm=+5.50*  w_res dm=+0.12
+  c= 32.0:  delta dm=+7.00*  usage dm=+14.12*  w_res dm=+0.38
+
+===== prompt 6 | correct=alpha incorrect=beta | base_margin=-3.88 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.12  w_res dm=-0.12
+  c=  2.0:  delta dm=+0.25  usage dm=+0.50  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.75  usage dm=+1.00  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.75  usage dm=+2.75  w_res dm=+0.12
+  c= 16.0:  delta dm=+3.75  usage dm=+7.75*  w_res dm=+0.12
+  c= 32.0:  delta dm=+8.00*  usage dm=+15.75*  w_res dm=+0.25
+
+===== prompt 7 | correct=alpha incorrect=beta | base_margin=-2.75 =====
+  c=  1.0:  delta dm=+0.38  usage dm=+0.38  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.62  usage dm=+0.75  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.12  usage dm=+1.50  w_res dm=+0.25
+  c=  8.0:  delta dm=+2.25  usage dm=+3.50*  w_res dm=+0.25
+  c= 16.0:  delta dm=+4.62*  usage dm=+8.50*  w_res dm=+0.50
+  c= 32.0:  delta dm=+7.75*  usage dm=+15.38*  w_res dm=+1.00
+
+===== prompt 8 | correct=beta incorrect=alpha | base_margin=-4.62 =====
+  c=  1.0:  delta dm=+0.25  usage dm=+0.50  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.00  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.88  usage dm=+1.88  w_res dm=+0.00
+  c=  8.0:  delta dm=+1.75  usage dm=+3.38  w_res dm=+0.00
+  c= 16.0:  delta dm=+4.75*  usage dm=+7.00*  w_res dm=+0.25
+  c= 32.0:  delta dm=+9.38*  usage dm=+10.00*  w_res dm=+0.62
+
+===== prompt 9 | correct=beta incorrect=alpha | base_margin=-4.75 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.50  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.12  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.88  usage dm=+2.00  w_res dm=+0.00
+  c=  8.0:  delta dm=+2.00  usage dm=+3.75  w_res dm=+0.00
+  c= 16.0:  delta dm=+5.00*  usage dm=+7.12*  w_res dm=+0.12
+  c= 32.0:  delta dm=+9.50*  usage dm=+9.88*  w_res dm=+0.62
+
+===== prompt 10 | correct=beta incorrect=alpha | base_margin=-6.12 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.75  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.38  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.00  usage dm=+2.50  w_res dm=+0.00
+  c=  8.0:  delta dm=+2.25  usage dm=+4.12  w_res dm=+0.00
+  c= 16.0:  delta dm=+5.50  usage dm=+8.12*  w_res dm=+0.25
+  c= 32.0:  delta dm=+10.88*  usage dm=+11.38*  w_res dm=+0.88
+
+===== prompt 11 | correct=beta incorrect=alpha | base_margin=-4.12 =====
+  c=  1.0:  delta dm=+0.38  usage dm=+0.88  w_res dm=+0.12
+  c=  2.0:  delta dm=+0.50  usage dm=+1.50  w_res dm=+0.12
+  c=  4.0:  delta dm=+1.12  usage dm=+2.50  w_res dm=+0.12
+  c=  8.0:  delta dm=+2.38  usage dm=+4.12  w_res dm=+0.12
+  c= 16.0:  delta dm=+5.38*  usage dm=+7.12*  w_res dm=+0.12
+  c= 32.0:  delta dm=+8.75*  usage dm=+9.50*  w_res dm=+0.50
+
+===== prompt 12 | correct=beta incorrect=alpha | base_margin=-3.25 =====
+  c=  1.0:  delta dm=+0.25  usage dm=+0.62  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.12  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.12  usage dm=+2.00  w_res dm=+0.12
+  c=  8.0:  delta dm=+2.38  usage dm=+3.62*  w_res dm=+0.12
+  c= 16.0:  delta dm=+5.25*  usage dm=+6.62*  w_res dm=+0.38
+  c= 32.0:  delta dm=+8.38*  usage dm=+8.75*  w_res dm=+0.88
+
+===== prompt 13 | correct=beta incorrect=alpha | base_margin=-3.88 =====
+  c=  1.0:  delta dm=+0.12  usage dm=+0.38  w_res dm=-0.12
+  c=  2.0:  delta dm=+0.38  usage dm=+1.00  w_res dm=+0.00
+  c=  4.0:  delta dm=+0.75  usage dm=+1.88  w_res dm=+0.00
+  c=  8.0:  delta dm=+2.00  usage dm=+3.62  w_res dm=+0.12
+  c= 16.0:  delta dm=+5.50*  usage dm=+7.38*  w_res dm=+0.25
+  c= 32.0:  delta dm=+8.62*  usage dm=+9.25*  w_res dm=+0.75
+
+===== prompt 14 | correct=beta incorrect=alpha | base_margin=-4.38 =====
+  c=  1.0:  delta dm=+0.25  usage dm=+0.62  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.25  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.12  usage dm=+2.25  w_res dm=+0.00
+  c=  8.0:  delta dm=+2.38  usage dm=+4.25  w_res dm=+0.12
+  c= 16.0:  delta dm=+6.88*  usage dm=+8.25*  w_res dm=+0.25
+  c= 32.0:  delta dm=+9.75*  usage dm=+10.50*  w_res dm=+1.00
+
+===== prompt 15 | correct=beta incorrect=alpha | base_margin=-4.88 =====
+  c=  1.0:  delta dm=+0.25  usage dm=+0.62  w_res dm=+0.00
+  c=  2.0:  delta dm=+0.50  usage dm=+1.38  w_res dm=+0.00
+  c=  4.0:  delta dm=+1.00  usage dm=+2.38  w_res dm=-0.12
+  c=  8.0:  delta dm=+2.25  usage dm=+4.25  w_res dm=+0.00
+  c= 16.0:  delta dm=+6.12*  usage dm=+8.38*  w_res dm=+0.00
+  c= 32.0:  delta dm=+9.62*  usage dm=+10.50*  w_res dm=+0.50
+
+[out_csv] appended 304 rows -> data/analysis/runD_v2/semantic_steering/semantic_steering_all.csv

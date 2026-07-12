@@ -1,0 +1,136 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-07-11 23:50:01.694578: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-07-11 23:50:01.765323: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 62.99it/s]
+layer=24 c=16 sigma=6.036 | push norm=96.58 | gen=30 tokens
+
+===== prompt 0 | correct=neutron incorrect=proton | base_margin=-7.75 =====
+  c=  1.0:  delta dm=+0.62  usage dm=+2.75  w_res dm=+0.25
+  c=  2.0:  delta dm=+1.62  usage dm=+5.88  w_res dm=+0.88
+  c=  4.0:  delta dm=+4.75  usage dm=+11.50*  w_res dm=+2.25
+  c=  8.0:  delta dm=+10.38*  usage dm=+16.62*  w_res dm=+5.50
+  c= 16.0:  delta dm=+14.00*  usage dm=+21.00*  w_res dm=+9.75*
+  c= 32.0:  delta dm=+18.38*  usage dm=+26.56*  w_res dm=+11.50*
+
+===== prompt 1 | correct=neutron incorrect=proton | base_margin=-6.38 =====
+  c=  1.0:  delta dm=+0.62  usage dm=+2.25  w_res dm=+0.25
+  c=  2.0:  delta dm=+1.62  usage dm=+5.00  w_res dm=+1.00
+  c=  4.0:  delta dm=+3.87  usage dm=+9.12*  w_res dm=+2.25
+  c=  8.0:  delta dm=+8.38*  usage dm=+13.62*  w_res dm=+4.25
+  c= 16.0:  delta dm=+12.62*  usage dm=+18.31*  w_res dm=+6.12
+  c= 32.0:  delta dm=+17.00*  usage dm=+23.94*  w_res dm=+7.37*
+
+===== prompt 2 | correct=neutron incorrect=proton | base_margin=-2.00 =====
+  c=  1.0:  delta dm=+0.38  usage dm=+1.00  w_res dm=+0.12
+  c=  2.0:  delta dm=+0.62  usage dm=+2.00  w_res dm=+0.25
+  c=  4.0:  delta dm=+1.25  usage dm=+3.88*  w_res dm=+0.75
+  c=  8.0:  delta dm=+2.88*  usage dm=+7.38*  w_res dm=+1.50
+  c= 16.0:  delta dm=+5.62*  usage dm=+12.25*  w_res dm=+2.38*
+  c= 32.0:  delta dm=+9.56*  usage dm=+18.00*  w_res dm=+2.88*
+
+===== prompt 3 | correct=neutron incorrect=proton | base_margin=-5.12 =====
+  c=  1.0:  delta dm=+1.50  usage dm=+3.00  w_res dm=+0.75
+  c=  2.0:  delta dm=+3.13  usage dm=+6.12*  w_res dm=+1.62
+  c=  4.0:  delta dm=+6.38*  usage dm=+10.88*  w_res dm=+3.38
+  c=  8.0:  delta dm=+11.12*  usage dm=+15.50*  w_res dm=+6.38*
+  c= 16.0:  delta dm=+14.81*  usage dm=+19.87*  w_res dm=+9.38*
+  c= 32.0:  delta dm=+18.31*  usage dm=+26.25*  w_res dm=+10.38*
+
+===== prompt 4 | correct=neutron incorrect=proton | base_margin=-5.25 =====
+  c=  1.0:  delta dm=+1.00  usage dm=+2.25  w_res dm=+0.50
+  c=  2.0:  delta dm=+2.25  usage dm=+4.38  w_res dm=+1.00
+  c=  4.0:  delta dm=+4.50  usage dm=+8.00*  w_res dm=+2.13
+  c=  8.0:  delta dm=+9.00*  usage dm=+13.50*  w_res dm=+4.50
+  c= 16.0:  delta dm=+12.62*  usage dm=+18.50*  w_res dm=+7.38*
+  c= 32.0:  delta dm=+17.31*  usage dm=+24.12*  w_res dm=+8.88*
+
+===== prompt 5 | correct=neutron incorrect=proton | base_margin=-6.62 =====
+  c=  1.0:  delta dm=+0.75  usage dm=+1.75  w_res dm=+0.37
+  c=  2.0:  delta dm=+1.38  usage dm=+3.75  w_res dm=+0.88
+  c=  4.0:  delta dm=+2.88  usage dm=+7.12*  w_res dm=+1.62
+  c=  8.0:  delta dm=+5.88  usage dm=+11.88*  w_res dm=+3.25
+  c= 16.0:  delta dm=+9.75*  usage dm=+17.62*  w_res dm=+5.38
+  c= 32.0:  delta dm=+14.25*  usage dm=+23.19*  w_res dm=+6.38
+
+===== prompt 6 | correct=neutron incorrect=proton | base_margin=-7.50 =====
+  c=  1.0:  delta dm=+1.38  usage dm=+4.00  w_res dm=+0.88
+  c=  2.0:  delta dm=+3.00  usage dm=+8.12*  w_res dm=+1.62
+  c=  4.0:  delta dm=+7.25  usage dm=+13.38*  w_res dm=+3.75
+  c=  8.0:  delta dm=+12.12*  usage dm=+17.62*  w_res dm=+7.88*
+  c= 16.0:  delta dm=+16.25*  usage dm=+21.94*  w_res dm=+11.25*
+  c= 32.0:  delta dm=+19.75*  usage dm=+27.03*  w_res dm=+11.75*
+
+===== prompt 7 | correct=neutron incorrect=proton | base_margin=-2.88 =====
+  c=  1.0:  delta dm=+1.00  usage dm=+2.50  w_res dm=+0.62
+  c=  2.0:  delta dm=+2.12  usage dm=+4.75*  w_res dm=+1.25
+  c=  4.0:  delta dm=+4.12*  usage dm=+8.62*  w_res dm=+2.38
+  c=  8.0:  delta dm=+7.75*  usage dm=+13.50*  w_res dm=+4.25*
+  c= 16.0:  delta dm=+12.69*  usage dm=+17.69*  w_res dm=+6.62*
+  c= 32.0:  delta dm=+16.13*  usage dm=+22.44*  w_res dm=+7.19*
+
+===== prompt 8 | correct=proton incorrect=neutron | base_margin=-3.88 =====
+  c=  1.0:  delta dm=+0.62  usage dm=+1.50  w_res dm=+0.25
+  c=  2.0:  delta dm=+1.25  usage dm=+3.25  w_res dm=+0.50
+  c=  4.0:  delta dm=+3.00  usage dm=+6.38*  w_res dm=+1.25
+  c=  8.0:  delta dm=+7.25*  usage dm=+12.56*  w_res dm=+3.00
+  c= 16.0:  delta dm=+10.62*  usage dm=+19.47*  w_res dm=+7.25*
+  c= 32.0:  delta dm=+13.94*  usage dm=+25.43*  w_res dm=+8.38*
+
+===== prompt 9 | correct=proton incorrect=neutron | base_margin=-3.00 =====
+  c=  1.0:  delta dm=+0.75  usage dm=+1.75  w_res dm=+0.38
+  c=  2.0:  delta dm=+1.62  usage dm=+4.00*  w_res dm=+0.88
+  c=  4.0:  delta dm=+3.75*  usage dm=+8.63*  w_res dm=+2.12
+  c=  8.0:  delta dm=+7.88*  usage dm=+13.62*  w_res dm=+5.00*
+  c= 16.0:  delta dm=+10.00*  usage dm=+19.06*  w_res dm=+8.00*
+  c= 32.0:  delta dm=+13.50*  usage dm=+24.52*  w_res dm=+7.62*
+
+===== prompt 10 | correct=proton incorrect=neutron | base_margin=-4.12 =====
+  c=  1.0:  delta dm=+0.62  usage dm=+1.50  w_res dm=+0.12
+  c=  2.0:  delta dm=+1.00  usage dm=+3.62  w_res dm=+0.38
+  c=  4.0:  delta dm=+2.00  usage dm=+9.75*  w_res dm=+0.62
+  c=  8.0:  delta dm=+8.88*  usage dm=+18.31*  w_res dm=+1.63
+  c= 16.0:  delta dm=+14.38*  usage dm=+24.75*  w_res dm=+6.88*
+  c= 32.0:  delta dm=+15.69*  usage dm=+28.51*  w_res dm=+8.56*
+
+===== prompt 11 | correct=proton incorrect=neutron | base_margin=-1.88 =====
+  c=  1.0:  delta dm=+0.75  usage dm=+2.25*  w_res dm=+0.50
+  c=  2.0:  delta dm=+1.75  usage dm=+5.25*  w_res dm=+0.88
+  c=  4.0:  delta dm=+4.25*  usage dm=+11.38*  w_res dm=+1.75
+  c=  8.0:  delta dm=+10.00*  usage dm=+17.00*  w_res dm=+4.12*
+  c= 16.0:  delta dm=+12.88*  usage dm=+22.00*  w_res dm=+7.25*
+  c= 32.0:  delta dm=+14.19*  usage dm=+25.75*  w_res dm=+7.38*
+
+===== prompt 12 | correct=proton incorrect=neutron | base_margin=-1.12 =====
+  c=  1.0:  delta dm=+1.00  usage dm=+2.38*  w_res dm=+0.50
+  c=  2.0:  delta dm=+2.12*  usage dm=+5.12*  w_res dm=+1.00
+  c=  4.0:  delta dm=+4.75*  usage dm=+9.50*  w_res dm=+2.12*
+  c=  8.0:  delta dm=+8.38*  usage dm=+14.12*  w_res dm=+4.50*
+  c= 16.0:  delta dm=+10.75*  usage dm=+19.81*  w_res dm=+7.38*
+  c= 32.0:  delta dm=+12.69*  usage dm=+24.66*  w_res dm=+7.94*
+
+===== prompt 13 | correct=proton incorrect=neutron | base_margin=-0.25 =====
+  c=  1.0:  delta dm=+1.50*  usage dm=+3.50*  w_res dm=+0.88*
+  c=  2.0:  delta dm=+2.75*  usage dm=+6.88*  w_res dm=+1.62*
+  c=  4.0:  delta dm=+5.62*  usage dm=+11.44*  w_res dm=+3.25*
+  c=  8.0:  delta dm=+9.12*  usage dm=+16.19*  w_res dm=+6.12*
+  c= 16.0:  delta dm=+11.50*  usage dm=+21.25*  w_res dm=+9.12*
+  c= 32.0:  delta dm=+12.88*  usage dm=+25.95*  w_res dm=+8.44*
+
+===== prompt 14 | correct=proton incorrect=neutron | base_margin=-3.50 =====
+  c=  1.0:  delta dm=+0.75  usage dm=+2.25  w_res dm=+0.50
+  c=  2.0:  delta dm=+1.75  usage dm=+5.25*  w_res dm=+0.87
+  c=  4.0:  delta dm=+3.87*  usage dm=+12.37*  w_res dm=+1.75
+  c=  8.0:  delta dm=+9.62*  usage dm=+17.62*  w_res dm=+3.87*
+  c= 16.0:  delta dm=+14.12*  usage dm=+22.72*  w_res dm=+8.62*
+  c= 32.0:  delta dm=+16.37*  usage dm=+28.42*  w_res dm=+8.75*
+
+===== prompt 15 | correct=proton incorrect=neutron | base_margin=-1.38 =====
+  c=  1.0:  delta dm=+0.88  usage dm=+2.50*  w_res dm=+0.25
+  c=  2.0:  delta dm=+1.88*  usage dm=+5.38*  w_res dm=+0.75
+  c=  4.0:  delta dm=+4.25*  usage dm=+10.75*  w_res dm=+1.62*
+  c=  8.0:  delta dm=+9.12*  usage dm=+16.00*  w_res dm=+4.00*
+  c= 16.0:  delta dm=+11.81*  usage dm=+21.09*  w_res dm=+7.25*
+  c= 32.0:  delta dm=+13.62*  usage dm=+25.36*  w_res dm=+6.50*
+
+[out_csv] appended 304 rows -> data/analysis/runD_v2/semantic_steering/semantic_steering_all.csv
