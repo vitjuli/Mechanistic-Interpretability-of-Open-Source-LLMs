@@ -1,0 +1,37 @@
+# Continuous Integration for the Cambridge GitLab repository.
+# Two stages: static checks (black/isort/flake8) and the unit-test suite.
+# The tests are CPU-only and need neither the model nor the large data dumps.
+
+image: python:3.10-slim
+
+stages:
+  - lint
+  - test
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+
+cache:
+  paths:
+    - .pip-cache/
+
+before_script:
+  - python --version
+  - pip install torch --index-url https://download.pytorch.org/whl/cpu
+  - pip install -e ".[dev]"
+
+lint:
+  stage: lint
+  script:
+    - black --check --line-length=100 src tests
+    - isort --check-only --profile=black --line-length=100 src tests
+    - flake8 src tests
+
+test:
+  stage: test
+  script:
+    - pytest -q --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml

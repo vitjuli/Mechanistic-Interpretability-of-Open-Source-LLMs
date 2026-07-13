@@ -1,0 +1,18 @@
+[flake8]
+max-line-length = 100
+# black owns line length (E501); E203/W503 are black-incompatible; E741 ('l' as a
+# layer index) is a deliberate convention in the research code.
+extend-ignore = E203, W503, E501, E741
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    docs/_build,
+    data
+per-file-ignores =
+    # scripts are numbered research entry-points: allow module-level imports after docstrings
+    scripts/*:E402
+    __init__.py:F401
