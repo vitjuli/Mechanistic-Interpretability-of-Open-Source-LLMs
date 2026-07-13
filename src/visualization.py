@@ -8,16 +8,14 @@ Provides functions for:
 - Publication-quality figure generation
 """
 
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.colors import LinearSegmentedColormap, Normalize
-import seaborn as sns
+import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
+import seaborn as sns
 
 # Cambridge colour palette
 PALETTE = {
@@ -29,21 +27,24 @@ PALETTE = {
     "grey": "#999999",
 }
 
+
 # Publication defaults
 def set_publication_style():
     """Set matplotlib defaults for publication-quality figures."""
-    plt.rcParams.update({
-        "font.size": 11,
-        "axes.labelsize": 12,
-        "axes.titlesize": 14,
-        "xtick.labelsize": 10,
-        "ytick.labelsize": 10,
-        "legend.fontsize": 10,
-        "figure.dpi": 150,
-        "savefig.dpi": 300,
-        "savefig.bbox": "tight",
-        "font.family": "serif",
-    })
+    plt.rcParams.update(
+        {
+            "font.size": 11,
+            "axes.labelsize": 12,
+            "axes.titlesize": 14,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "legend.fontsize": 10,
+            "figure.dpi": 150,
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+            "font.family": "serif",
+        }
+    )
 
 
 def plot_attribution_graph(
@@ -109,10 +110,17 @@ def plot_attribution_graph(
         edge_widths = []
 
     # Draw
-    nx.draw_networkx_edges(graph, pos, ax=ax, width=edge_widths,
-                           edge_color="grey", alpha=0.5, arrows=True, arrowsize=12)
-    nx.draw_networkx_nodes(graph, pos, ax=ax, node_color=node_colors,
-                           node_size=400, alpha=0.9)
+    nx.draw_networkx_edges(
+        graph,
+        pos,
+        ax=ax,
+        width=edge_widths,
+        edge_color="grey",
+        alpha=0.5,
+        arrows=True,
+        arrowsize=12,
+    )
+    nx.draw_networkx_nodes(graph, pos, ax=ax, node_color=node_colors, node_size=400, alpha=0.9)
 
     labels = {}
     for n in graph.nodes():
@@ -196,12 +204,17 @@ def plot_intervention_effects(
     # Paired comparison
     ax1 = axes[0]
     for i in range(len(baseline_diffs)):
-        ax1.plot([0, 1], [baseline_diffs[i], intervened_diffs[i]],
-                 color="grey", alpha=0.3)
-    ax1.scatter([0] * len(baseline_diffs), baseline_diffs,
-                color=PALETTE["blue"], label="Baseline", zorder=5)
-    ax1.scatter([1] * len(intervened_diffs), intervened_diffs,
-                color=PALETTE["red"], label="Intervened", zorder=5)
+        ax1.plot([0, 1], [baseline_diffs[i], intervened_diffs[i]], color="grey", alpha=0.3)
+    ax1.scatter(
+        [0] * len(baseline_diffs), baseline_diffs, color=PALETTE["blue"], label="Baseline", zorder=5
+    )
+    ax1.scatter(
+        [1] * len(intervened_diffs),
+        intervened_diffs,
+        color=PALETTE["red"],
+        label="Intervened",
+        zorder=5,
+    )
     ax1.set_xticks([0, 1])
     ax1.set_xticklabels(["Baseline", "Intervened"])
     ax1.set_ylabel("Logit Difference")
@@ -213,8 +226,9 @@ def plot_intervention_effects(
     effects = intervened_diffs - baseline_diffs
     ax2.hist(effects, bins=20, color=PALETTE["purple"], edgecolor="black", alpha=0.7)
     ax2.axvline(x=0, color="black", linestyle="--")
-    ax2.axvline(x=effects.mean(), color=PALETTE["red"], linestyle="-",
-                label=f"Mean: {effects.mean():.2f}")
+    ax2.axvline(
+        x=effects.mean(), color=PALETTE["red"], linestyle="-", label=f"Mean: {effects.mean():.2f}"
+    )
     ax2.set_xlabel("Change in Logit Difference")
     ax2.set_ylabel("Count")
     ax2.set_title("Effect Size Distribution")
@@ -241,10 +255,20 @@ def plot_logit_diff_distribution(
     fig, ax = plt.subplots(figsize=figsize)
 
     ax.hist(logit_diffs, bins=30, color=PALETTE["blue"], edgecolor="black", alpha=0.7)
-    ax.axvline(x=threshold, color=PALETTE["red"], linestyle="--", linewidth=2,
-               label=f"Threshold ({threshold})")
-    ax.axvline(x=np.mean(logit_diffs), color=PALETTE["green"], linestyle="-",
-               linewidth=2, label=f"Mean ({np.mean(logit_diffs):.2f})")
+    ax.axvline(
+        x=threshold,
+        color=PALETTE["red"],
+        linestyle="--",
+        linewidth=2,
+        label=f"Threshold ({threshold})",
+    )
+    ax.axvline(
+        x=np.mean(logit_diffs),
+        color=PALETTE["green"],
+        linestyle="-",
+        linewidth=2,
+        label=f"Mean ({np.mean(logit_diffs):.2f})",
+    )
     ax.set_xlabel("Logit Difference (correct - incorrect)")
     ax.set_ylabel("Count")
     ax.set_title(f"Logit Difference Distribution: {behaviour_name}")
@@ -271,8 +295,9 @@ def plot_sae_reconstruction_quality(
 
     # R-squared
     ax1 = axes[0]
-    ax1.bar(range(len(layers)), [r2_scores[l] for l in layers],
-            color=PALETTE["blue"], edgecolor="black")
+    ax1.bar(
+        range(len(layers)), [r2_scores[l] for l in layers], color=PALETTE["blue"], edgecolor="black"
+    )
     ax1.set_xticks(range(len(layers)))
     ax1.set_xticklabels([f"L{l}" for l in layers], rotation=45)
     ax1.set_ylabel("R-squared")
@@ -283,8 +308,12 @@ def plot_sae_reconstruction_quality(
 
     # L0 sparsity
     ax2 = axes[1]
-    ax2.bar(range(len(layers)), [l0_scores[l] for l in layers],
-            color=PALETTE["green"], edgecolor="black")
+    ax2.bar(
+        range(len(layers)),
+        [l0_scores[l] for l in layers],
+        color=PALETTE["green"],
+        edgecolor="black",
+    )
     ax2.set_xticks(range(len(layers)))
     ax2.set_xticklabels([f"L{l}" for l in layers], rotation=45)
     ax2.set_ylabel("L0 (fraction active)")
@@ -292,8 +321,12 @@ def plot_sae_reconstruction_quality(
 
     # Dead features
     ax3 = axes[2]
-    ax3.bar(range(len(layers)), [dead_fractions[l] for l in layers],
-            color=PALETTE["orange"], edgecolor="black")
+    ax3.bar(
+        range(len(layers)),
+        [dead_fractions[l] for l in layers],
+        color=PALETTE["orange"],
+        edgecolor="black",
+    )
     ax3.set_xticks(range(len(layers)))
     ax3.set_xticklabels([f"L{l}" for l in layers], rotation=45)
     ax3.set_ylabel("Dead Feature Fraction")

@@ -12,6 +12,7 @@ Reference:
 from __future__ import annotations  # defer PEP-604 (X | Y) annotations for Python 3.9
 
 from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -30,6 +31,7 @@ def rectangle(x: torch.Tensor) -> torch.Tensor:
         Binary tensor indicating values in the rectangle
     """
     return ((x > -0.5) & (x < 0.5)).to(x.dtype)
+
 
 # ENCODER
 class _JumpReLUFunction(torch.autograd.Function):

@@ -15,18 +15,15 @@ Reference:
 - https://github.com/safety-research/circuit-tracer
 """
 
-import os
-import yaml
 import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
 
 import torch
 from huggingface_hub import hf_hub_download, snapshot_download
 
 from src.transcoder.single_layer_transcoder import SingleLayerTranscoder
-from src.transcoder.activation_functions import JumpReLU
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +93,7 @@ class TranscoderSet:
         """
         self.config = config
         self.cache_dir = cache_dir or Path.home() / ".cache" / "transcoders"
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dtype = dtype
         self.lazy_load = lazy_load
 
@@ -109,8 +104,7 @@ class TranscoderSet:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(
-            f"Initialized TranscoderSet for {config.model_name} "
-            f"({config.num_layers} layers)"
+            f"Initialized TranscoderSet for {config.model_name} " f"({config.num_layers} layers)"
         )
 
     def __getitem__(self, layer_idx: int) -> SingleLayerTranscoder:
@@ -151,9 +145,7 @@ class TranscoderSet:
     def _load_layer(self, layer_idx: int) -> None:
         """Load a single layer's transcoder."""
         if layer_idx < 0 or layer_idx >= self.config.num_layers:
-            raise ValueError(
-                f"Layer {layer_idx} out of range [0, {self.config.num_layers})"
-            )
+            raise ValueError(f"Layer {layer_idx} out of range [0, {self.config.num_layers})")
 
         logger.info(f"Loading transcoder for layer {layer_idx}")
 
@@ -316,8 +308,7 @@ def load_transcoder_set(
 
     if model_size not in QWEN3_CONFIGS:
         raise ValueError(
-            f"Unknown model size '{model_size}'. "
-            f"Available: {list(QWEN3_CONFIGS.keys())}"
+            f"Unknown model size '{model_size}'. " f"Available: {list(QWEN3_CONFIGS.keys())}"
         )
 
     model_config = QWEN3_CONFIGS[model_size]

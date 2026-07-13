@@ -16,8 +16,8 @@ from src.transcoder.activation_functions import JumpReLU, TopK
 from src.transcoder.single_layer_transcoder import SingleLayerTranscoder
 from src.transcoder.transcoder_loader import (
     TranscoderSet,
-    load_transcoder_set,
     download_transcoder_weights,
+    load_transcoder_set,
 )
 
 __all__ = [

@@ -14,14 +14,12 @@ Key differences from SAEs:
 - Features represent "what the MLP is computing" rather than "what is in the residual"
 """
 
+import logging
+from typing import Dict, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from typing import Optional, Tuple, Dict
-from pathlib import Path
-import logging
-
 from safetensors import safe_open
 from safetensors.torch import save_file
 
@@ -119,9 +117,7 @@ class SingleLayerTranscoder(nn.Module):
 
         # Optional skip connection
         if skip_connection:
-            self.W_skip = nn.Parameter(
-                torch.zeros(d_model, d_model, device=device, dtype=dtype)
-            )
+            self.W_skip = nn.Parameter(torch.zeros(d_model, d_model, device=device, dtype=dtype))
         else:
             self.register_parameter("W_skip", None)
 
@@ -231,9 +227,7 @@ class SingleLayerTranscoder(nn.Module):
 
         if self.W_skip is not None:
             if input_acts is None:
-                raise ValueError(
-                    "Transcoder has skip connection but no input_acts provided"
-                )
+                raise ValueError("Transcoder has skip connection but no input_acts provided")
             reconstruction = reconstruction + self.compute_skip(input_acts)
 
         return reconstruction
@@ -366,9 +360,7 @@ class SingleLayerTranscoder(nn.Module):
         }
 
         if isinstance(self.activation_function, JumpReLU):
-            state_dict["activation_function.threshold"] = (
-                self.activation_function.threshold.cpu()
-            )
+            state_dict["activation_function.threshold"] = self.activation_function.threshold.cpu()
 
         if self.W_skip is not None:
             state_dict["W_skip"] = self.W_skip.cpu()

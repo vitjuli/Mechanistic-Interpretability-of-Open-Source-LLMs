@@ -27,15 +27,15 @@ PILOT_ARCHIVE = PROMPTS_DIR / f"{BEHAVIOUR}_train_n24_pilot.jsonl"
 
 def make_prompt(
     text: str,
-    concept: str,           # "alpha_decay" | "beta_decay"
-    concept_index: int,     # 0 | 1
+    concept: str,  # "alpha_decay" | "beta_decay"
+    concept_index: int,  # 0 | 1
     template_idx: int,
-    surface_family: str,    # "F0" | "F1" | "F2" | "F3" | "F4"
+    surface_family: str,  # "F0" | "F1" | "F2" | "F3" | "F4"
     keyword_free: bool,
     difficulty: str = "standard",
 ) -> dict:
-    correct   = " alpha" if concept == "alpha_decay" else " beta"
-    incorrect = " beta"  if concept == "alpha_decay" else " alpha"
+    correct = " alpha" if concept == "alpha_decay" else " beta"
+    incorrect = " beta" if concept == "alpha_decay" else " alpha"
     return {
         "prompt": text,
         "correct_answer": correct,
@@ -88,7 +88,7 @@ F0_BETA = [
 
 # F0 difficulties (matching original pilot)
 F0_ALPHA_DIFF = ["standard"] * 11 + ["indirect"]
-F0_BETA_DIFF  = ["standard"] * 9 + ["indirect", "standard", "indirect"]
+F0_BETA_DIFF = ["standard"] * 9 + ["indirect", "standard", "indirect"]
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +223,7 @@ F4_BETA = [
 # Assembly
 # ---------------------------------------------------------------------------
 
+
 def build_dataset() -> list[dict]:
     records = []
 
@@ -271,9 +272,9 @@ def build_dataset() -> list[dict]:
 
 def sanity_check(records: list[dict]) -> None:
     n_alpha = sum(1 for r in records if r["physics_concept"] == "alpha_decay")
-    n_beta  = sum(1 for r in records if r["physics_concept"] == "beta_decay")
-    n_kf    = sum(1 for r in records if r["keyword_free"])
-    fams    = {}
+    n_beta = sum(1 for r in records if r["physics_concept"] == "beta_decay")
+    n_kf = sum(1 for r in records if r["keyword_free"])
+    fams = {}
     for r in records:
         fams[r["surface_family"]] = fams.get(r["surface_family"], 0) + 1
 
@@ -298,8 +299,15 @@ def sanity_check(records: list[dict]) -> None:
                 description = description[:idx]
             for kw in kw_forbidden:
                 if kw in description:
-                    violations.append((r["surface_family"], r["physics_concept"],
-                                   r["template_idx"], kw, r["prompt"]))
+                    violations.append(
+                        (
+                            r["surface_family"],
+                            r["physics_concept"],
+                            r["template_idx"],
+                            kw,
+                            r["prompt"],
+                        )
+                    )
     if violations:
         print("\nWARNING — keyword_free violations:")
         for v in violations:

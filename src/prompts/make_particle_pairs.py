@@ -15,15 +15,22 @@ USAGE:
     --out_dir data/prompts/particle_pairs
 SELF-TEST: python make_particle_pairs.py --self_test
 """
-from __future__ import annotations
-import argparse, json, logging
-from pathlib import Path
-from itertools import combinations
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from itertools import combinations
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S"
+)
 logger = logging.getLogger("pairs")
 
 PARTICLES = ["electron", "neutron", "photon", "proton"]
+
 
 def particle_of(p, class_key):
     v = str(p.get(class_key, "")).strip().lower()
@@ -32,8 +39,10 @@ def particle_of(p, class_key):
             return part
     return None
 
+
 def run(args):
-    out = Path(args.out_dir); out.mkdir(parents=True, exist_ok=True)
+    out = Path(args.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
     prompts = [json.loads(l) for l in open(args.corpus)]
     # bucket by particle
     by_part = {p: [] for p in PARTICLES}
@@ -41,10 +50,15 @@ def run(args):
     for pr in prompts:
         part = particle_of(pr, args.class_key)
         if part is None:
-            dropped += 1; continue
+            dropped += 1
+            continue
         by_part[part].append(pr)
-    logger.info("corpus %d | per particle: %s | dropped(non-4particle): %d",
-                len(prompts), {k: len(v) for k, v in by_part.items()}, dropped)
+    logger.info(
+        "corpus %d | per particle: %s | dropped(non-4particle): %d",
+        len(prompts),
+        {k: len(v) for k, v in by_part.items()},
+        dropped,
+    )
     if dropped == len(prompts):
         logger.warning("ALL dropped -- check --class_key (got 0 matches for %s)", PARTICLES)
 
@@ -54,29 +68,44 @@ def run(args):
         pa, pb = by_part[a], by_part[b]
         n = min(len(pa), len(pb))
         if n == 0:
-            logger.warning("pair %s_vs_%s: one side empty, skipping", a, b); continue
+            logger.warning("pair %s_vs_%s: one side empty, skipping", a, b)
+            continue
         # balance: take min(n) from each (already 80/80 if balanced corpus)
         rows = []
         for pr in pa[:n]:
-            pr = dict(pr); pr["_pair_class"] = 0; pr["_pair"] = f"{a}_vs_{b}"; pr["_particle"] = a
+            pr = dict(pr)
+            pr["_pair_class"] = 0
+            pr["_pair"] = f"{a}_vs_{b}"
+            pr["_particle"] = a
             rows.append(pr)
         for pr in pb[:n]:
-            pr = dict(pr); pr["_pair_class"] = 1; pr["_pair"] = f"{a}_vs_{b}"; pr["_particle"] = b
+            pr = dict(pr)
+            pr["_pair_class"] = 1
+            pr["_pair"] = f"{a}_vs_{b}"
+            pr["_particle"] = b
             rows.append(pr)
         fn = out / f"particles_{a}_vs_{b}.jsonl"
         with open(fn, "w") as f:
             for r in rows:
                 f.write(json.dumps(r) + "\n")
-        manifest[f"{a}_vs_{b}"] = {"file": str(fn), "n_class0": n, "n_class1": n,
-                                   "class0": a, "class1": b}
+        manifest[f"{a}_vs_{b}"] = {
+            "file": str(fn),
+            "n_class0": n,
+            "n_class1": n,
+            "class0": a,
+            "class1": b,
+        }
         logger.info("wrote %s  (%d/%d, class0=%s class1=%s)", fn.name, n, n, a, b)
     json.dump(manifest, open(out / "pairs_manifest.json", "w"), indent=2)
     logger.info("manifest -> %s | %d pairs", out / "pairs_manifest.json", len(manifest))
     print("\nNEXT: use _pair_class as the binary label (class1=beta-role) in 154/119:")
     print("      --label_key _pair_class --pos_value 1   (or your dump's native label flag)")
 
+
 def self_test():
-    import tempfile, os
+    import os
+    import tempfile
+
     d = tempfile.mkdtemp()
     corpus = os.path.join(d, "c.jsonl")
     rows = []
@@ -86,6 +115,7 @@ def self_test():
     rows.append({"prompt": "muon q", "correct_answer": " muon"})  # should be dropped
     open(corpus, "w").write("\n".join(json.dumps(r) for r in rows))
     from types import SimpleNamespace
+
     run(SimpleNamespace(corpus=corpus, class_key="correct_answer", out_dir=os.path.join(d, "out")))
     man = json.load(open(os.path.join(d, "out", "pairs_manifest.json")))
     assert len(man) == 6, f"expected 6 pairs, got {len(man)}"
@@ -97,15 +127,23 @@ def self_test():
     assert all(r["_pair_class"] in (0, 1) for r in ep), "binary label present"
     print("[self_test] OK - 6 balanced pairs, muon dropped, binary _pair_class label. pass.")
 
+
 def build_parser():
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument("--self_test", action="store_true")
-    p.add_argument("--corpus"); p.add_argument("--class_key", default="correct_answer")
+    p.add_argument("--corpus")
+    p.add_argument("--class_key", default="correct_answer")
     p.add_argument("--out_dir", default="particle_pairs")
     return p
 
+
 if __name__ == "__main__":
     a = build_parser().parse_args()
-    if a.self_test: self_test()
-    elif a.corpus: run(a)
-    else: raise SystemExit("need --corpus (or --self_test)")
+    if a.self_test:
+        self_test()
+    elif a.corpus:
+        run(a)
+    else:
+        raise SystemExit("need --corpus (or --self_test)")
