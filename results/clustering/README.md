@@ -17,6 +17,7 @@ ablation. Pipeline: `scripts/22`–`29`, `scripts/27_cluster_joint_ablation.py`,
 | `cluster_stability_k_sweep.csv` | paraphrase-stability sweep over K: `paraphrase_percentile_of_random`, `silhouette` per K (K=12 → 47.5, 0.479) | **Table `tab:kstab`**, App D "Selecting the number of clusters" |
 | `cluster_stability_summary.json` | Louvain (2.5th percentile) vs average-linkage agglomerative (47.5th) paraphrase agreement | App D algorithm choice |
 
-⚠ `decay_cluster_feature_firing.csv` carries a *different* (runB, 0–10) cluster assignment in its
-`cluster` column — do not read cluster membership from it. It is used here only for the partition-independent
-**per-feature** firing values (e.g. the L18 singleton that HAC's activation matrix omitted).
+Note: the `cluster` column of `decay_cluster_feature_firing.csv` uses a separate (runB) 0–10
+indexing, so cluster membership is read from `hac_k12_table8_renumbered.csv`, not from this file.
+This file provides the partition-independent **per-feature** firing values (e.g. the L18 singleton
+that the HAC activation matrix omitted).

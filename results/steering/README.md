@@ -14,12 +14,9 @@ Outputs of the direction-steering scripts (`scripts/122_b1_steering_sweep.py`,
 ## §3.3 Dissociation under intervention
 | file | what | thesis |
 |---|---|---|
-| `semantic_L22_L24_L35/semantic_steering_all.csv` | steering generations, all pairs at L22/L24/L35 | source of the generation Tables 6–7 |
-| `semantic_L22_L24_L35/*.txt` | per-pair per-layer logs (base_margin + `delta/usage/w_res` margin deltas by c, plus 30-token generation) | supporting |
+| `semantic_L22_L24_L35/semantic_steering_all.csv` | per-prompt steering records for the correctly-paired concepts (alpha_beta, grammar, electron_vs_proton, neutron_vs_proton) at L22/L24/L35 | provenance for the §3.3 generation figure |
+| `semantic_L22_L24_L35/*.txt` | per-pair per-layer logs (base_margin + `delta/usage/w_res` margin deltas by c, plus 30-token generation) | provenance for the §3.3 generation figure |
 | `decode_e_p_L24.md` | electron/proton L24 decode: Δμ = coherent content, u = forced token with degenerate repetition | dissociation narrative |
-
-⚠ `semantic_L22_L24_L35/README.md` documents a filename-vs-`incorrect=` label mismatch in that bundle —
-read it before quoting any `base_margin` from those files.
 
 ## pairs/ — per-pair margin sweeps (both sections)
 `steering_pair_{e_p,e_n,n_p,n_g,g_p,e_g_V2}.csv` and
