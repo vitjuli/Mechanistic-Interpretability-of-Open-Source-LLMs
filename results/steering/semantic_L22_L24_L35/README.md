@@ -1,38 +1,35 @@
 # Semantic steering bundle (L22 / L24 / L35)
 
-Copied from `~/Downloads` on 2026-07-12 (source run dated 2026-07-11, generations timestamped 2026-07-12 01:51).
-Origin: `colab/run_semantic_steering.sh`. Downloads artifacts were `semantic_out.tar.gz` + `semantic_steering_all.csv`.
+Per-prompt semantic-steering logs at three depths (L22, L24, L35), produced by
+`colab/run_semantic_steering.sh`. For each prompt the log records the baseline
+correct-vs-incorrect logit margin and, for the three directions, the margin
+change under steering across a range of strengths, together with a short
+generation.
 
 ## Contents
-- `<pair>_L{22,24,35}.txt` — per-prompt steering logs: for each prompt, `base_margin` and the
-  margin delta `dm` for the three directions (`delta` = Delta-mu writing, `usage` = u use direction,
-  `w_res` = reading direction) across strengths c = 1,2,4,8,16,32, plus a 30-token generation.
-- `semantic_steering_all.csv` — aggregate table across all pairs/layers (md5 341668d7...).
 
-Pairs: `alpha_beta`, `electron_vs_{neutron,photon,proton}`, `neutron_vs_{photon,proton}`,
-`photon_vs_proton`, `grammar`.
+- `<pair>_L{22,24,35}.txt` — per-prompt logs. Each prompt line gives
+  `correct=`, `incorrect=` and `base_margin` (the correct-minus-incorrect logit
+  margin), then the margin delta `dm` for `delta` (writing `Δμ`), `usage` (use
+  `u`) and `w_res` (reading `w_LDA`) at strengths `c = 1, 2, 4, 8, 16, 32`,
+  followed by a 30-token generation.
+- `semantic_steering_all.csv` — the same records in aggregate
+  (`tag, layer, c, prompt_idx, correct, incorrect, push, margin, base_margin,
+  dmargin, flipped, top1, top5, gen`).
+
+Pairs: `alpha_beta`, `grammar`, `electron_vs_proton`, `neutron_vs_proton`. For
+every retained file the `incorrect` class matches the pair named in the file, so
+`base_margin` is the correct-minus-paired-class margin.
 
 ## Relation to the thesis
-Plausible provenance for the §3.3 "Dissociation under intervention" generation tables
-(particle steering at L24). NOTE these are a SEPARATE, later run from the aggregate per-pair CSVs
-in the parent dir (`steering_pair_*.csv`), which were used for the §3.3 margin-flip verification.
-Numbers here do not necessarily match those.
 
-## ⚠️ Known issue — filename vs internal `incorrect=` label mismatch
-The `correct=` header matches the filename's first token, but the `incorrect=` header (which sets
-`base_margin` = margin of correct vs incorrect) does NOT match the filename's second token for most
-particle pairs (L24 shown):
+Provenance for the §3.3 "Dissociation under intervention" generation figure,
+which shows the neutron/proton generations at L24 (`neutron_vs_proton_L24.txt`):
+steering along the use direction forces the class token and degenerates into
+repetition, while the writing and reading directions keep the continuation
+coherent.
 
-| file                        | internal label                 | filename implies |
-|-----------------------------|--------------------------------|------------------|
-| electron_vs_neutron_L24.txt | correct=electron incorrect=proton | ...neutron |
-| electron_vs_photon_L24.txt  | correct=electron incorrect=proton | ...photon  |
-| electron_vs_proton_L24.txt  | correct=electron incorrect=proton | ...proton ✓ |
-| neutron_vs_photon_L24.txt   | correct=neutron incorrect=proton  | ...photon  |
-| neutron_vs_proton_L24.txt   | correct=neutron incorrect=proton  | ...proton ✓ |
-| photon_vs_proton_L24.txt    | correct=photon incorrect=electron | ...proton  |
-
-Most pairs report `incorrect=proton` regardless of the filename. Before using any base_margin / dm
-value from this bundle in the thesis (in particular Table 7 = electron_vs_photon), confirm which
-incorrect class the run actually steered against — the header label may be stale/buggy, or the
-filenames may be wrong. Do NOT trust the pairing on filename alone.
+These logs are a separate, later run from the per-pair margin-flip sweeps in the
+parent directory (`steering_pair_*.csv`), which are the source of the §3.1.2 and
+§3.3 margin-flip numbers. The two runs are independent, so the numbers here are
+provenance for the generations only, not for the reported margin-flip values.

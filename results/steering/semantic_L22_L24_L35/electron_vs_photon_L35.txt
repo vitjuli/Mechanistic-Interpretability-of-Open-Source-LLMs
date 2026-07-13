@@ -1,27 +1,0 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
-2026-07-11 22:54:07.451034: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2026-07-11 22:54:07.519824: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 62.44it/s]
-layer=35 c=16 sigma=67.435 | push norm=1078.96 | gen=30 tokens
-
-===== prompt 0 | correct=electron incorrect=proton | base_margin=-6.44 =====
-Traceback (most recent call last):
-  File "/content/project/scripts/steering_decode_check.py", line 122, in <module>
-    if __name__=="__main__": main()
-                             ^^^^^^
-  File "/content/project/scripts/steering_decode_check.py", line 104, in main
-    top,rank,cont,margin=analyse(p["prompt"], s*(cval*sigma)*d, ids)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/content/project/scripts/steering_decode_check.py", line 60, in analyse
-    h=hook(push) if push is not None else None
-      ^^^^^^^^^^
-  File "/content/project/scripts/steering_decode_check.py", line 56, in hook
-    return blocks[L+1].register_forward_pre_hook(pre)
-           ~~~~~~^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/container.py", line 386, in __getitem__
-    return self._modules[self._get_abs_string_index(idx)]
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/container.py", line 370, in _get_abs_string_index
-    raise IndexError(f"index {idx} is out of range")
-IndexError: index 36 is out of range
