@@ -5,7 +5,7 @@ cluster,physical_feature,lift,fire_a,fire_b,offset,layer,status,agglo_id
 4,emitted_charge_minus1,7.8,1.97,1.89,0.08,L13,accepted (pending c5),7
 5,neutron_to_proton,18.8,1.94,2.03,0.2,L14-22,partial,5
 6,composite_nuclear_object,11.8,3.07,3.37,0.29,L15,descriptive (singleton),12
-7,emitted_charge_minus1,9.8,⏳,⏳,⏳,L18,descriptive (singleton),6
+7,emitted_charge_minus1,9.8,0.49,0.46,0.04,L18,descriptive (singleton),6
 8,composite_nuclear_object,17.6,1.36,1.31,0.12,L19,accepted (pending c5),9
 9,z_plus1_with_antineutrino,11.8,2.17,1.94,0.23,L20,accepted (pending c5),4
 10,heavy_nuclear_fragment,15.7,3.06,2.92,0.14,L21,accepted (pending c5),10
