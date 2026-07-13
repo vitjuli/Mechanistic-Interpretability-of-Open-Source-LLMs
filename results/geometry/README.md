@@ -15,6 +15,13 @@ on the decay task and its variants, computed from the residual/gradient field du
 | `realized_*.csv` | MLP share of rotation/length of `Δμ` + transcoder reconstruction relative error, one file per framing/pair | **Table 5** (`tab:mlpshare`), §3.2 |
 | `norm_ratio_by_layer.csv` | per-layer `r_Δμ = ‖Δμ‖/⟨‖h‖⟩`, `r_u`, and `‖Δμ‖/‖u‖`, three concepts | **Table** `tab:normratio`, §3.4 (726/234/903 at L35) |
 
+## §3.1.3 — orthogonality null and reliability bound
+`null_calibration/` — the covariance-matched null and reliability correction behind the orthogonality claim:
+| file | what | thesis |
+|---|---|---|
+| `null_calibration/null_calibration_per_layer.csv` | cos(w,u) percentile vs isotropic / covariance-matched / span nulls per layer (`pct_cov` ≈ 18–20%) | §3.1.3 "18th percentile", `app:orthogonality` |
+| `null_calibration/reliability_disattenuation.csv` | reliability of `w`/`u`, observed vs disattenuated cos, upper bound `rho_true_upper_bound` (max = 0.074) | §3.1.3 "never exceeds 0.074" |
+
 ## Appendix B — decision zone
 | file | what |
 |---|---|
