@@ -12,6 +12,11 @@ set -e
 cd /content/project 2>/dev/null || cd "$(dirname "$0")/.."
 OUT=data/analysis/runD_v2/semantic_steering; mkdir -p "$OUT"
 CSV="$OUT/semantic_steering_all.csv"; rm -f "$CSV"
+# Must be the checkpoint the dumps were captured with (Qwen/Qwen3-4B). The 2026-07-11 run
+# used the old script default (Qwen3-4B-Base) against Qwen3-4B dumps -- directions and sigma
+# from one model, generations from another. steering_decode_check.py now asserts this when the
+# dump records model_name (the particle dumps do not, hence the explicit flag here).
+MODEL="Qwen/Qwen3-4B"
 LAYERS="22 24 35"
 C_GRID="1,2,4,8,16,32"   # push-strength sweep: graded margin response + where reading(w_res) orthogonality breaks
 K=8             # prompts per class -> 16 per concept
@@ -44,7 +49,7 @@ PY
   for L in $LAYERS; do
     python -u scripts/steering_decode_check.py --dump "$dump" --prompts /tmp/sub.jsonl \
         --steering_csv /tmp/sigma.csv --layer "$L" --c_grid "$C_GRID" --n 100 --gen "$GEN" --topk 15 \
-        --device cuda --tag "${tag}" --out_csv "$CSV" \
+        --device cuda --tag "${tag}" --out_csv "$CSV" --model "$MODEL" \
         2>&1 | tee -a "$OUT/${tag}_L${L}.txt"
   done
 }

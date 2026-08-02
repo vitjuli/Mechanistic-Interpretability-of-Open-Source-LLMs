@@ -15,11 +15,23 @@ and measures the FULL metric set per (layer, c, dir):
   intact_flip           margin_flip AND intact (now meaningful: scaffolded corpus)
 
 Two tiers:
-  tier1 (default): ALL layers x c in {1,4,16} x {w_res, usage, shuffled*, random*}
+  tier1 (default): ALL layers x c in {1,4,16} x {w_res, usage, delta, shuffled*, random*}
                    x up to --t1_per_class targets/class  (~35k forwards)
-  tier2: dense c grid {0.5,1,2,4,8,16,32} on --tier2_layers (default: auto =
+  tier2: dense c grid {1/16,1/8,1/4,1/2,1,2,4,8,16,32} on --tier2_layers (default: auto =
          top-3 usage-flip layers from a tier1 CSV + fixed controls 16,24,35)
          x the FULL baseline-correct held-out pool
+
+Sweep design (fixed 2026-08-02, reported in the paper's protocol appendix):
+  rule A — ONE regular power-of-two c grid for every layer and every direction. The top
+           carries the commit ceiling, the bottom buys linear-and-informative cells on
+           late layers. No per-cell or per-direction amplitude selection: that would make
+           the design a function of the first-order prediction the calibration must test,
+           and it would break the shared norm-matching scale that makes directions
+           comparable (w_res and random have small drive BY the theorem — their own c*
+           would leave the linear radius by construction).
+  rule B — one power-of-two --c_anchor per concept, derived from MEASURED tier-1 usage
+           flips only (derive_c_anchor), logged to sweep_summary.json. Informative-cell
+           selection stays a post-hoc filter in 132 and never feeds back into the design.
 
 Output CSVs are column-compatible with 116's auto-detect loader, so the
 predicted-vs-measured calibration and dose-response plots come for free:
@@ -59,6 +71,46 @@ def fisher_axis(H, y, shrink=0.1):
     Sw = 0.5 * (Sw + Sw.T); Sw = (1 - shrink) * Sw + shrink * np.diag(np.diag(Sw))
     Sw += 1e-6 * float(np.mean(np.diag(Sw)) + 1e-12) * np.eye(Sw.shape[0])
     return unit_raw(np.linalg.solve(Sw, mu1 - mu0))
+
+
+def delta_axis(H, y):
+    """Writing direction on the train split: unit(mu1 - mu0). Same estimator as
+    delta_axis() in 131_delta_sweep_tier2.py (scripts are standalone, so it is restated
+    rather than imported — keep the two in sync)."""
+    return unit_raw(H[y == 1].mean(0) - H[y == 0].mean(0))
+
+
+def derive_c_anchor(tier1_rows, zone_layers, grid):
+    """Rule B: one power-of-two scalar per concept, from MEASURED tier-1 usage flips only.
+
+    The design must not consult any first-order quantity, otherwise the amplitudes would be
+    chosen where the linear form of §5 works and the calibration would stop being a test.
+    So we look at where the measured usage flip rate crosses 0.5 on the zone layers:
+      * already >0.5 at the smallest tier-1 strength -> the crossing is below the sweep,
+        slide the whole grid down so its top sits at that strength;
+      * still <0.5 at the largest -> the crossing is above, slide up so its bottom sits there;
+      * otherwise the crossing is already inside -> anchor 1.
+    Returns a power of two (1.0 when tier-1 is missing or uninformative)."""
+    zone = set(int(l) for l in zone_layers)
+    use = [r for r in tier1_rows if r.get("dir") == "usage" and int(r["layer"]) in zone
+           and not np.isnan(r.get("flip_norm", float("nan")))]
+    if not use or not grid:
+        return 1.0
+    cs = sorted({float(r["c"]) for r in use})
+    c_lo, c_hi = cs[0], cs[-1]
+
+    def med(c):
+        v = sorted(float(r["flip_norm"]) for r in use if float(r["c"]) == c)
+        return v[len(v) // 2] if v else float("nan")
+
+    g_lo, g_hi = min(grid), max(grid)
+    if med(c_lo) > 0.5:
+        k = int(np.floor(np.log2(c_lo / g_hi)))          # top of the grid at c_lo or below
+    elif med(c_hi) < 0.5:
+        k = int(np.ceil(np.log2(c_hi / g_lo)))           # bottom of the grid at c_hi or above
+    else:
+        return 1.0
+    return float(2.0 ** k)
 
 
 def aggregate_cell(recs):
@@ -135,7 +187,35 @@ def self_test():
     rows += [{"dir": "usage", "c": 4.0, "layer": 20, "flip_norm": 0.99}]
     sel = pick_tier2_layers(rows, n_top=2, controls=(16, 35))
     assert sel == [16, 20, 24, 35], sel
-    print("[self_test] OK — cell aggregation (all 8 metrics), tier-2 layer selection pass.")
+
+    # (3) writing axis: unit(mu1 - mu0), independent of within-class spread
+    H = np.vstack([np.zeros((3, 4)), np.tile([2.0, 0, 0, 0], (3, 1))])
+    yv = np.array([0, 0, 0, 1, 1, 1])
+    d = delta_axis(H, yv)
+    assert np.allclose(d, [1, 0, 0, 0]), d
+
+    # (4) rule B anchor: crossing inside the tier-1 range -> 1; saturated low / never
+    #     reaching 0.5 -> power-of-two slide, and the slide always lands the grid edge
+    #     on the tier-1 strength that motivated it
+    grid = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
+    inside = [{"dir": "usage", "layer": 24, "c": c, "flip_norm": f}
+              for c, f in ((1, 0.10), (4, 0.60), (16, 0.99))]
+    assert derive_c_anchor(inside, [24], grid) == 1.0
+    hot = [{"dir": "usage", "layer": 24, "c": c, "flip_norm": f}
+           for c, f in ((1, 0.80), (4, 0.99), (16, 1.00))]
+    a_hot = derive_c_anchor(hot, [24], grid)
+    assert a_hot == 2.0 ** -5 and max(grid) * a_hot <= 1.0, a_hot
+    cold = [{"dir": "usage", "layer": 24, "c": c, "flip_norm": f}
+            for c, f in ((1, 0.00), (4, 0.02), (16, 0.10))]
+    a_cold = derive_c_anchor(cold, [24], grid)
+    assert a_cold == 2.0 ** 8 and min(grid) * a_cold >= 16.0, a_cold
+    # other layers and other directions must not leak into the anchor
+    noise = hot + [{"dir": "w_res", "layer": 24, "c": 1, "flip_norm": 0.99},
+                   {"dir": "usage", "layer": 3, "c": 1, "flip_norm": 0.99}]
+    assert derive_c_anchor(noise, [24], grid) == a_hot
+    assert derive_c_anchor([], [24], grid) == 1.0
+    print("[self_test] OK — cell aggregation (all 8 metrics), tier-2 layer selection, "
+          "writing axis, c-anchor rule pass.")
 
 
 # =====================================================================
@@ -207,7 +287,7 @@ def run_real(args):
         w = fisher_axis(H[trm], y[trm], args.shrink)
         u = unit_raw(G.mean(0))
         sigma = float(np.std(H[trm] @ w))
-        dd = {"w_res": w, "usage": u}
+        dd = {"w_res": w, "usage": u, "delta": delta_axis(H[trm], y[trm])}
         for k in range(args.n_shuffled):
             yp = y[trm].copy(); rng.shuffle(yp)
             dd[f"shuffled{k}"] = fisher_axis(H[trm], yp, args.shrink)
@@ -273,31 +353,35 @@ def run_real(args):
             [w.writerow({k: r.get(k) for k in fields}) for r in rows]
 
     t1_rows = []
+    anchor, t2_grid = None, None
     if args.tier in ("1", "both"):
         t1_rows = run_tier("tier1", list(range(n_layers)), args.t1_c_grid, t1_targets)
         wcsv("steering_sweep_tier1.csv", t1_rows)
         logger.info("tier1 written: steering_sweep_tier1.csv (%d cells)", len(t1_rows))
 
     if args.tier in ("2", "both"):
-        if args.tier2_layers:
-            t2_layers = args.tier2_layers
-        else:
-            src = t1_rows
-            if not src and args.tier1_csv and Path(args.tier1_csv).exists():
-                with open(args.tier1_csv) as f:
-                    src = [{**r, "c": float(r["c"]), "layer": int(r["layer"]),
-                            "flip_norm": float(r["flip_norm"]) if r["flip_norm"] not in ("", "nan") else float("nan")}
-                           for r in _csv.DictReader(f)]
-            t2_layers = pick_tier2_layers(src, controls=tuple(args.tier2_controls))
+        src = t1_rows
+        if not src and args.tier1_csv and Path(args.tier1_csv).exists():
+            with open(args.tier1_csv) as f:
+                src = [{**r, "c": float(r["c"]), "layer": int(r["layer"]),
+                        "flip_norm": float(r["flip_norm"]) if r["flip_norm"] not in ("", "nan") else float("nan")}
+                       for r in _csv.DictReader(f)]
+        t2_layers = args.tier2_layers or pick_tier2_layers(src, controls=tuple(args.tier2_controls))
         logger.info("tier2 layers: %s | full correct held pool: %d targets", t2_layers, len(t2_targets))
-        t2_rows = run_tier("tier2", t2_layers, args.t2_c_grid, t2_targets,
-                           dir_filter={"w_res", "usage", "shuffled0", "random0"})
+        anchor = args.c_anchor if args.c_anchor is not None else derive_c_anchor(
+            src, t2_layers, args.t2_c_grid)
+        t2_grid = [c * anchor for c in args.t2_c_grid]
+        logger.info("tier2 c-anchor: %g (grid %s)", anchor, t2_grid)
+        t2_rows = run_tier("tier2", t2_layers, t2_grid, t2_targets,
+                           dir_filter={"w_res", "usage", "delta", "shuffled0", "random0"})
         wcsv("steering_sweep_tier2.csv", t2_rows)
         logger.info("tier2 written: steering_sweep_tier2.csv (%d cells)", len(t2_rows))
 
     json.dump({"concept": concept, "n_prompts": nP,
                "baseline_accuracy": float(correct.mean()),
-               "t1_targets": len(t1_targets), "t2_targets": len(t2_targets)},
+               "t1_targets": len(t1_targets), "t2_targets": len(t2_targets),
+               "t1_c_grid": list(args.t1_c_grid), "t2_c_grid_base": list(args.t2_c_grid),
+               "c_anchor": anchor, "t2_c_grid_applied": t2_grid},
               open(out / "sweep_summary.json", "w"), indent=2)
     print("\n" + "=" * 88)
     print(f"B1 STEERING SWEEP — {concept}")
@@ -318,7 +402,15 @@ def build_parser():
     p.add_argument("--device", default="cuda")
     p.add_argument("--tier", choices=["1", "2", "both"], default="both")
     p.add_argument("--t1_c_grid", type=float, nargs="*", default=[1, 4, 16])
-    p.add_argument("--t2_c_grid", type=float, nargs="*", default=[0.5, 1, 2, 4, 8, 16, 32])
+    p.add_argument("--t2_c_grid", type=float, nargs="*",
+                   default=[0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32],
+                   help="rule A: one regular power-of-two grid for every layer and direction. "
+                        "The top (32) carries the commit ceiling, the bottom gives linear-and-"
+                        "informative cells on late layers")
+    p.add_argument("--c_anchor", type=float, default=None,
+                   help="rule B: power-of-two multiplier for the tier-2 grid. Default None = "
+                        "derive from measured tier-1 usage flips (see derive_c_anchor); pass 1 to "
+                        "pin the grid as-is")
     p.add_argument("--t1_per_class", type=int, default=40)
     p.add_argument("--tier2_layers", type=int, nargs="*", default=None)
     p.add_argument("--tier2_controls", type=int, nargs="*", default=[16, 24, 35])

@@ -128,6 +128,13 @@ def run_real(args):
     fams = json.load(open(dump / "families.json"))
     prompts = [json.loads(l) for l in open(args.corpus)]
     nP = len(prompts); assert nP == len(fams), "corpus/dump mismatch"
+    if "model_name" in meta.files:
+        dump_model = str(meta["model_name"])
+        assert dump_model == args.model_name, (
+            f"model mismatch: the dump was captured with {dump_model!r} but this run steers "
+            f"{args.model_name!r}. The forward pass must use the same model as 119/122, otherwise "
+            f"the delta cells are not comparable with cells_tier2.csv (pass --model_name {dump_model})."
+        )
     y = meta["y"].astype(int)
     m0 = meta["clean_margin"].astype(np.float64)
     n_layers = int(meta["n_layers"]); d = int(meta["d"])
@@ -218,7 +225,8 @@ def main():
     ap.add_argument("--c_grid", default="0.5,1,2,4,8,16,32")
     ap.add_argument("--dirs", default="delta",
                     help="comma list from {delta,usage}; usage = continuity cross-check vs 122")
-    ap.add_argument("--model_name", default="Qwen/Qwen3-4B-Base")
+    ap.add_argument("--model_name", default="Qwen/Qwen3-4B",
+                    help="MUST match the model in the dump's meta.npz (119/122) — asserted at start")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--shrink", type=float, default=0.1, help="MUST match the 122 run")
     ap.add_argument("--split_seed", type=int, default=0, help="MUST match the 122 run")

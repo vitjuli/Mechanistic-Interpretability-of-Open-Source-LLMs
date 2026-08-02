@@ -1,0 +1,129 @@
+tag,prompt_idx,prompt_class,recorded_contrast,expected_contrast,usable,reason
+alpha_beta,0,alpha,beta,beta,1,
+alpha_beta,1,alpha,beta,beta,1,
+alpha_beta,2,alpha,beta,beta,1,
+alpha_beta,3,alpha,beta,beta,1,
+alpha_beta,4,alpha,beta,beta,1,
+alpha_beta,5,alpha,beta,beta,1,
+alpha_beta,6,alpha,beta,beta,1,
+alpha_beta,7,alpha,beta,beta,1,
+alpha_beta,8,beta,alpha,alpha,1,
+alpha_beta,9,beta,alpha,alpha,1,
+alpha_beta,10,beta,alpha,alpha,1,
+alpha_beta,11,beta,alpha,alpha,1,
+alpha_beta,12,beta,alpha,alpha,1,
+alpha_beta,13,beta,alpha,alpha,1,
+alpha_beta,14,beta,alpha,alpha,1,
+alpha_beta,15,beta,alpha,alpha,1,
+electron_vs_neutron,0,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,1,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,2,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,3,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,4,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,5,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,6,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,7,electron,proton,neutron,0,contrast is not the pair partner
+electron_vs_neutron,8,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,9,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,10,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,11,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,12,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,13,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,14,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_neutron,15,neutron,proton,electron,0,contrast is not the pair partner
+electron_vs_photon,0,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,1,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,2,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,3,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,4,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,5,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,6,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,7,electron,proton,photon,0,contrast is not the pair partner
+electron_vs_photon,8,photon,electron,electron,1,
+electron_vs_photon,9,photon,electron,electron,1,
+electron_vs_photon,10,photon,electron,electron,1,
+electron_vs_photon,11,photon,electron,electron,1,
+electron_vs_photon,12,photon,electron,electron,1,
+electron_vs_photon,13,photon,electron,electron,1,
+electron_vs_photon,14,photon,electron,electron,1,
+electron_vs_photon,15,photon,electron,electron,1,
+electron_vs_proton,0,electron,proton,proton,1,
+electron_vs_proton,1,electron,proton,proton,1,
+electron_vs_proton,2,electron,proton,proton,1,
+electron_vs_proton,3,electron,proton,proton,1,
+electron_vs_proton,4,electron,proton,proton,1,
+electron_vs_proton,5,electron,proton,proton,1,
+electron_vs_proton,6,electron,proton,proton,1,
+electron_vs_proton,7,electron,proton,proton,1,
+electron_vs_proton,8,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,9,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,10,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,11,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,12,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,13,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,14,proton,neutron,electron,0,contrast is not the pair partner
+electron_vs_proton,15,proton,neutron,electron,0,contrast is not the pair partner
+grammar,0,plural,singular,singular,1,
+grammar,1,plural,singular,singular,1,
+grammar,2,plural,singular,singular,1,
+grammar,3,plural,singular,singular,1,
+grammar,4,plural,singular,singular,1,
+grammar,5,plural,singular,singular,1,
+grammar,6,plural,singular,singular,1,
+grammar,7,plural,singular,singular,1,
+grammar,8,singular,plural,plural,1,
+grammar,9,singular,plural,plural,1,
+grammar,10,singular,plural,plural,1,
+grammar,11,singular,plural,plural,1,
+grammar,12,singular,plural,plural,1,
+grammar,13,singular,plural,plural,1,
+grammar,14,singular,plural,plural,1,
+grammar,15,singular,plural,plural,1,
+neutron_vs_photon,0,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,1,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,2,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,3,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,4,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,5,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,6,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,7,neutron,proton,photon,0,contrast is not the pair partner
+neutron_vs_photon,8,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,9,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,10,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,11,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,12,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,13,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,14,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_photon,15,photon,electron,neutron,0,contrast is not the pair partner
+neutron_vs_proton,0,neutron,proton,proton,1,
+neutron_vs_proton,1,neutron,proton,proton,1,
+neutron_vs_proton,2,neutron,proton,proton,1,
+neutron_vs_proton,3,neutron,proton,proton,1,
+neutron_vs_proton,4,neutron,proton,proton,1,
+neutron_vs_proton,5,neutron,proton,proton,1,
+neutron_vs_proton,6,neutron,proton,proton,1,
+neutron_vs_proton,7,neutron,proton,proton,1,
+neutron_vs_proton,8,proton,neutron,neutron,1,
+neutron_vs_proton,9,proton,neutron,neutron,1,
+neutron_vs_proton,10,proton,neutron,neutron,1,
+neutron_vs_proton,11,proton,neutron,neutron,1,
+neutron_vs_proton,12,proton,neutron,neutron,1,
+neutron_vs_proton,13,proton,neutron,neutron,1,
+neutron_vs_proton,14,proton,neutron,neutron,1,
+neutron_vs_proton,15,proton,neutron,neutron,1,
+photon_vs_proton,0,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,1,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,2,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,3,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,4,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,5,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,6,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,7,photon,electron,proton,0,contrast is not the pair partner
+photon_vs_proton,8,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,9,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,10,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,11,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,12,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,13,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,14,proton,neutron,photon,0,contrast is not the pair partner
+photon_vs_proton,15,proton,neutron,photon,0,contrast is not the pair partner

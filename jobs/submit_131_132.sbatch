@@ -43,6 +43,7 @@ for CPT in B1_alpha_beta B1_grammar_number; do
       --match_cells $ROOT/$CPT/cells_tier2.csv \
       --out_dir     $ROOT/$CPT \
       --dirs delta,usage \
+      --model_name Qwen/Qwen3-4B \
       --split_seed $SPLIT_SEED --train_frac $TRAIN_FRAC --shrink $SHRINK
 
   echo "=== 132 assembly: $CPT (CPU, in-sample F + held-out F) ==="

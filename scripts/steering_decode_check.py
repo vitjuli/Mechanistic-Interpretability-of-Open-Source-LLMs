@@ -32,17 +32,26 @@ def main():
     ap.add_argument("--n",type=int,default=6); ap.add_argument("--gen",type=int,default=20)
     ap.add_argument("--c_grid", default=None, help="comma-sep c values to sweep (overrides --c); model loads once")
     ap.add_argument("--topk",type=int,default=15)
-    ap.add_argument("--model",default="Qwen/Qwen3-4B-Base"); ap.add_argument("--device",default="cuda")
+    ap.add_argument("--model",default="Qwen/Qwen3-4B",
+                    help="must match the dump's meta.npz model_name (asserted when recorded)")
+    ap.add_argument("--device",default="cuda")
     ap.add_argument("--out_csv", default=None, help="append structured rows here (for analysis)")
     ap.add_argument("--tag", default="", help="concept/pair label written into the CSV")
     a=ap.parse_args()
 
-    tok=AutoTokenizer.from_pretrained(a.model)
-    model=AutoModelForCausalLM.from_pretrained(a.model,torch_dtype=torch.bfloat16).to(a.device).eval()
-    blocks=model.model.layers; L=a.layer
     prompts=[json.loads(l) for l in open(a.prompts)]
     _meta=np.load(f"{a.dump}/meta.npz"); y=_meta["y"].astype(int)
     class_a=str(_meta["class_a"]).strip() if "class_a" in _meta else None  # name of class0 (d_delta points class0->class1)
+    if "model_name" in _meta.files:
+        # The directions and sigma come from this dump; steering a different checkpoint makes
+        # the generations incomparable with every other number in the paper.
+        assert str(_meta["model_name"])==a.model, (
+            f"model mismatch: dump captured with {str(_meta['model_name'])!r}, this run steers "
+            f"{a.model!r} (pass --model {str(_meta['model_name'])})")
+
+    tok=AutoTokenizer.from_pretrained(a.model)
+    model=AutoModelForCausalLM.from_pretrained(a.model,torch_dtype=torch.bfloat16).to(a.device).eval()
+    blocks=model.model.layers; L=a.layer
     res=np.load(f"{a.dump}/res_L{L:02d}.npy").astype(np.float64)
     grad=np.load(f"{a.dump}/grad_L{L:02d}.npy").astype(np.float64)
     d_delta=unit(res[y==1].mean(0)-res[y==0].mean(0)); d_usage=unit(grad.mean(0))
@@ -73,17 +82,40 @@ def main():
         margin=float(lp[ids[1]]-lp[ids[0]])   # logprob(incorrect) - logprob(correct): <0 = correct preferred, >0 = FLIPPED
         return top, rank, cont, margin
 
+    # The two class labels of THIS corpus, ordered (class0, class1) so that d_delta points
+    # class0 -> class1. class_a from the dump names class0 when present.
+    raw_classes = sorted({p["correct_answer"] for p in prompts if p.get("correct_answer")})
+    pair_classes = ()
+    if len(raw_classes) == 2:
+        if class_a is not None and class_a in [str(c).strip() for c in raw_classes]:
+            first = next(c for c in raw_classes if str(c).strip() == class_a)
+            pair_classes = (first, next(c for c in raw_classes if c != first))
+        else:
+            pair_classes = (raw_classes[0], raw_classes[1])
+        print(f"corpus contrast: class0={pair_classes[0]!r} class1={pair_classes[1]!r}")
+
     rows=[]
     c_values=[float(x) for x in a.c_grid.split(",")] if a.c_grid else [a.c]
     dirs={"delta":d_delta, "usage":d_usage, "w_res":d_wres}   # writing / use / reading
     for i in range(min(a.n,len(prompts))):
         p=prompts[i]; ca=p.get("correct_answer"); ia=p.get("incorrect_answer")
-        if ia is not None:
-            ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
-        else:
+        if "tok_id_class0" in p and "y_canonical" in p:
             c0,c1=int(p["tok_id_class0"]),int(p["tok_id_class1"]); yy=int(p["y_canonical"])
             cid,iid=(c0,c1) if yy==0 else (c1,c0)
             ids=[cid,iid]; ca=ca or tok.decode([cid]); ia=tok.decode([iid])
+        elif pair_classes and ca in pair_classes:
+            # Contrast = the OTHER class of this corpus, i.e. the class the sweep actually
+            # steers toward. NOT p["incorrect_answer"]: in the v2 particle corpora that field
+            # carries an arbitrary distractor (proton for an electron/photon pair), so the
+            # margin was being read against a token no direction was ever pointed at.
+            ia = pair_classes[1] if ca == pair_classes[0] else pair_classes[0]
+            ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
+        elif ia is not None:
+            print(f"  [warn] prompt {i}: falling back to incorrect_answer={str(ia).strip()!r} "
+                  f"-- corpus does not define a two-class contrast")
+            ids=[tok.encode(ca,add_special_tokens=False)[0], tok.encode(ia,add_special_tokens=False)[0]]
+        else:
+            raise SystemExit(f"prompt {i}: no way to determine the contrast token")
         # push TOWARD the incorrect token. d_delta points class0->class1.
         if class_a is not None:
             s = 1.0 if str(ca).strip()==class_a else -1.0
